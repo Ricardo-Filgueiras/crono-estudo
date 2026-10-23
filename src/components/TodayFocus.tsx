@@ -101,7 +101,7 @@ export const TodayFocus: React.FC = () => {
             </div>
 
             {/* Clean time pill selector */}
-            <div className="inline-flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs" role="group" aria-label="Tempo disponível para estudo">
+            <div className="grid grid-cols-5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs w-full max-w-md mx-auto" role="group" aria-label="Tempo disponível para estudo">
               {(
                 [
                   { id: 'micro', label: '15-20m' },
@@ -115,7 +115,7 @@ export const TodayFocus: React.FC = () => {
                   key={d.id}
                   onClick={() => setSessionDuration(d.id)}
                   aria-pressed={sessionDuration === d.id}
-                  className={`px-3 py-1.5 rounded-lg transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                  className={`px-1.5 sm:px-3 py-2 rounded-lg transition text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
                     sessionDuration === d.id ? 'bg-emerald-600 text-white font-medium' : 'text-slate-300 hover:text-white'
                   }`}
                 >
@@ -223,12 +223,12 @@ export const TodayFocus: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Right: Clean, Action Buttons */}
-                  <div className="flex items-center gap-1.5 pt-2 sm:pt-0">
+                  {/* Right: Action Buttons (Responsive Grid on Mobile) */}
+                  <div className="grid grid-cols-4 gap-1.5 pt-2 sm:pt-0 sm:flex sm:items-center sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
                     <button
                       onClick={() => setActiveTimerTopic(topic.microtopico)}
                       aria-label={`Vincular tópico ${topic.microtopico} ao cronômetro de foco`}
-                      className={`text-xs px-2.5 py-1.5 rounded-lg border font-medium transition flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                      className={`text-xs px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
                         isSelectedForTimer
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                           : 'bg-slate-800 text-slate-200 border-slate-700 hover:text-white'
@@ -236,36 +236,36 @@ export const TodayFocus: React.FC = () => {
                       title="Vincular ao Cronômetro"
                     >
                       <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Focar</span>
+                      <span className="text-[11px] sm:text-xs">Focar</span>
                     </button>
 
                     <button
                       onClick={() => markAsMastered(topic.id)}
                       aria-label={`Marcar tópico ${topic.microtopico} como já dominado`}
-                      className="text-xs bg-slate-800 hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition flex items-center gap-1"
+                      className="text-xs bg-slate-800 hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                       title="Marcar como já dominado"
                     >
                       <Award className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Dominado</span>
+                      <span className="text-[11px] sm:text-xs">Dominado</span>
                     </button>
 
                     <button
                       onClick={() => rescheduleTopic(topic.id, 1)}
                       aria-label={`Adiar tópico ${topic.microtopico} para amanhã`}
-                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition flex items-center gap-1"
+                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                       title="Adiar para amanhã sem culpa"
                     >
                       <FastForward className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
-                      <span>Adiar</span>
+                      <span className="text-[11px] sm:text-xs">Adiar</span>
                     </button>
 
                     <button
                       onClick={() => setSelectedTopicForModal(topic)}
                       aria-label={`Concluir tópico ${topic.microtopico} e editar registro`}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center gap-1 shadow-sm"
+                      className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1 shadow-sm"
                     >
                       <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Concluir</span>
+                      <span className="text-[11px] sm:text-xs">Concluir</span>
                     </button>
                   </div>
 

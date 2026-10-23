@@ -271,46 +271,49 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ currentTopicTitle }) => 
             </div>
           )}
 
-          {/* Clock Display */}
-          <div 
-            role="timer"
-            aria-label={`Tempo do cronômetro: ${timeFormatted}`}
-            className="font-mono text-xl sm:text-2xl font-bold text-white px-3 py-0.5 bg-slate-950 rounded-xl border border-slate-800 min-w-[85px] text-center"
-          >
-            {timeFormatted}
-          </div>
-
-          {/* Play/Pause/Reset Controls */}
-          <div className="flex items-center gap-1.5">
-            <button
-              onClick={() => setIsRunning(!isRunning)}
-              aria-label={isRunning ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
-              className={`p-2 rounded-xl font-medium transition flex items-center justify-center text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                isRunning ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'
-              }`}
-              title={isRunning ? 'Pausar' : 'Iniciar'}
+          {/* Clock Display & Controls Group (Mobile-friendly) */}
+          <div className="flex items-center gap-2">
+            {/* Clock Display */}
+            <div 
+              role="timer"
+              aria-label={`Tempo do cronômetro: ${timeFormatted}`}
+              className="font-mono text-xl sm:text-2xl font-bold text-white px-3 py-1 sm:py-0.5 bg-slate-950 rounded-xl border border-slate-800 min-w-[85px] text-center"
             >
-              {isRunning ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4 ml-0.5" aria-hidden="true" />}
-            </button>
+              {timeFormatted}
+            </div>
 
-            <button
-              onClick={resetTimer}
-              aria-label="Zerar cronômetro"
-              className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
-              title="Zerar Timer"
-            >
-              <RotateCcw className="w-4 h-4" aria-hidden="true" />
-            </button>
+            {/* Play/Pause/Reset Controls */}
+            <div className="flex items-center gap-1.5">
+              <button
+                onClick={() => setIsRunning(!isRunning)}
+                aria-label={isRunning ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
+                className={`p-2.5 sm:p-2 rounded-xl font-medium transition flex items-center justify-center text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                  isRunning ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                }`}
+                title={isRunning ? 'Pausar' : 'Iniciar'}
+              >
+                {isRunning ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4 ml-0.5" aria-hidden="true" />}
+              </button>
 
-            {/* Zen Fullscreen Trigger */}
-            <button
-              onClick={() => setIsZenMode(true)}
-              aria-label="Entrar no Modo Foco Zen em tela cheia"
-              className="p-2 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
-              title="Entrar no Modo Foco Zen (Tela Cheia Limpa)"
-            >
-              <Maximize2 className="w-4 h-4" aria-hidden="true" />
-            </button>
+              <button
+                onClick={resetTimer}
+                aria-label="Zerar cronômetro"
+                className="p-2.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+                title="Zerar Timer"
+              >
+                <RotateCcw className="w-4 h-4" aria-hidden="true" />
+              </button>
+
+              {/* Zen Fullscreen Trigger */}
+              <button
+                onClick={() => setIsZenMode(true)}
+                aria-label="Entrar no Modo Foco Zen em tela cheia"
+                className="p-2.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+                title="Entrar no Modo Foco Zen (Tela Cheia Limpa)"
+              >
+                <Maximize2 className="w-4 h-4" aria-hidden="true" />
+              </button>
+            </div>
           </div>
         </div>
       </section>

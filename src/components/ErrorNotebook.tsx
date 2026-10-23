@@ -159,12 +159,12 @@ export const ErrorNotebook: React.FC = () => {
       {/* Add Modal */}
       {showAddModal && (
         <div 
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-fade-in"
+          className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-black/75 backdrop-blur-sm animate-fade-in overflow-y-auto"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-error-title"
         >
-          <div className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl">
+          <div className="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] sm:max-h-[92vh] flex flex-col overflow-hidden shadow-2xl pb-safe">
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
               <h3 id="modal-error-title" className="text-base font-bold text-white">Registrar Erro no Caderno FCC</h3>
               <button 

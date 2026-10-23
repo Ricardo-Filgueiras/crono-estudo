@@ -69,7 +69,7 @@ export const CurriculumView: React.FC = () => {
     <div className="space-y-6">
       
       {/* Search & Filter Header */}
-      <section aria-labelledby="curriculum-filters-heading" className="bg-slate-900 border border-slate-800 rounded-3xl p-5 space-y-4 shadow-xl">
+      <section aria-labelledby="curriculum-filters-heading" className="bg-slate-900 border border-slate-800 rounded-3xl p-4 sm:p-5 space-y-4 shadow-xl">
         <h2 id="curriculum-filters-heading" className="sr-only">Filtros e Busca do Edital</h2>
         
         {/* Search bar */}
@@ -90,24 +90,24 @@ export const CurriculumView: React.FC = () => {
           </div>
         </div>
 
-        {/* Quick Trilha Filter Pills */}
-        <div className="flex flex-wrap items-center gap-1.5 pt-1" role="group" aria-label="Filtrar por Trilha">
-          <span className="text-[11px] font-semibold text-slate-300 mr-2 uppercase tracking-wider">
-            Filtrar por Trilha:
+        {/* Quick Trilha Filter Pills (Horizontal scrollable on mobile) */}
+        <div className="flex items-center gap-1.5 pt-1 overflow-x-auto no-scrollbar whitespace-nowrap" role="group" aria-label="Filtrar por Trilha">
+          <span className="text-[11px] font-semibold text-slate-300 mr-1 uppercase tracking-wider flex-shrink-0">
+            Trilha:
           </span>
           {[
-            { id: 'TODAS', label: 'Todas as Trilhas' },
-            { id: 'MBA', label: '🎓 MBA Ciência de Dados' },
-            { id: 'Matemática Base', label: '📐 Matemática Base' },
-            { id: 'Português Base', label: '📝 Português Base' },
-            { id: 'Leitura / Livro', label: '📖 Livros & Leituras' },
-            { id: 'Concurso', label: '🏛️ Concurso Público' },
+            { id: 'TODAS', label: 'Todas' },
+            { id: 'MBA', label: '🎓 MBA Dados' },
+            { id: 'Matemática Base', label: '📐 Matemática' },
+            { id: 'Português Base', label: '📝 Português' },
+            { id: 'Leitura / Livro', label: '📖 Livros' },
+            { id: 'Concurso', label: '🏛️ Concurso' },
           ].map(tag => (
             <button
               key={tag.id}
               onClick={() => setSelectedTag(tag.id)}
               aria-pressed={selectedTag === tag.id}
-              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
                 selectedTag === tag.id
                   ? 'bg-emerald-600 text-white border-emerald-500 shadow-sm'
                   : 'bg-slate-950 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800'
@@ -281,49 +281,56 @@ export const CurriculumView: React.FC = () => {
                     )}
                   </div>
 
-                  {/* Actions */}
-                  <div className="flex flex-wrap items-center gap-1.5 pt-2 md:pt-0 border-t md:border-t-0 border-slate-800">
+                  {/* Actions (Responsive Grid on Mobile) */}
+                  <div className="grid grid-cols-4 gap-1.5 pt-2.5 sm:pt-0 sm:flex sm:items-center sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
                     
                     {/* Schedule for Today */}
                     <button
                       onClick={() => scheduleForToday(topic.id)}
-                      className="text-xs bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+                      className="text-xs bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                       title="Agendar para a fila de estudo de hoje"
                       aria-label={`Agendar ${topic.microtopico} para hoje`}
                     >
-                      + Hoje
+                      <span className="text-emerald-400 font-bold">+</span>
+                      <span className="text-[11px] sm:text-xs">Hoje</span>
                     </button>
 
                     {/* Reschedule */}
                     <button
                       onClick={() => rescheduleTopic(topic.id, 2)}
-                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition"
+                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                       title="Reagendar para daqui a 2 dias"
                       aria-label={`Reagendar ${topic.microtopico} para daqui a 2 dias`}
                     >
                       <FastForward className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
+                      <span className="text-[11px] sm:text-xs">+2 dias</span>
                     </button>
 
                     {/* Mark as Mastered */}
-                    {!isMastered && (
+                    {!isMastered ? (
                       <button
                         onClick={() => markAsMastered(topic.id)}
-                        className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition"
+                        className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                         title="Marcar como Dominado"
                         aria-label={`Marcar ${topic.microtopico} como dominado`}
                       >
                         <Award className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span className="text-[11px] sm:text-xs">Dominar</span>
                       </button>
+                    ) : (
+                      <div className="text-[11px] text-amber-400 flex items-center justify-center font-medium bg-amber-500/10 rounded-lg border border-amber-500/20 py-2 sm:py-1.5">
+                        ⭐ Feito
+                      </div>
                     )}
 
                     {/* Edit Modal */}
                     <button
                       onClick={() => setSelectedTopicForModal(topic)}
-                      className="text-xs bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center gap-1"
+                      className="text-xs bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg border border-emerald-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                       aria-label={`Editar anotações e status de ${topic.microtopico}`}
                     >
                       <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Editar</span>
+                      <span className="text-[11px] sm:text-xs">Editar</span>
                     </button>
 
                   </div>

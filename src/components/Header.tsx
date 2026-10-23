@@ -1,5 +1,6 @@
 import React, { useRef } from 'react';
 import { useStudy } from '../context/StudyContext';
+import { useAuth } from '../context/AuthContext';
 import { ActiveTab } from '../types';
 import { 
   Calendar, 
@@ -10,7 +11,10 @@ import {
   Download, 
   Upload, 
   RefreshCw,
-  Award
+  Award,
+  Cloud,
+  LogIn,
+  LogOut
 } from 'lucide-react';
 
 export const Header: React.FC = () => {
@@ -20,8 +24,11 @@ export const Header: React.FC = () => {
     setActiveTab, 
     exportBackup, 
     importBackup, 
-    resetToInitial 
+    resetToInitial,
+    isSyncing
   } = useStudy();
+
+  const { user, openAuthModal, signOut } = useAuth();
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -152,11 +159,44 @@ export const Header: React.FC = () => {
                 <RefreshCw className="w-3.5 h-3.5" aria-hidden="true" />
               </button>
             </div>
+
+            {/* Auth / Cloud Sync Status */}
+            <div className="flex items-center pl-2 border-l border-slate-800">
+              {user ? (
+                <div className="flex items-center gap-2">
+                  <div
+                    title={isSyncing ? "Sincronizando com Supabase..." : "Nuvem Conectada e Sincronizada"}
+                    className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 px-2.5 py-1.5 rounded-lg text-xs"
+                  >
+                    <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse text-amber-400' : 'text-emerald-400'}`} />
+                    <span className="hidden md:inline font-mono text-[11px] max-w-[120px] truncate text-slate-200">
+                      {user.email}
+                    </span>
+                  </div>
+                  <button
+                    onClick={signOut}
+                    title="Sair da conta"
+                    aria-label="Sair da conta"
+                    className="text-slate-400 hover:text-red-400 p-1.5 rounded-lg hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-red-400 transition"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              ) : (
+                <button
+                  onClick={openAuthModal}
+                  className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white font-medium text-xs px-3 py-1.5 rounded-lg shadow-sm shadow-emerald-500/20 transition cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+                >
+                  <LogIn className="w-3.5 h-3.5" />
+                  <span>Entrar / Sincronizar</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 
-        {/* Tab Navigation */}
-        <nav className="flex space-x-1 sm:space-x-2 overflow-x-auto pb-2 scrollbar-none" aria-label="Navegação principal">
+        {/* Desktop Tab Navigation (Mobile uses BottomNav) */}
+        <nav className="hidden sm:flex space-x-1 sm:space-x-2 overflow-x-auto pb-2 scrollbar-none" aria-label="Navegação principal">
           {navItems.map(item => {
             const isActive = activeTab === item.id;
             return (

@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
 import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem } from '../types';
 import { INITIAL_TOPICS, INITIAL_ERRORS } from '../data/initialData';
 import { 
@@ -8,6 +8,8 @@ import {
   getUnlockPower, 
   recommendNextSteps 
 } from '../utils/conceptGraph';
+import { useAuth } from './AuthContext';
+import { supabase } from '../lib/supabase';
 import confetti from 'canvas-confetti';
 
 interface StudyContextType {
@@ -27,6 +29,11 @@ interface StudyContextType {
   resetToInitial: () => void;
   selectedTopicForModal: Topic | null;
   setSelectedTopicForModal: (topic: Topic | null) => void;
+
+  // Sincronização Nuvem / Supabase
+  isSyncing: boolean;
+  isCloudConnected: boolean;
+  cloudSyncError: string | null;
 
   // === GRAFO CONCEITUAL & RECOMENDAÇÃO INTELIGENTE (FASE 1) ===
   getTopicPedagogicalStatus: (topic: Topic) => PedagogicalStatus;
@@ -92,6 +99,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeTab, setActiveTab] = useState<ActiveTab>('hoje');
   const [selectedTopicForModal, setSelectedTopicForModal] = useState<Topic | null>(null);
 
+  const { user } = useAuth();
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
+  const cloudLoadedForUser = useRef<string | null>(null);
+
   // Sync to localStorage
   useEffect(() => {
     try {
@@ -108,6 +120,86 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Falha ao salvar erros no storage', e);
     }
   }, [errors]);
+
+  // Carregar dados do Supabase quando o usuário autenticar
+  useEffect(() => {
+    if (!user) {
+      cloudLoadedForUser.current = null;
+      return;
+    }
+
+    if (cloudLoadedForUser.current === user.id) return;
+
+    let isMounted = true;
+    const loadCloudData = async () => {
+      try {
+        setIsSyncing(true);
+        setCloudSyncError(null);
+        const { data, error } = await supabase
+          .from('user_study_data')
+          .select('topics, errors')
+          .eq('user_id', user.id)
+          .maybeSingle();
+
+        if (error) throw error;
+
+        if (isMounted) {
+          if (data && Array.isArray(data.topics) && data.topics.length > 0) {
+            setTopics(data.topics);
+            if (Array.isArray(data.errors)) {
+              setErrors(data.errors);
+            }
+          } else {
+            // Primeiro login: salva os dados locais atuais no Supabase
+            await supabase.from('user_study_data').upsert({
+              user_id: user.id,
+              topics,
+              errors,
+              updated_at: new Date().toISOString()
+            });
+          }
+          cloudLoadedForUser.current = user.id;
+        }
+      } catch (err: any) {
+        console.error('Erro ao sincronizar com Supabase:', err);
+        if (isMounted) setCloudSyncError(err.message || 'Falha ao sincronizar com a nuvem');
+      } finally {
+        if (isMounted) setIsSyncing(false);
+      }
+    };
+
+    loadCloudData();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [user]);
+
+  // Sincronizar alterações locais para o Supabase (Debounced)
+  useEffect(() => {
+    if (!user || cloudLoadedForUser.current !== user.id) return;
+
+    const timeout = setTimeout(async () => {
+      try {
+        setIsSyncing(true);
+        setCloudSyncError(null);
+        const { error } = await supabase.from('user_study_data').upsert({
+          user_id: user.id,
+          topics,
+          errors,
+          updated_at: new Date().toISOString()
+        });
+        if (error) throw error;
+      } catch (err: any) {
+        console.error('Erro ao salvar no Supabase:', err);
+        setCloudSyncError('Não foi possível salvar na nuvem');
+      } finally {
+        setIsSyncing(false);
+      }
+    }, 1200);
+
+    return () => clearTimeout(timeout);
+  }, [topics, errors, user]);
 
   // Mapa otimizado de tópicos para consulta de grafos
   const topicMap = useMemo(() => buildTopicMap(topics), [topics]);
@@ -326,6 +418,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         resetToInitial,
         selectedTopicForModal,
         setSelectedTopicForModal,
+        isSyncing,
+        isCloudConnected: !!user,
+        cloudSyncError,
         getTopicPedagogicalStatus,
         getTopicUnmetPrerequisites,
         getTopicUnlockCount,
