@@ -1,0 +1,1909 @@
+import { Topic, ErrorItem } from '../types';
+
+export const INITIAL_TOPICS: Topic[] = [
+  {
+    "id": "mba-sql",
+    "disciplina": "Linguagem SQL para Data Analytics",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "SQL Avançado, Consultas Analíticas, Agregações e Otimização",
+    "peso": "MBA (40h) • Sinergia com Concurso",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Em Andamento",
+    "agendadoPara": "2026-10-23",
+    "faseRecomendada": "📘 Disciplina Ativa da Semana do MBA! Acompanhar com leitura do livro.",
+    "anotacoes": "Disciplina em curso do MBA. Fortíssima sinergia com o edital do Concurso em Banco de Dados."
+  },
+  {
+    "id": "livro-db",
+    "disciplina": "Leitura Técnica Bibliográfica",
+    "macrotema": "Bibliografia MBA & Concurso",
+    "microtopico": "Livro: Sistemas de Banco de Dados (Elmasri/Navathe)",
+    "peso": "Leitura Recomendada",
+    "origem": [
+      "Leitura / Livro",
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Em Andamento",
+    "agendadoPara": "2026-10-23",
+    "faseRecomendada": "📖 Bloco de leitura de 20-30 min para fundamentação teórica de SQL.",
+    "anotacoes": "Leitura de apoio para a disciplina de SQL do MBA e aprofundamento para questões conceituais."
+  },
+  {
+    "id": "mba-gov",
+    "disciplina": "Governança de Dados",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "DAMA-DMBOK, Qualidade de Dados, Metadados e Gestão Estratégica",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-spark",
+    "disciplina": "Linguagens de Programação para Ciência de Dados",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Python com Spark, PySpark e Processamento Distribuído",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-stat-r",
+    "disciplina": "Técnicas Estatísticas: Teoria e Prática",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Estatística Descritiva, Inferencial e Testes de Hipótese com R Programming",
+    "peso": "MBA (40h) • Exclusivo MBA",
+    "origem": [
+      "MBA"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-etl",
+    "disciplina": "Integração e Fluxo de Dados (ETL)",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Pipelines de Dados, Extração, Transformação e Carga (ETL/ELT)",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-data-analysis",
+    "disciplina": "Análise de Dados",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Análise Exploratória de Dados (EDA), Visualização e Storytelling",
+    "peso": "MBA (40h) • Exclusivo MBA",
+    "origem": [
+      "MBA"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-pred-models",
+    "disciplina": "Análise e Modelagem Preditiva",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Modelagem Preditiva, Séries Temporais e Regressões Avançadas",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-ml",
+    "disciplina": "Machine Learning",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Algoritmos Supervisionados, Não Supervisionados e Otimização",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-analytics-ai",
+    "disciplina": "Analytics e Inteligência Artificial (IA)",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "Aplicações Corporativas de IA e Tomada de Decisão Analítica",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-lgpd",
+    "disciplina": "Lei Geral de Proteção de Dados (LGPD)",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "LGPD aplicada à Governança de Dados, Privacidade e Segurança",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "mba-ai-tools",
+    "disciplina": "Inteligência Artificial: Conceitos, Ferramentas e Aplicações",
+    "macrotema": "MBA Ciência de Dados & Analytics",
+    "microtopico": "IA Generativa, Ferramentas Modernas e Frameworks de Aplicação",
+    "peso": "MBA (40h)",
+    "origem": [
+      "MBA",
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+  },
+  {
+    "id": "math-poly-div",
+    "disciplina": "Matemática (Módulo 04)",
+    "macrotema": "Introdução à Álgebra (Google Drive)",
+    "microtopico": "Divisão Euclidiana de Polinômios pelo Método da Chave",
+    "peso": "Matemática Base",
+    "origem": [
+      "Matemática Base"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "faseRecomendada": "⭐ Dominado! Resolução detalhada de polinômios, Teorema do Resto e D’Alembert no Google Drive.",
+    "anotacoes": "Documento no Drive: Anotacao_Matematica_Modulo04_Unidade03_Divisao_de_Polinomios. Q(x) e resto R(x)."
+  },
+  {
+    "id": "math-rec-seq",
+    "disciplina": "Matemática (Módulo 02)",
+    "macrotema": "Aritmética Avançada (Google Drive)",
+    "microtopico": "Sequências e Progressões Recursivas (PA, PG e Mistas)",
+    "peso": "Matemática Base",
+    "origem": [
+      "Matemática Base"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "faseRecomendada": "⭐ Dominado! Conversão de fórmula recursiva para forma explícita fechada.",
+    "anotacoes": "Documento no Drive: Anotacao_Matematica_Modulo02_Unidade03_Sequencias_e_Progressoes_Recursivas. NotebookLM integrado."
+  },
+  {
+    "id": "topic-1",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Interpretação e Compreensão de Texto",
+    "microtopico": "Tipologia e Gêneros Textuais (Narrativo, Descritivo, Dissertativo/Argumentativo)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Em Andamento",
+    "faseRecomendada": "🎯 Foco de Hoje: Teoria e Reconhecimento dos Padrões FCC (Dissertativo-Argumentativo vs Narrativo/Descritivo).",
+    "anotacoes": "Meta de estudo imediata. Pular etapas anteriores dominadas e focar na tipologia textual da FCC.",
+    "agendadoPara": "2026-10-23",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-2",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Interpretação e Compreensão de Texto",
+    "microtopico": "Coesão Textual (Referencial, Sequencial e Marcadores Discursivos)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-3",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Interpretação e Compreensão de Texto",
+    "microtopico": "Coerência, Semântica e Figuras de Linguagem da Banca FCC",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-4",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Fonética e Fonologia",
+    "microtopico": "Fonética, Divisão Silábica e Sílaba Tônica (Letras vs. Fonemas, Vogal Núcleo, Dígrafos e Encontros)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "dataEstudo": "2026-09-25",
+    "faseRecomendada": "⭐ Conteúdo Dominado! Letras vs Fonemas, Vogal centro da sílaba, Dígrafos, Ditongos/Hiatos e Tonicidade (Oxítona, Paroxítona, Proparoxítona).",
+    "anotacoes": "Dominado: Letras vs. Fonemas (símbolo vs som); Vogal como centro (sem sílaba sem vogal); Dígrafos vs Encontros consonantais; Ditongos (mesma sílaba) vs Hiatos (separam). Tonicidade: Oxítona, Paroxítona, Proparoxítona.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-5",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Ortografia e Acentuação",
+    "microtopico": "Ortografia Oficial e Regras de Acentuação Gráfica (Oxítonas, Paroxítonas, Proparoxítonas e Hiatos)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "dataEstudo": "2026-09-25",
+    "faseRecomendada": "⭐ Conteúdo Dominado! Regra do Espelho, Proparoxítonas e Hiatos tônicos.",
+    "anotacoes": "Dominado: Acentuação cruza tonicidade e terminação. Regra do Espelho: Oxítonas(-a,-e,-o,-em/ens acentuam; paroxítonas não); Paroxítonas(-i,-u,-l,-n,-r,-x,ditongos acentuam). Todas proparoxítonas acentuam. Hiato tônico (i/u sozinhos ou c/ s).",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-4"],
+    "tempoEstimadoMinutos": 25
+  },
+  {
+    "id": "topic-6",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Morfologia",
+    "microtopico": "Classes de Palavras I: Substantivo, Adjetivo, Artigo e Numeral",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "dataEstudo": "2026-10-23",
+    "faseRecomendada": "⭐ Conteúdo Dominado! Ponte da Tonicidade para Morfologia (sá-bi-a vs sa-bi-a vs sa-bi-á) e 10 classes.",
+    "anotacoes": "Dominado: 10 classes (6 variáveis: Substantivo, Artigo, Adjetivo, Numeral, Pronome, Verbo; 4 invariáveis: Advérbio, Preposição, Conjunção, Interjeição). Substantivos (4 pares opostos + coletivo), Adjetivo (caracteriza), Advérbio (modifica verbo/adj/adv).",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-4"],
+    "tempoEstimadoMinutos": 30
+  },
+  {
+    "id": "topic-7",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Morfologia",
+    "microtopico": "Classes de Palavras II: Pronomes (Classificação e Colocação Pronominal)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-6"],
+    "tempoEstimadoMinutos": 35
+  },
+  {
+    "id": "topic-8",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Morfologia",
+    "microtopico": "Classes de Palavras III: Verbos (Tempos, Modos, Vozes e Correlação Verbal)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-6"],
+    "tempoEstimadoMinutos": 45
+  },
+  {
+    "id": "topic-9",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Morfologia",
+    "microtopico": "Classes de Palavras IV: Conjunções Coordenativas e Subordinativas (Valores Semânticos)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-6"],
+    "tempoEstimadoMinutos": 30
+  },
+  {
+    "id": "topic-10",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe do Período Simples",
+    "microtopico": "Termos Essenciais: Sujeito e Predicado",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-6", "topic-8"],
+    "tempoEstimadoMinutos": 40
+  },
+  {
+    "id": "topic-11",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe do Período Simples",
+    "microtopico": "Termos Integrantes: Objeto Direto/Indireto, Complemento Nominal e Agente da Passiva",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-10"],
+    "tempoEstimadoMinutos": 40
+  },
+  {
+    "id": "topic-12",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe do Período Simples",
+    "microtopico": "Termos Acessórios: Adjunto Adnominal, Adverbial, Aposto e Vocativo",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-10"],
+    "tempoEstimadoMinutos": 30
+  },
+  {
+    "id": "topic-13",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe do Período Composto",
+    "microtopico": "Coordenação: Orações Coordenadas Sindéticas e Assindéticas",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": ["topic-9", "topic-10"],
+    "tempoEstimadoMinutos": 35
+  },
+  {
+    "id": "topic-14",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe do Período Composto",
+    "microtopico": "Subordinação I: Orações Subordinadas Substantivas e Adjetivas",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-15",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe do Período Composto",
+    "microtopico": "Subordinação II: Orações Subordinadas Adverbiais (Causais, Concessivas etc.)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-16",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Sintaxe e Pontuação",
+    "microtopico": "Emprego da Vírgula e Demais Sinais de Pontuação em Texto",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-17",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Concordância",
+    "microtopico": "Concordância Verbal (Regras Gerais, Sujeito Composto, Partícula SE, Haver/Fazer)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-18",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Concordância",
+    "microtopico": "Concordância Nominal (Adjetivos, Expressões Especiais)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-19",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Regência",
+    "microtopico": "Regência Verbal e Pronomes Relativos (Verbos Típicos FCC)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-20",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Regência",
+    "microtopico": "Regência Nominal e Preposições",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-21",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Crase",
+    "microtopico": "Crase: Regras Gerais e Casos Proibitivos",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-22",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Crase",
+    "microtopico": "Crase: Casos Facultativos e Casos Especiais",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-23",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Aritmética e Proporcionalidade",
+    "microtopico": "Razão, Proporção, Regra de Três Simples e Composta",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "faseRecomendada": "⭐ Dominado no Google Drive (Módulo 01/02/03). Fazer apenas manutenção periódica.",
+    "anotacoes": "Estudado e registrado no Google Drive (Anotações Módulos 01 a 03). Manutenção e treino pontual.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "dataEstudo": "2026-10-22"
+  },
+  {
+    "id": "topic-24",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Aritmética e Proporcionalidade",
+    "microtopico": "Porcentagem, Variação Percentual e Lucro/Prejuízo",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "faseRecomendada": "⭐ Dominado no Google Drive (Módulo 01/02/03). Fazer apenas manutenção periódica.",
+    "anotacoes": "Estudado e registrado no Google Drive (Anotações Módulos 01 a 03). Manutenção e treino pontual.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "dataEstudo": "2026-10-22"
+  },
+  {
+    "id": "topic-25",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Contagem e Probabilidade",
+    "microtopico": "Princípio Fundamental da Contagem, Arranjos, Combinações e Permutações",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-26",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Contagem e Probabilidade",
+    "microtopico": "Probabilidade Básica, Condicional e Eventos Independentes",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-27",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Lógica Proposicional",
+    "microtopico": "Proposições, Conectivos Lógicos e Tabela-Verdade",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-28",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Lógica Proposicional",
+    "microtopico": "Equivalências Lógicas (Contrapositiva, Leis de De Morgan) e Negações",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-29",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Lógica Proposicional",
+    "microtopico": "Tautologia, Contradição, Contingência e Implicação Lógica",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-30",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Lógica de Argumentação",
+    "microtopico": "Validade de Argumentos, Silogismos e Métodos de Dedução",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-31",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Estruturas Lógicas",
+    "microtopico": "Diagramas Lógicos, Conjuntos e Operações (União, Interseção, Diferença)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "faseRecomendada": "⭐ Dominado no Google Drive (Módulo 01/02/03). Fazer apenas manutenção periódica.",
+    "anotacoes": "Estudado e registrado no Google Drive (Anotações Módulos 01 a 03). Manutenção e treino pontual.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "dataEstudo": "2026-10-22"
+  },
+  {
+    "id": "topic-32",
+    "disciplina": "Raciocínio Lógico/Mat.",
+    "macrotema": "Lógica Sequencial e Dedutiva",
+    "microtopico": "Sequências Numéricas, Figurais e Problemas de Associação Lógica",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Dominado",
+    "faseRecomendada": "⭐ Dominado no Google Drive (Módulo 01/02/03). Fazer apenas manutenção periódica.",
+    "anotacoes": "Estudado e registrado no Google Drive (Anotações Módulos 01 a 03). Manutenção e treino pontual.",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "dataEstudo": "2026-10-22"
+  },
+  {
+    "id": "topic-33",
+    "disciplina": "Legislação Institucional",
+    "macrotema": "Lei Orgânica do TCE-GO (Lei 16.168)",
+    "microtopico": "TCE-GO: Natureza, Competências Constitucionais e Jurisdição (Arts. 1º a 15)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-34",
+    "disciplina": "Legislação Institucional",
+    "macrotema": "Lei Orgânica do TCE-GO (Lei 16.168)",
+    "microtopico": "TCE-GO: Julgamento de Contas e Fiscalização de Atos (Arts. 16 a 45)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-35",
+    "disciplina": "Legislação Institucional",
+    "macrotema": "Lei Orgânica do TCE-GO (Lei 16.168)",
+    "microtopico": "TCE-GO: Sanções, Recursos e Organização do Tribunal (Conselheiros e MPC)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-36",
+    "disciplina": "Legislação Institucional",
+    "macrotema": "Regimento Interno do TCE-GO",
+    "microtopico": "Regimento Interno (Resolução 22/2008): Estrutura, Sessões Plenárias e Câmaras",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-37",
+    "disciplina": "Legislação Institucional",
+    "macrotema": "Estatuto dos Servidores de GO (Lei 20.756/2020)",
+    "microtopico": "Estatuto GO: Provimento, Vacância, Direitos, Vantagens e Licenças",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-38",
+    "disciplina": "Legislação Institucional",
+    "macrotema": "Estatuto dos Servidores de GO (Lei 20.756/2020)",
+    "microtopico": "Estatuto GO: Regime Disciplinar, Deveres, Proibições, Penalidades e PAD",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-39",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Fundamentos de Bancos de Dados",
+    "microtopico": "Propriedades ACID, Concorrência e Gerenciamento de Transações",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-40",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Modelagem de Dados",
+    "microtopico": "Modelagem Conceitual: Diagrama Entidade-Relacionamento (DER), Entidades, Atributos e Relacionamentos",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-10-07",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "Níveis de abstração (conceitual, lógico, físico). MER/DER: entidades, atributos e cardinalidades (1:1, 1:N, N:N).",
+    "proximaRevisao": "2026-10-14",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-41",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Modelagem de Dados",
+    "microtopico": "Modelagem Lógica e Transformação DER para Esquema Relacional (Chaves Primárias e Estrangeiras)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-10-07",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "Chaves e integridade referencial: PK (identificação única), FK (vínculo relacional). Arquiteturas OLTP (alta normalização/escrita rápida) vs. OLAP (dimensional, Star/Snowflake schema).",
+    "proximaRevisao": "2026-10-14",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-42",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Normalização de Dados",
+    "microtopico": "Formas Normais: 1FN, 2FN, 3FN, BCFN e 4FN",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-09-24",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "1FN (atomicidade e sem repetições); 2FN (elimina dependência parcial da PK composta); 3FN (elimina dependência transitiva entre não-chaves); BCFN (todo determinante é chave candidata); 4FN (elimina dependência multivalorada independente).",
+    "proximaRevisao": "2026-10-01",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-43",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Linguagem SQL",
+    "microtopico": "SQL Básico: DDL (CREATE, ALTER, DROP) e DCL (GRANT, REVOKE)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-10-07",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "DDL: CREATE (PK, FK, NOT NULL, CHECK, UNIQUE), ALTER, DROP (remove objeto e dados) vs. TRUNCATE (limpa páginas/registros rápido, mantendo schema).",
+    "proximaRevisao": "2026-10-14",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-44",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Linguagem SQL",
+    "microtopico": "SQL DQL/DML: Consultas Básicas, Filtros, Agrupamentos (GROUP BY, HAVING) e Ordenação",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-10-07",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "DML (INSERT, UPDATE, DELETE com WHERE). DQL: Ordem lógica de execução (FROM/JOIN -> WHERE -> GROUP BY -> HAVING -> SELECT -> DISTINCT -> ORDER BY -> LIMIT); CASE WHEN; COALESCE; funções agregadas.",
+    "proximaRevisao": "2026-10-14",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-45",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Linguagem SQL Avançado",
+    "microtopico": "Junções Relacionais (INNER, LEFT, RIGHT, FULL OUTER, CROSS JOIN) e Subconsultas",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-10-07",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "JOINs: INNER, LEFT, RIGHT, FULL OUTER. Subconsultas (nested queries): escalares, de tabela e correlacionadas (IN, EXISTS). WHERE filtra linhas antes do agrupamento; HAVING filtra pós-agregação.",
+    "proximaRevisao": "2026-10-14",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-46",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Linguagem SQL Avançado",
+    "microtopico": "Window Functions (ROW_NUMBER, RANK, DENSE_RANK, OVER) e CTEs (WITH)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-10-07",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "CTEs modulares com WITH (inclui WITH RECURSIVE). Window Functions (OVER PARTITION BY... ORDER BY): ROW_NUMBER, RANK, DENSE_RANK, NTILE, LAG/LEAD (navegação temporal), somas/médias móveis. Análise temporal (DATE_TRUNC, EXTRACT, MoM/YoY).",
+    "proximaRevisao": "2026-10-14",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-47",
+    "disciplina": "Banco de Dados",
+    "macrotema": "SGBDs Relacionais e Otimização",
+    "microtopico": "SGBDs Relacionais de Mercado: Oracle, SQL Server e MySQL (Arquitetura e Características)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Teoria Concluída",
+    "dataEstudo": "2026-09-24",
+    "faseRecomendada": "📖 Teoria pronta! Fazer bateria de questões.",
+    "anotacoes": "RDBMS com ACID: Oracle (líder corporativo, alta escalabilidade, RAC, missão crítica); SQL Server (ecossistema MS, Always On, forte integração BI); MySQL (código aberto, leve/web, motor padrão InnoDB com suporte ACID).",
+    "proximaRevisao": "2026-10-01",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-48",
+    "disciplina": "Banco de Dados",
+    "macrotema": "SGBDs Relacionais e Otimização",
+    "microtopico": "Otimização de Consultas: Planos de Execução (EXPLAIN ANALYZE), Índices (B-Tree, Hash, GIN, GiST)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-49",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Bancos NoSQL",
+    "microtopico": "Bancos NoSQL: Modelos Chave-Valor (Redis), Documentos (MongoDB) e Colunar",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-50",
+    "disciplina": "Banco de Dados",
+    "macrotema": "Bancos Vetoriais",
+    "microtopico": "Bancos Vetoriais e Busca Semântica: Embeddings, pgvector, Índices HNSW e Cosine Similarity",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-51",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Lógica e Algoritmos",
+    "microtopico": "Lógica de Programação, Complexidade de Algoritmos (Notação Big-O: Tempo e Espaço)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-52",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Estruturas de Dados",
+    "microtopico": "Estruturas Lineares: Vetores, Matrizes, Listas Encadeadas, Pilhas e Filas",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-53",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Estruturas de Dados",
+    "microtopico": "Estruturas Não Lineares e Busca: Tabelas Hash, Árvores Binárias (BST, AVL) e Grafos",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-54",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Paradigmas de Programação",
+    "microtopico": "Programação Orientada a Objetos: Classes, Objetos, Encapsulamento, Herança, Polimorfismo e Interfaces",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-55",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Paradigmas de Programação",
+    "microtopico": "Programação Funcional: Funções Puras, Imutabilidade, Lambdas, Map/Filter/Reduce e Closures",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-56",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Linguagens do Edital",
+    "microtopico": "Python para Desenvolvimento: Sintaxe, Tipos, Módulos, Manipulação de Dados e Asyncio",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-57",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Linguagens do Edital",
+    "microtopico": "Java e TypeScript/JavaScript: Tipagem, Concorrência e Ecossistema",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-58",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Desenvolvimento Web & APIs",
+    "microtopico": "Arquitetura Web, HTTP/HTTPS, Métodos (GET, POST, PUT, DELETE, PATCH) e Status Codes",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-59",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Desenvolvimento Web & APIs",
+    "microtopico": "Construção de APIs RESTful: Padrões, Paginação, Versionamento e Especificação OpenAPI/Swagger",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-60",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Desenvolvimento Web & APIs",
+    "microtopico": "APIs Modernas: GraphQL (Queries, Mutations, Schemas) e Comunicação em Tempo Real (WebSockets)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-61",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Front-end & Node.js",
+    "microtopico": "Desenvolvimento Front-end: SPA, React (Componentes, Hooks useState/useEffect, Virtual DOM)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-62",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Front-end & Node.js",
+    "microtopico": "Back-end com Node.js: Event Loop, NPM/Yarn, Criação de Servidores Express e Middlewares",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-63",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Segurança em Desenvolvimento",
+    "microtopico": "Autenticação e Autorização: Protocolos OAuth 2.0, OpenID Connect (OIDC) e Estrutura JWT",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-64",
+    "disciplina": "Desenvolvimento",
+    "macrotema": "Controle de Versão",
+    "microtopico": "Git: Comandos Fundamentais (commit, branch, merge, rebase, cherry-pick) e Workflows (GitFlow, Trunk-Based)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-65",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Fundamentos de Ciência de Dados",
+    "microtopico": "Estatística Descritiva, Distribuições de Probabilidade e Amostragem para Dados",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-66",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Processamento e Análise de Dados",
+    "microtopico": "Manipulação e Limpeza de Dados: Pandas, NumPy e Pipelines de Pré-processamento",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-67",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Big Data",
+    "microtopico": "Fundamentos de Big Data: 5 Vs, Arquiteturas de Dados (Data Warehouse, Data Lake, Lakehouse)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-68",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Machine Learning Clássico",
+    "microtopico": "Aprendizado Supervisionado: Regressão Linear/Logística, Árvores de Decisão, Random Forest e SVM",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-69",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Machine Learning Clássico",
+    "microtopico": "Aprendizado Não Supervisionado: Clustering (K-Means, DBSCAN) e Redução de Dimensionalidade (PCA)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-70",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Avaliação de Modelos",
+    "microtopico": "Métricas de Avaliação: Matriz de Confusão, Acurácia, Precisão, Recall, F1-Score, Curva ROC/AUC",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-71",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "Deep Learning e PLN",
+    "microtopico": "Redes Neurais Artificiais, Deep Learning (MLP, CNN, RNN/LSTM) e Processamento de Linguagem Natural",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-72",
+    "disciplina": "IA & Ciência de Dados",
+    "macrotema": "IA Responsável e Governança",
+    "microtopico": "IA Generativa, Ética, Viés Algorítmico, Explicabilidade (XAI) e LGPD aplicada a Algoritmos",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-73",
+    "disciplina": "IA & Sistemas Agentivos",
+    "macrotema": "Grandes Modelos de Linguagem (LLMs)",
+    "microtopico": "Arquitetura Transformers, Mecanismo de Atenção, Parâmetros e Janela de Contexto",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-74",
+    "disciplina": "IA & Sistemas Agentivos",
+    "macrotema": "Engenharia de Prompts",
+    "microtopico": "Técnicas de Prompts: Zero-shot, Few-shot, Chain-of-Thought (CoT), ReAct e Estruturação de Saídas (JSON)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-75",
+    "disciplina": "IA & Sistemas Agentivos",
+    "macrotema": "Arquitetura RAG",
+    "microtopico": "Retrieval-Augmented Generation (RAG): Chunking, Embeddings, Busca Vetorial, Reranking e Redução de Alucinações",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-76",
+    "disciplina": "IA & Sistemas Agentivos",
+    "macrotema": "Sistemas Agentivos",
+    "microtopico": "Ciclo de Vida do Agente: Planejamento, Memória (Short/Long-term), Uso de Ferramentas (Tool Use) e Autocorreção",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-77",
+    "disciplina": "IA & Sistemas Agentivos",
+    "macrotema": "Protocolos de Conectividade",
+    "microtopico": "Model Context Protocol (MCP): Arquitetura Cliente-Servidor, Tools, Resources, Prompts e Segurança",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-78",
+    "disciplina": "IA & Sistemas Agentivos",
+    "macrotema": "Assistentes de Código e CLI",
+    "microtopico": "Assistentes de Codificação em CLI/IDE: Claude Code, Antigravity CLI, Automação de Tarefas e Engenharia de Contexto",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-79",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Fundamentos de Segurança",
+    "microtopico": "Princípios da Segurança da Informação: Confidencialidade, Integridade, Disponibilidade e Autenticidade (CIDA)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-80",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Gestão de Segurança e Riscos",
+    "microtopico": "Normas ISO/IEC 27001 e 27002: Controles, Política de Segurança e Gestão de Riscos de TI",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-81",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Criptografia",
+    "microtopico": "Criptografia Simétrica (AES), Assimétrica (RSA, Curvas Elípticas), Funções Hash (SHA-256) e Assinatura Digital",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-82",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Certificação Digital",
+    "microtopico": "Infraestrutura de Chaves Públicas (ICP-Brasil), Certificados Digitais A1/A3 e Carimbo do Tempo",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-83",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Segurança em Redes e Perímetro",
+    "microtopico": "Mecanismos de Defesa: Firewalls (Stateful, NGFW), IDS/IPS, VPN, WAF e Arquitetura Zero Trust",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-84",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Segurança de Software (DevSecOps)",
+    "microtopico": "Vulnerabilidades Web: OWASP Top 10 (SQL Injection, XSS, Broken Access Control, CSRF)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-85",
+    "disciplina": "Segurança da Informação",
+    "macrotema": "Segurança de Software (DevSecOps)",
+    "microtopico": "Práticas de DevSecOps, Análise Estática (SAST), Dinâmica (DAST) e Gestão de Dependências (SCA)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-86",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Sistemas Operacionais",
+    "microtopico": "Sistemas Operacionais: Processos, Threads, Gerenciamento de Memória (Paginação, Memória Virtual) e I/O",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-87",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Administração e Automação SO",
+    "microtopico": "Linux/Unix e Windows Server: Permissões, Comandos Essenciais, Shell Script (Bash) e PowerShell",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-88",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Redes de Computadores",
+    "microtopico": "Modelo OSI vs Arquitetura TCP/IP: Camadas, Encapsulamento, Protocolos IP (IPv4, IPv6) e Roteamento",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-89",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Protocolos de Transporte e Aplicação",
+    "microtopico": "Camada de Transporte (TCP vs UDP) e Aplicação (DNS, DHCP, HTTP/1.1, HTTP/2, HTTPS, TLS/SSL)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-90",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Infraestrutura de Rede",
+    "microtopico": "Dispositivos de Rede: Switches, Roteadores, VLANs, NAT, Proxy Reverso e Balanceamento de Carga",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-91",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Computação em Nuvem",
+    "microtopico": "Fundamentos de Cloud: Modelos de Serviço (IaaS, PaaS, SaaS) e Implantação (Pública, Privada, Híbrida)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-92",
+    "disciplina": "Redes & Nuvem",
+    "macrotema": "Computação em Nuvem",
+    "microtopico": "Arquiteturas em Nuvem: Serverless (FaaS), Microserviços, Storage (Block, Object Storage S3) e Elasticidade",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-93",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Ciclos de Vida e Métodos Ágeis",
+    "microtopico": "Modelos de Ciclo de Vida: Cascata, Espiral e Métodos Ágeis (Manifesto Ágil, Scrum, Kanban, XP)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-94",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Engenharia de Requisitos",
+    "microtopico": "Requisitos Funcionais e Não Funcionais, Histórias de Usuário, Critérios de Aceite e Casos de Uso",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-95",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Arquitetura e Design de Software",
+    "microtopico": "Princípios de Design: SOLID (Single Responsibility, Open/Closed, Liskov, Interface Segregation, Dependency Inversion)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-96",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Arquitetura e Design de Software",
+    "microtopico": "Princípios de Boas Práticas: DRY, KISS, YAGNI, Clean Code e Padrões de Projeto (GoF)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-97",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Modelagem de Sistemas",
+    "microtopico": "Modelagem UML 2.5: Diagramas Estruturais (Classes, Componentes) e Comportamentais (Casos de Uso, Sequência)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-98",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Modelagem de Processos",
+    "microtopico": "Modelagem e Notação de Processos de Negócio: BPMN 2.0 (Eventos, Atividades, Gateways e Raias)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-99",
+    "disciplina": "Engenharia de Software",
+    "macrotema": "Qualidade e Testes de Software",
+    "microtopico": "Pirâmide de Testes: Testes Unitários, Integração, Sistema e Aceitação; TDD e Refatoração (Code Smells)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-100",
+    "disciplina": "DevOps & Infraestrutura",
+    "macrotema": "Cultura DevOps e Confiabilidade",
+    "microtopico": "Fundamentos de DevOps, Site Reliability Engineering (SRE), SLI, SLO e SLA",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-101",
+    "disciplina": "DevOps & Infraestrutura",
+    "macrotema": "CI/CD e Automação",
+    "microtopico": "Pipelines de Integração e Entrega Contínua (CI/CD): GitHub Actions e GitLab CI (Triggers, Jobs, Runners e Deploys)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-102",
+    "disciplina": "DevOps & Infraestrutura",
+    "macrotema": "Containerização",
+    "microtopico": "Containers com Docker: Dockerfile, Imagens, Containers, Volumes, Redes e Docker Compose",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-103",
+    "disciplina": "DevOps & Infraestrutura",
+    "macrotema": "Orquestração",
+    "microtopico": "Orquestração com Kubernetes (K8s): Pods, Deployments, Services, Ingress, ConfigMaps e Secrets",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-104",
+    "disciplina": "DevOps & Infraestrutura",
+    "macrotema": "Infraestrutura como Código",
+    "microtopico": "Infraestrutura como Código (IaC): Conceitos, Vantagens e Introdução a Terraform e Ansible",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-105",
+    "disciplina": "DevOps & Infraestrutura",
+    "macrotema": "Observabilidade e Monitoramento",
+    "microtopico": "Pilares da Observabilidade: Logs, Métricas e Tracing (Prometheus, Grafana, ELK/OpenSearch)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-106",
+    "disciplina": "Governança de TI",
+    "macrotema": "COBIT 2019",
+    "microtopico": "COBIT 2019: Princípios, Sistema de Governança, Objetivos de Governança e Gestão (EDM, APO, BAI, DSS, MEA)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-107",
+    "disciplina": "Governança de TI",
+    "macrotema": "ITIL v4",
+    "microtopico": "ITIL v4: Sistema de Valor de Serviço (SVS), 4 Dimensões, Princípios Orientadores e Práticas Principais (Incidentes, Problemas, Mudanças)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-108",
+    "disciplina": "Governança de TI",
+    "macrotema": "Governança Corporativa e ISO 38500",
+    "microtopico": "Norma ABNT NBR ISO/IEC 38500: Princípios e Modelo de Governança de TI (Avaliar, Dirigir e Monitorar)",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-109",
+    "disciplina": "Governança de TI",
+    "macrotema": "Gestão de Projetos (PMBOK 8ª/7ª ed)",
+    "microtopico": "PMBOK: Princípios de Entrega de Projetos, Domínios de Desempenho, Abordagens Preditiva, Híbrida e Adaptativa",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-110",
+    "disciplina": "Governança de TI",
+    "macrotema": "Contratações de TIC e Governo Digital",
+    "microtopico": "Lei nº 14.133/2021 aplicada a TIC: Planejamento da Contratação, ETP, Termo de Referência e Gestão de Contratos",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-111",
+    "disciplina": "Governança de TI",
+    "macrotema": "Contratações de TIC e Governo Digital",
+    "microtopico": "Lei do Governo Digital (Lei nº 14.129/2021) e Princípios da Eficiência e Transformação Digital no Setor Público",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-112",
+    "disciplina": "Legislação Aplicada",
+    "macrotema": "Marco Civil da Internet (Lei 12.965)",
+    "microtopico": "Marco Civil da Internet: Princípios, Garantias, Direitos dos Usuários, Neutralidade da Rede e Responsabilidade por Danos",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-113",
+    "disciplina": "Legislação Aplicada",
+    "macrotema": "Lei Geral de Proteção de Dados (LGPD)",
+    "microtopico": "LGPD (Lei nº 13.709/2018): Conceitos (Dado Pessoal, Sensível, Titular, Controlador, Operador, DPO), Princípios e Bases Legais",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-114",
+    "disciplina": "Legislação Aplicada",
+    "macrotema": "LGPD e Setor Público",
+    "microtopico": "LGPD no Setor Público (Tratamento pelo Poder Público), Direitos dos Titulares, Relatório de Impacto (RIPD) e Sanções da ANPD",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  },
+  {
+    "id": "topic-115",
+    "disciplina": "Legislação Aplicada",
+    "macrotema": "Normativos de TIC do TCE-GO",
+    "microtopico": "Resoluções e Políticas Internas de Segurança da Informação e Plano Diretor de TIC (PDTI) do TCE-GO",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-116",
+    "disciplina": "Inglês Técnico",
+    "macrotema": "Vocabulário e Leitura Técnica",
+    "microtopico": "Vocabulário Técnico de TI, Expressões Idiomáticas em Documentação e Falsos Cognatos",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-117",
+    "disciplina": "Inglês Técnico",
+    "macrotema": "Interpretação de Textos de TI",
+    "microtopico": "Leitura e Interpretação de Documentação Técnica Oficial, RFCs, Manuais e Artigos de Engenharia",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-118",
+    "disciplina": "Inglês Técnico",
+    "macrotema": "Especificações e APIs",
+    "microtopico": "Compreensão e Análise de Especificações Técnicas, Arquiteturas de Software e Documentação de APIs REST",
+    "peso": "Peso 2 (Específicos)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-119",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Metodologia de Resolução FCC",
+    "microtopico": "Estrutura do Estudo de Caso FCC: Introdução ao Problema, Fundamentação Técnica e Proposta de Solução",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-120",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Simulação Banco de Dados & SQL",
+    "microtopico": "Estudo de Caso Prático: Modelagem Relacional, Normalização ou Otimização de Banco de Dados Público",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-121",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Simulação Engenharia & Arquitetura",
+    "microtopico": "Estudo de Caso Prático: Arquitetura de Microserviços, APIs RESTful e Integração com RAG/IA",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso"
+    ]
+  },
+  {
+    "id": "topic-122",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Simulação Governança & LGPD",
+    "microtopico": "Estudo de Caso Prático: Incidente de Segurança, Conformidade com a LGPD e Fiscalização de Contrato de TIC",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "anotacoes": "Aguardando teoria.",
+    "origem": [
+      "Concurso",
+      "MBA"
+    ]
+  }
+];
+
+export const INITIAL_ERRORS: ErrorItem[] = [
+  {
+    "id": "err-1",
+    "data": "2026-09-25",
+    "disciplina": "Língua Portuguesa",
+    "microtopico": "Regras de Acentuação Gráfica",
+    "idQuestao": "FCC-2024-Q1234",
+    "enunciado": "Acentuação de 'ideia' e 'herói' pela mesma regra do ditongo aberto",
+    "alternativaMarcada": "B",
+    "gabaritoCorreto": "D",
+    "classificacaoErro": "Falta de Memorização de Regra/Exceção",
+    "licaoAprendida": "Pelo Acordo Ortográfico, ditongos abertos ÉI/ÓI só mantêm acento em oxítonas (herói) e monossílabos; paroxítonas (ideia, colmeia) perderam o acento."
+  },
+  {
+    "id": "err-2",
+    "data": "2026-09-24",
+    "disciplina": "Banco de Dados",
+    "microtopico": "SQL Básico (DDL vs DML)",
+    "idQuestao": "FCC-2023-Q5678",
+    "enunciado": "Comando TRUNCATE classificado como DML",
+    "alternativaMarcada": "C",
+    "gabaritoCorreto": "A",
+    "classificacaoErro": "Pegadinha de Enunciado",
+    "licaoAprendida": "A FCC considera TRUNCATE TABLE como comando DDL (opera sobre o schema/desaloca páginas sem registrar linha a linha no log de transações), diferente de DELETE que é DML."
+  }
+];
