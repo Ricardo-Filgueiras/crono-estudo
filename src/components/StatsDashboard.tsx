@@ -21,6 +21,7 @@ export const StatsDashboard: React.FC = () => {
   const mbaStats = getTagStats('MBA');
   const mathStats = getTagStats('Matemática Base');
   const portStats = getTagStats('Português Base');
+  const natureStats = getTagStats('Ciências da Natureza');
   const concursoStats = getTagStats('Concurso');
 
   return (
@@ -129,6 +130,26 @@ export const StatsDashboard: React.FC = () => {
               aria-label="Progresso da trilha Português Base"
             >
               <div className="bg-blue-500 h-full rounded-full transition-all duration-500" style={{ width: `${portStats.percent}%` }} />
+            </div>
+          </div>
+
+          {/* Ciências da Natureza */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-teal-300">
+                🧪 Ciências da Natureza (Física, Química & Biologia)
+              </span>
+              <span className="font-mono text-teal-400">{natureStats.completed}/{natureStats.total} ({natureStats.percent}%)</span>
+            </div>
+            <div 
+              className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800"
+              role="progressbar"
+              aria-valuenow={natureStats.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label="Progresso da trilha Ciências da Natureza"
+            >
+              <div className="bg-teal-500 h-full rounded-full transition-all duration-500" style={{ width: `${natureStats.percent}%` }} />
             </div>
           </div>
 

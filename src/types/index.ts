@@ -6,7 +6,7 @@ export type TopicStatus =
   | 'Precisa Revisar' 
   | 'Dominado';
 
-export type StudyContextTag = 'MBA' | 'Concurso' | 'Matemática Base' | 'Português Base' | 'Leitura / Livro';
+export type StudyContextTag = 'MBA' | 'Concurso' | 'Matemática Base' | 'Português Base' | 'Ciências da Natureza' | 'Leitura / Livro';
 
 /**
  * Evidências de aprendizagem multidimensional (Especificação Pedagógica Sec. 5)

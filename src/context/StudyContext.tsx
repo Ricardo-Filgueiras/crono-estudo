@@ -41,12 +41,54 @@ interface StudyContextType {
   getTopicUnlockCount: (topicId: string) => number;
   getRecommendedMission: (availableMinutes?: number) => RecommendationItem[];
   schedulePedagogicalMission: (availableMinutes?: number) => void;
+
+  // === HÁBITO DIÁRIO DE INGLÊS & REORDENAÇÃO ===
+  englishHabits: Record<string, { done: boolean; atEnd: boolean }>;
+  toggleEnglishDone: (dateStr: string) => void;
+  toggleEnglishAtEnd: (dateStr: string) => void;
+  moveTopicOrder: (topicId: string, direction: 'up' | 'down') => void;
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
 
-const STORAGE_KEY_TOPICS = 'crono_estudo_topics_v4';
+const STORAGE_KEY_TOPICS = 'crono_estudo_topics_v7';
 const STORAGE_KEY_ERRORS = 'crono_estudo_errors_v1';
+const STORAGE_KEY_HABITS = 'crono_estudo_english_habits_v1';
+
+export interface WeekDayInfo {
+  dateStr: string;
+  dayNumber: number;
+  dayName: string;
+  isToday: boolean;
+}
+
+export const getWeekDays = (baseDateStr: string): WeekDayInfo[] => {
+  const base = new Date(baseDateStr + 'T12:00:00');
+  const dayOfWeek = base.getDay(); 
+  const diffToMonday = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
+  
+  const monday = new Date(base);
+  monday.setDate(base.getDate() + diffToMonday);
+
+  const days: WeekDayInfo[] = [];
+  const dayNames = ['Seg', 'Ter', 'Qua', 'Qui', 'Sex', 'Sáb', 'Dom'];
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(monday);
+    d.setDate(monday.getDate() + i);
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    const dateStr = `${year}-${month}-${day}`;
+    days.push({
+      dateStr,
+      dayNumber: d.getDate(),
+      dayName: dayNames[i],
+      isToday: dateStr === baseDateStr
+    });
+  }
+  return days;
+};
 
 export const getTodayDateString = (): string => {
   const now = new Date();
@@ -72,11 +114,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (saved) {
         return JSON.parse(saved);
       }
-      // Fallback para versões anteriores se existirem
-      const legacyV3 = localStorage.getItem('crono_estudo_topics_v3');
-      if (legacyV3) return JSON.parse(legacyV3);
-      const legacyV2 = localStorage.getItem('crono_estudo_topics_v2');
-      if (legacyV2) return JSON.parse(legacyV2);
     } catch (e) {
       console.error('Erro ao ler tópicos do localStorage', e);
     }
@@ -99,6 +136,16 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [activeTab, setActiveTab] = useState<ActiveTab>('hoje');
   const [selectedTopicForModal, setSelectedTopicForModal] = useState<Topic | null>(null);
 
+  const [englishHabits, setEnglishHabits] = useState<Record<string, { done: boolean; atEnd: boolean }>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_HABITS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Erro ao ler hábitos de inglês', e);
+    }
+    return {};
+  });
+
   const { user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
@@ -120,6 +167,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Falha ao salvar erros no storage', e);
     }
   }, [errors]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_HABITS, JSON.stringify(englishHabits));
+    } catch (e) {
+      console.error('Falha ao salvar hábitos no storage', e);
+    }
+  }, [englishHabits]);
 
   // Carregar dados do Supabase quando o usuário autenticar
   useEffect(() => {
@@ -390,6 +445,48 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return false;
   };
 
+  const toggleEnglishDone = (dateStr: string) => {
+    setEnglishHabits(prev => {
+      const current = prev[dateStr] || { done: false, atEnd: false };
+      const nextDone = !current.done;
+      if (nextDone) {
+        try {
+          confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+        } catch {}
+      }
+      return {
+        ...prev,
+        [dateStr]: { ...current, done: nextDone }
+      };
+    });
+  };
+
+  const toggleEnglishAtEnd = (dateStr: string) => {
+    setEnglishHabits(prev => {
+      const current = prev[dateStr] || { done: false, atEnd: false };
+      return {
+        ...prev,
+        [dateStr]: { ...current, atEnd: !current.atEnd }
+      };
+    });
+  };
+
+  const moveTopicOrder = (topicId: string, direction: 'up' | 'down') => {
+    setTopics(prev => {
+      const idx = prev.findIndex(t => t.id === topicId);
+      if (idx === -1) return prev;
+      
+      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      if (targetIdx < 0 || targetIdx >= prev.length) return prev;
+
+      const newTopics = [...prev];
+      const temp = newTopics[idx];
+      newTopics[idx] = newTopics[targetIdx];
+      newTopics[targetIdx] = temp;
+      return newTopics;
+    });
+  };
+
   const resetToInitial = () => {
     if (window.confirm('Tem certeza que deseja restaurar os dados originais? Todas as alterações manuais serão resetadas.')) {
       setTopics(INITIAL_TOPICS);
@@ -425,7 +522,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         getTopicUnmetPrerequisites,
         getTopicUnlockCount,
         getRecommendedMission,
-        schedulePedagogicalMission
+        schedulePedagogicalMission,
+        englishHabits,
+        toggleEnglishDone,
+        toggleEnglishAtEnd,
+        moveTopicOrder
       }}
     >
       {children}

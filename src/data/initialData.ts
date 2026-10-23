@@ -2,6 +2,350 @@ import { Topic, ErrorItem } from '../types';
 
 export const INITIAL_TOPICS: Topic[] = [
   {
+    "id": "science-fis-u01",
+    "disciplina": "Física (Módulo 01)",
+    "macrotema": "Fundamentos & Cinemática",
+    "microtopico": "Grandezas Físicas, Escalares e Vetoriais, Velocidade Média e SI",
+    "peso": "Ciências da Natureza Base",
+    "origem": [
+      "Ciências da Natureza"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-23",
+    "linkMaterial": "https://docs.google.com/document/d/1qBeCkpzaV9URACx927iF0DtzWwylE6n60-AYXSzL8rQ/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Vetores, conversão km/h <-> m/s e circuito fechado.",
+    "anotacoes": "Definição de grandezas escalares vs vetoriais, velocidade média escalar vs vetorial, deslocamento Delta x = v * Delta t, fator 3,6 e trajetória fechada com Delta x = 0. NotebookLM 1. Física."
+  },
+  {
+    "id": "science-fis-u02",
+    "disciplina": "Física (Módulo 01)",
+    "macrotema": "Fundamentos & Cinemática",
+    "microtopico": "Movimento Unidimensional, Cinemática Escalar e Inversão de Sentido",
+    "peso": "Ciências da Natureza Base",
+    "origem": [
+      "Ciências da Natureza"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-23",
+    "linkMaterial": "https://docs.google.com/document/d/1ifKIjIegIXmuT8Drq5mMVk5PVUiG9OA4vx0HYuGe4m4/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Marco zero s(t), Delta s vs distância d, e rapidez média.",
+    "anotacoes": "Referencial 1D, deslocamento escalar Delta s vs distância acumulada d, movimento progressivo (v>0) vs retrógrado (v<0), cálculo com inversão de sentido. NotebookLM 1. Física."
+  },
+  {
+    "id": "science-qui-u01",
+    "disciplina": "Química (Módulo 01)",
+    "macrotema": "Matéria & Estrutura Atômica",
+    "microtopico": "Origem dos Elementos, Estrutura Atômica Fundamental, Íons e Nuclídeos",
+    "peso": "Ciências da Natureza Base",
+    "origem": [
+      "Ciências da Natureza"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-23",
+    "linkMaterial": "https://docs.google.com/document/d/15moHIySxVyz5mCUVdDuG-envsRHTfBxHEYFtkjCE6uk/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Nucleossíntese estelar, prótons, nêutrons, elétrons e íons.",
+    "anotacoes": "Nucleossíntese primordial e estelar (1H, 4He), número atômico Z = p, número de massa A = Z + n, cátions (p > e-), ânions (e- > p), reações químicas vs nucleares. NotebookLM 1. Química."
+  },
+  {
+    "id": "science-bio-u01",
+    "disciplina": "Biologia (Módulo 01)",
+    "macrotema": "Bioquímica Celular & Citologia",
+    "microtopico": "Bioquímica Celular, Biomoléculas e Estrutura Celular",
+    "peso": "Ciências da Natureza Base",
+    "origem": [
+      "Ciências da Natureza"
+    ],
+    "status": "Pendente",
+    "linkMaterial": "https://gemini.google.com/notebook/12206f4e-2ec3-4d09-9daf-b46ebd304198",
+    "faseRecomendada": "⏳ Estrutura pronta no Google Drive (03_Biologia) e NotebookLM. Aguardando anotações no Google Keep.",
+    "anotacoes": "Caderno no NotebookLM: 1. Biologia — Bioquímica Celular & Citologia. Repositório 03_Biologia no Google Drive."
+  },
+  {
+    "id": "math-m01-u01",
+    "disciplina": "Matemática (Módulo 01)",
+    "macrotema": "Aritmética Fundamental",
+    "microtopico": "Aritmética e Fundamentos: Números Inteiros, Frações e Decimais",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-20",
+    "linkMaterial": "https://docs.google.com/document/d/1LIAv3HLr14nyB5KVnrFRpyQXty7QH08PwdGSOwATIOc/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Manutenção e treino rápido.",
+    "anotacoes": "Números inteiros (Z), regras de sinais, frações mistas/impróprias, MMC e alinhamento de decimais. NotebookLM Módulos 01 e 02."
+  },
+  {
+    "id": "math-m01-u02",
+    "disciplina": "Matemática (Módulo 01)",
+    "macrotema": "Aritmética Fundamental",
+    "microtopico": "Reta Numérica, Simetria e Valor Absoluto (|x|)",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-20",
+    "linkMaterial": "https://docs.google.com/document/d/19lS9AEIpUv74MFlPYZZT5Dzps9ZOuIQAXO4gYNmUFec/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Interpretação geométrica como distância escalar.",
+    "anotacoes": "Reta numérica, números opostos, valor absoluto (|a| >= 0), simetria de distância (|a-b| = |b-a|)."
+  },
+  {
+    "id": "math-m02-u01",
+    "disciplina": "Matemática (Módulo 02)",
+    "macrotema": "Aritmética Avançada",
+    "microtopico": "Potenciação, Expoentes Inteiros e Notação Científica",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-21",
+    "linkMaterial": "https://docs.google.com/document/d/1MHF51MEwNOvtzlGI5U3BHbCCBeNMs7xjQeOTFxjU1_4/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Propriedades de mesma base, a^0=1, expoente negativo.",
+    "anotacoes": "Propriedades da potenciação, expoentes inteiros (a^-n = 1/a^n), notação científica normalizada (a * 10^n)."
+  },
+  {
+    "id": "math-m02-u02",
+    "disciplina": "Matemática (Módulo 02)",
+    "macrotema": "Aritmética Avançada",
+    "microtopico": "Radiciação, Operação Inversa e Expoentes Fracionários",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-21",
+    "linkMaterial": "https://docs.google.com/document/d/1mVhs7iWiJ835k02WPTPPcQDEp3XHz-wRVhjNsVcqAIY/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Equivalência x^(m/n) e simplificação de radicais.",
+    "anotacoes": "Cancelamento inverso, expoentes fracionários (raiz n-ésima de x^m = x^(m/n)), produto e quociente de radicais."
+  },
+  {
+    "id": "math-m02-u03",
+    "disciplina": "Matemática (Módulo 02)",
+    "macrotema": "Aritmética Avançada",
+    "microtopico": "Sequências e Progressões Recursivas (PA, PG e Mistas)",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1bj9vTqqOwrEl7GBerJ2FZAPkVrpFUzcFWtZWEcGjAzI/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Conversão de fórmula recursiva para forma explícita fechada.",
+    "anotacoes": "Fórmulas recursivas (termo inicial e passo an = f(an-1)). Diferenciação: PG (multiplicação de razão q) vs PA (adição de r). Forma explícita fechada."
+  },
+  {
+    "id": "math-m03-u01",
+    "disciplina": "Matemática (Módulo 03)",
+    "macrotema": "Proporcionalidade & Matemática Comercial",
+    "microtopico": "Relações Proporcionais, Regra de Três e Fatores de Porcentagem",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/16xR7U5TzP0_r-M8yZ00M9qVvD3jQ4x5y/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Grandezas diretas e inversas, regra de três simples/composta e porcentagem.",
+    "anotacoes": "Propriedade fundamental a*d = b*c, proporcionalidade direta e inversa, regra de três e multiplicadores de porcentagem (1 +- p/100)."
+  },
+  {
+    "id": "math-m04-u01",
+    "disciplina": "Matemática (Módulo 04)",
+    "macrotema": "Introdução à Álgebra",
+    "microtopico": "Introdução à Álgebra, Polinômios, FOIL e Modelo de Áreas",
+    "peso": "Matemática Base",
+    "origem": [
+      "Matemática Base"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1dQ2KdXiL9dzZ-cP_W7sTwNaGZCXq6d2WOCtWD4I-0aA/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Monômios, polinômios, comutatividade e produto de Stevin.",
+    "anotacoes": "Terminologia polinomial, operações fundamentais, distributiva (FOIL), modelo geométrico de áreas e produto de Stevin (x+a)(x+b)."
+  },
+  {
+    "id": "math-m04-u02",
+    "disciplina": "Matemática (Módulo 04)",
+    "macrotema": "Introdução à Álgebra",
+    "microtopico": "Fatoração, Produtos Notáveis e Método AC por Agrupamento",
+    "peso": "Matemática Base",
+    "origem": [
+      "Matemática Base"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1ljZzkwLVBPV4gLwp2CebI2IyukTq2OXD4cCe6Jd7He0/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Fator comum, soma e produto, trinômio quadrado perfeito e método AC de Sal Khan.",
+    "anotacoes": "Propriedade do Produto Nulo, diferença de quadrados, fatoração de trinômios do 2º grau e método AC para a != 1."
+  },
+  {
+    "id": "math-m04-u03",
+    "disciplina": "Matemática (Módulo 04)",
+    "macrotema": "Introdução à Álgebra",
+    "microtopico": "Divisão de Polinômios pelo Método da Chave e Teorema do Resto",
+    "peso": "Matemática Base",
+    "origem": [
+      "Matemática Base"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1CTPEZKw6wh6yfRoCOXkYO_--_HwojmbauKz49ZOXhew/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Divisão euclidiana, prova real e D’Alembert P(-3)=-18.",
+    "anotacoes": "Algoritmo euclidiano da chave com ordenação decrescente de graus, critério de parada grau(R) < grau(D) e verificação de D’Alembert."
+  },
+  {
+    "id": "math-m05-u01",
+    "disciplina": "Matemática (Módulo 05)",
+    "macrotema": "Equações, Sistemas & Funções Lineares",
+    "microtopico": "Equações e Inequações do 1º Grau (SPD, SI e SPI)",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/15EeQHAfV761Om5Z607AJl4cbY2vwIQnv8Cv8V7W02K8/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Classificação de soluções e inequações na reta real.",
+    "anotacoes": "Princípio de equivalência, SPD (única), SI (impossível 0x=k), SPI (indeterminada 0x=0) e inversão de desigualdade com negativo."
+  },
+  {
+    "id": "math-m05-u02",
+    "disciplina": "Matemática (Módulo 05)",
+    "macrotema": "Equações, Sistemas & Funções Lineares",
+    "microtopico": "Sistemas de Equações: Métodos da Substituição e Adição",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1J_FNHWd6tG-eZnKKvNBnGsiD3D_wu2s2fU4bLh8ATHg/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Sistemas consistentes independentes, dependentes e inconsistentes.",
+    "anotacoes": "Método da substituição e adição/eliminação, interpretação gráfica de retas concorrentes, coincidentes e paralelas."
+  },
+  {
+    "id": "math-m05-u03",
+    "disciplina": "Matemática (Módulo 05)",
+    "macrotema": "Equações, Sistemas & Funções Lineares",
+    "microtopico": "Equações Lineares, Inclinação (m = dy/dx) e Retas no Plano",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1_adOXQ125mkNZQ-xB1dU9aQqd9IrKSOsAhn-toX2Kek/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Coeficiente angular, forma reduzida y=ax+b e perpendicularismo.",
+    "anotacoes": "Taxa de variação m = dy/dx, interceptos x e y, paralelismo m1=m2 e perpendicularismo analítico m1 * m2 = -1."
+  },
+  {
+    "id": "math-m05-u04",
+    "disciplina": "Matemática (Módulo 05)",
+    "macrotema": "Equações, Sistemas & Funções Lineares",
+    "microtopico": "Funções e Modelos Lineares: Notação f(x) e Aplicações Reais",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1RBjXT8g70hChPubdjsAe4Z5WlxyoEQQNVLDlYJ4jWww/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Teste da reta vertical e contraste entre linearidade e aceleração.",
+    "anotacoes": "Conceito formal de função f(x), teste da reta vertical, modelagem contextual (tarifas, esvaziamento linear) e restrições de domínio."
+  },
+  {
+    "id": "math-m06-u01",
+    "disciplina": "Matemática (Módulo 06)",
+    "macrotema": "Geometria Euclidiana",
+    "microtopico": "Definições Geométricas: Ponto, Reta, Semirreta e Segmentos",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/19bLj-mitcps7oJw-GuLoSlzoL4DYurQJH8tIPC42WA4/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Método axiomático de Euclides e posições relativas.",
+    "anotacoes": "Entes primitivos, distinção entre reta, semirreta e segmento, congruência de segmentos, ponto médio e perpendicularidade."
+  },
+  {
+    "id": "math-m06-u02",
+    "disciplina": "Matemática (Módulo 06)",
+    "macrotema": "Geometria Euclidiana",
+    "microtopico": "Estudo dos Ângulos, Relações e Ângulos Opostos pelo Vértice (OPV)",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1a1UDv80agdIzWPIiPl_8cyrTP3RMzBLteVMvE1JMhE0/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Ângulos complementares, suplementares e prova dedutiva de OPV.",
+    "anotacoes": "Classificação (agudo, reto, obtuso, raso), ângulos complementares (90°) e suplementares (180°), demonstração de OPV."
+  },
+  {
+    "id": "math-m06-u03",
+    "disciplina": "Matemática (Módulo 06)",
+    "macrotema": "Geometria Euclidiana",
+    "microtopico": "Área, Perímetro e Métodos de Decomposição de Figuras Planas",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1GYhQZ5rUlcl4-C40msfWUBYk0nLHMWDMLJBeWUQy8Bc/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Equidecomposição de Sal Khan e partição aditiva/subtrativa.",
+    "anotacoes": "Grandezas 2D, fórmulas poligonais (triângulos, paralelogramos, trapézios, círculos), partição aditiva e decomposição subtrativa."
+  },
+  {
+    "id": "math-m06-u04",
+    "disciplina": "Matemática (Módulo 06)",
+    "macrotema": "Geometria Euclidiana",
+    "microtopico": "Volume, Área de Superfície e Efeito de Escala Cúbica (k³)",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1M1J7LRFVrG0_2SjDl99mTMDdNMqIvLefA1jhcTh8eXw/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Prisma retangular, conversões SI e efeito de escala k³.",
+    "anotacoes": "Volume V = c*l*h, área superficial, conversões volumétricas (1 m³ = 1.000 L) e variação proporcional ao cubo (V’ = k³ * V)."
+  },
+  {
+    "id": "math-m06-u05",
+    "disciplina": "Matemática (Módulo 06)",
+    "macrotema": "Geometria Euclidiana",
+    "microtopico": "Paralelogramos, Bissetrizes e Prova Dedutiva de Losangos",
+    "peso": "Matemática Base • Sinergia com Concurso",
+    "origem": [
+      "Matemática Base",
+      "Concurso"
+    ],
+    "status": "Dominado",
+    "dataEstudo": "2026-10-22",
+    "linkMaterial": "https://docs.google.com/document/d/1uWfK5enBaIYRux5JGiaNpePYBSbe2hTMBkuAZVEKwxM/edit",
+    "faseRecomendada": "⭐ Dominado no Google Drive! Demonstração dedutiva de Sal Khan e ortogonalidade das diagonais.",
+    "anotacoes": "Definições, propriedades de paralelogramos, bissetriz como lugar geométrico, prova de diagonais bissetrizes exclusivas de Losango/Quadrado."
+  },
+  {
     "id": "mba-sql",
     "disciplina": "Linguagem SQL para Data Analytics",
     "macrotema": "MBA Ciência de Dados & Analytics",
@@ -37,13 +381,15 @@ export const INITIAL_TOPICS: Topic[] = [
     "disciplina": "Governança de Dados",
     "macrotema": "MBA Ciência de Dados & Analytics",
     "microtopico": "DAMA-DMBOK, Qualidade de Dados, Metadados e Gestão Estratégica",
-    "peso": "MBA (40h)",
+    "peso": "MBA (40h) • Sinergia com Concurso",
     "origem": [
       "MBA",
       "Concurso"
     ],
-    "status": "Pendente",
-    "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+    "status": "Dominado",
+    "dataEstudo": "2026-10-23",
+    "faseRecomendada": "⭐ Disciplina do MBA Concluída com Sucesso (40h)! DAMA-DMBOK, Governança e Qualidade de Dados.",
+    "anotacoes": "40 horas do MBA em Ciência de Dados concluídas. DAMA-DMBOK, ciclo de vida dos dados, qualidade, linhagem e metadados. Base consolidada para a governança corporativa e concursos."
   },
   {
     "id": "mba-spark",
@@ -161,34 +507,6 @@ export const INITIAL_TOPICS: Topic[] = [
     "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
   },
   {
-    "id": "math-poly-div",
-    "disciplina": "Matemática (Módulo 04)",
-    "macrotema": "Introdução à Álgebra (Google Drive)",
-    "microtopico": "Divisão Euclidiana de Polinômios pelo Método da Chave",
-    "peso": "Matemática Base",
-    "origem": [
-      "Matemática Base"
-    ],
-    "status": "Dominado",
-    "dataEstudo": "2026-10-22",
-    "faseRecomendada": "⭐ Dominado! Resolução detalhada de polinômios, Teorema do Resto e D’Alembert no Google Drive.",
-    "anotacoes": "Documento no Drive: Anotacao_Matematica_Modulo04_Unidade03_Divisao_de_Polinomios. Q(x) e resto R(x)."
-  },
-  {
-    "id": "math-rec-seq",
-    "disciplina": "Matemática (Módulo 02)",
-    "macrotema": "Aritmética Avançada (Google Drive)",
-    "microtopico": "Sequências e Progressões Recursivas (PA, PG e Mistas)",
-    "peso": "Matemática Base",
-    "origem": [
-      "Matemática Base"
-    ],
-    "status": "Dominado",
-    "dataEstudo": "2026-10-22",
-    "faseRecomendada": "⭐ Dominado! Conversão de fórmula recursiva para forma explícita fechada.",
-    "anotacoes": "Documento no Drive: Anotacao_Matematica_Modulo02_Unidade03_Sequencias_e_Progressoes_Recursivas. NotebookLM integrado."
-  },
-  {
     "id": "topic-1",
     "disciplina": "Língua Portuguesa",
     "macrotema": "Interpretação e Compreensão de Texto",
@@ -260,7 +578,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-4"],
+    "prerequisitos": [
+      "topic-4"
+    ],
     "tempoEstimadoMinutos": 25
   },
   {
@@ -277,7 +597,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-4"],
+    "prerequisitos": [
+      "topic-4"
+    ],
     "tempoEstimadoMinutos": 30
   },
   {
@@ -293,7 +615,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-6"],
+    "prerequisitos": [
+      "topic-6"
+    ],
     "tempoEstimadoMinutos": 35
   },
   {
@@ -309,7 +633,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-6"],
+    "prerequisitos": [
+      "topic-6"
+    ],
     "tempoEstimadoMinutos": 45
   },
   {
@@ -325,7 +651,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-6"],
+    "prerequisitos": [
+      "topic-6"
+    ],
     "tempoEstimadoMinutos": 30
   },
   {
@@ -341,7 +669,10 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-6", "topic-8"],
+    "prerequisitos": [
+      "topic-6",
+      "topic-8"
+    ],
     "tempoEstimadoMinutos": 40
   },
   {
@@ -357,7 +688,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-10"],
+    "prerequisitos": [
+      "topic-10"
+    ],
     "tempoEstimadoMinutos": 40
   },
   {
@@ -373,7 +706,9 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-10"],
+    "prerequisitos": [
+      "topic-10"
+    ],
     "tempoEstimadoMinutos": 30
   },
   {
@@ -389,7 +724,10 @@ export const INITIAL_TOPICS: Topic[] = [
       "Português Base",
       "Concurso"
     ],
-    "prerequisitos": ["topic-9", "topic-10"],
+    "prerequisitos": [
+      "topic-9",
+      "topic-10"
+    ],
     "tempoEstimadoMinutos": 35
   },
   {

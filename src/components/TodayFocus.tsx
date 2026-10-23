@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useStudy, getTodayDateString } from '../context/StudyContext';
+import { useStudy, getTodayDateString, getWeekDays } from '../context/StudyContext';
 import { StudyTimer } from './StudyTimer';
 import { WeeklyPrintModal } from './WeeklyPrintModal';
 import { 
@@ -9,14 +9,20 @@ import {
   Award, 
   Printer, 
   Sparkles, 
-  ChevronDown,
-  ChevronUp,
-  Plus,
-  BookmarkCheck,
-  Lock,
-  Unlock,
-  Lightbulb,
-  AlertTriangle
+  ChevronDown, 
+  ChevronUp, 
+  Plus, 
+  BookmarkCheck, 
+  Lock, 
+  Unlock, 
+  Lightbulb, 
+  AlertTriangle, 
+  ExternalLink,
+  Languages,
+  ArrowDownToLine,
+  ArrowUp,
+  ArrowDown,
+  CalendarDays
 } from 'lucide-react';
 
 export const TodayFocus: React.FC = () => {
@@ -28,19 +34,31 @@ export const TodayFocus: React.FC = () => {
     setSelectedTopicForModal,
     getTopicPedagogicalStatus,
     getTopicUnmetPrerequisites,
-    schedulePedagogicalMission
+    schedulePedagogicalMission,
+    englishHabits,
+    toggleEnglishDone,
+    toggleEnglishAtEnd,
+    moveTopicOrder
   } = useStudy();
 
   const [activeTimerTopic, setActiveTimerTopic] = useState<string | undefined>(undefined);
   const [sessionDuration, setSessionDuration] = useState<'micro' | 'curta' | 'media' | 'longa' | 'livre'>('media');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [showCatalogDrawer, setShowCatalogDrawer] = useState(false);
+  
   const today = getTodayDateString();
+  const [selectedDate, setSelectedDate] = useState<string>(today);
 
-  // Topics explicitly scheduled for today or past days that weren't completed yet
-  const todayScheduledTopics = topics.filter(t => {
+  // Dias da semana atual (Segunda a Domingo)
+  const weekDays = getWeekDays(today);
+
+  // Tópicos da data selecionada
+  const activeDateScheduledTopics = topics.filter(t => {
     if (t.status === 'Dominado') return false;
-    return t.agendadoPara === today || (t.agendadoPara && t.agendadoPara < today);
+    if (selectedDate === today) {
+      return t.agendadoPara === today || (t.agendadoPara && t.agendadoPara < today);
+    }
+    return t.agendadoPara === selectedDate;
   });
 
   const pendingPortuguese = topics.filter(t => t.disciplina === 'Língua Portuguesa' && t.status === 'Pendente');
@@ -57,10 +75,110 @@ export const TodayFocus: React.FC = () => {
     schedulePedagogicalMission(minutesMap[sessionDuration]);
   };
 
+  // Status do hábito de inglês para o dia selecionado
+  const currentHabit = englishHabits[selectedDate] || { done: false, atEnd: false };
+
+  // Componente do Card de Inglês
+  const renderEnglishCard = () => (
+    <article
+      key="daily-english-habit"
+      className={`border rounded-2xl p-4 sm:p-5 transition shadow-sm space-y-3 ${
+        currentHabit.done
+          ? 'bg-emerald-950/20 border-emerald-500/40 ring-1 ring-emerald-500/30'
+          : 'bg-gradient-to-r from-indigo-950/40 to-slate-900 border-indigo-500/30 hover:border-indigo-500/50'
+      }`}
+    >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        {/* Left: Info */}
+        <div className="space-y-1.5 flex-1">
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 flex items-center gap-1">
+              <Languages className="w-3 h-3" aria-hidden="true" />
+              <span>Micro-Hábito Diário</span>
+            </span>
+
+            <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+              15-20 min
+            </span>
+
+            {currentHabit.done ? (
+              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
+                <CheckCircle className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                <span>Concluído Hoje!</span>
+              </span>
+            ) : currentHabit.atEnd ? (
+              <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
+                <ArrowDownToLine className="w-3 h-3" aria-hidden="true" />
+                <span>Adiado p/ o final do dia</span>
+              </span>
+            ) : (
+              <span className="text-[10px] px-2 py-0.5 rounded bg-sky-500/15 text-sky-300 border border-sky-500/25">
+                Item 1 Prioritário
+              </span>
+            )}
+          </div>
+
+          <h3 className="text-sm sm:text-base font-bold text-white tracking-tight flex items-center gap-2">
+            <span>🇬🇧 Prática de Inglês (Listening & Vocabulário Técnico)</span>
+          </h3>
+
+          <p className="text-xs text-slate-300 font-mono">
+            {currentHabit.done
+              ? '✅ Excelente consistência diária mantida! Hábito concluído.'
+              : '15 minutos de leitura de documentação técnica, podcast ou vocabulário para concurso e TI.'}
+          </p>
+        </div>
+
+        {/* Right: Actions */}
+        <div className="grid grid-cols-3 gap-1.5 pt-2 sm:pt-0 sm:flex sm:items-center sm:gap-2 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
+          {/* Focar Timer */}
+          <button
+            onClick={() => setActiveTimerTopic('Hábito Diário: 15 min de Inglês')}
+            aria-label="Vincular hábito de inglês ao cronômetro"
+            className="text-xs px-2.5 py-2 sm:py-1.5 rounded-lg border font-medium bg-slate-800 text-slate-200 border-slate-700 hover:text-white transition flex items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            title="Cronometrar 15 min de foco"
+          >
+            <Clock className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
+            <span className="text-[11px] sm:text-xs">Focar</span>
+          </button>
+
+          {/* Adiar p/ Fim do Dia */}
+          <button
+            onClick={() => toggleEnglishAtEnd(selectedDate)}
+            aria-label={currentHabit.atEnd ? 'Mover inglês de volta para o topo' : 'Adiar inglês para o final do dia'}
+            className={`text-xs px-2.5 py-2 sm:py-1.5 rounded-lg border font-medium transition flex items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 ${
+              currentHabit.atEnd
+                ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                : 'bg-slate-800 text-slate-300 border-slate-700 hover:text-white'
+            }`}
+            title={currentHabit.atEnd ? 'Retornar ao início' : 'Adiar para o fim do dia'}
+          >
+            <ArrowDownToLine className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
+            <span className="text-[11px] sm:text-xs">{currentHabit.atEnd ? 'No Fim' : 'P/ Fim'}</span>
+          </button>
+
+          {/* Marcar OK */}
+          <button
+            onClick={() => toggleEnglishDone(selectedDate)}
+            aria-label={currentHabit.done ? 'Desmarcar hábito de inglês' : 'Marcar hábito de inglês como concluído'}
+            className={`text-xs font-semibold px-3 py-2 sm:py-1.5 rounded-lg transition flex items-center justify-center gap-1 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+              currentHabit.done
+                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
+                : 'bg-emerald-600/90 hover:bg-emerald-500 text-white'
+            }`}
+          >
+            <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+            <span className="text-[11px] sm:text-xs">{currentHabit.done ? 'OK Feito' : 'Marcar OK'}</span>
+          </button>
+        </div>
+      </div>
+    </article>
+  );
+
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       
-      {/* Clean, Minimalist Header Bar */}
+      {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 pb-1 border-b border-slate-800/60">
         <div>
           <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
@@ -83,24 +201,98 @@ export const TodayFocus: React.FC = () => {
         </button>
       </div>
 
-      {/* Focus Timer Bar (Minimal & Clean) */}
+      {/* Focus Timer Bar */}
       <StudyTimer currentTopicTitle={activeTimerTopic} />
 
-      {/* Today's Mission Cards */}
+      {/* Navegador dos Dias da Semana Atual (Weekly Day Strip - Seta 2 da imagem) */}
+      <section aria-label="Navegador dos dias da semana atual" className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-3 sm:p-4 space-y-2.5 shadow-md">
+        <div className="flex items-center justify-between text-xs text-slate-300">
+          <div className="flex items-center gap-1.5 font-semibold text-slate-200">
+            <CalendarDays className="w-4 h-4 text-emerald-400" aria-hidden="true" />
+            <span>Semana Atual:</span>
+          </div>
+
+          {selectedDate !== today && (
+            <button
+              onClick={() => setSelectedDate(today)}
+              className="text-[11px] font-medium text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20 transition"
+            >
+              ← Voltar para Hoje
+            </button>
+          )}
+        </div>
+
+        {/* 7 Dias da Semana (Grid responsivo) */}
+        <div className="grid grid-cols-7 gap-1 sm:gap-2" role="group" aria-label="Seletor de dias da semana">
+          {weekDays.map(day => {
+            const isSelected = selectedDate === day.dateStr;
+            const countForDay = topics.filter(t => t.status !== 'Dominado' && (day.isToday ? (t.agendadoPara === day.dateStr || (t.agendadoPara && t.agendadoPara < day.dateStr)) : t.agendadoPara === day.dateStr)).length;
+
+            return (
+              <button
+                key={day.dateStr}
+                onClick={() => setSelectedDate(day.dateStr)}
+                aria-pressed={isSelected}
+                className={`flex flex-col items-center justify-center p-1.5 sm:p-2.5 rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                  isSelected
+                    ? 'bg-emerald-500/15 border-emerald-500/50 text-emerald-300 shadow-sm'
+                    : day.isToday
+                    ? 'bg-slate-800/90 border-slate-700 text-white hover:border-slate-600'
+                    : 'bg-slate-950/60 border-slate-800 text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
+                }`}
+              >
+                <span className="text-[10px] sm:text-xs font-semibold uppercase tracking-wider">
+                  {day.dayName}
+                </span>
+
+                <span className={`text-xs sm:text-sm font-extrabold my-0.5 ${
+                  isSelected ? 'text-emerald-300' : 'text-slate-100'
+                }`}>
+                  {day.dayNumber}
+                </span>
+
+                <div className="flex items-center gap-1">
+                  {day.isToday && (
+                    <span className="text-[8px] font-bold px-1 py-0.2 rounded bg-emerald-500 text-slate-950 uppercase">
+                      Hoje
+                    </span>
+                  )}
+                  {countForDay > 0 && (
+                    <span className={`text-[9px] px-1 py-0.2 rounded-full font-bold ${
+                      isSelected ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
+                    }`}>
+                      {countForDay}
+                    </span>
+                  )}
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </section>
+
+      {/* Missão e Tópicos do Dia */}
       <section aria-label="Missão e Tópicos de Hoje" className="space-y-3">
-        {todayScheduledTopics.length === 0 ? (
-          /* Clean Empty State with Pedagogical Setup */
+        
+        {/* Item 1: Bloco Fixo de Inglês (Renderizado no início se não foi adiado) */}
+        {!currentHabit.atEnd && renderEnglishCard()}
+
+        {/* Tópicos Regulares Agendados */}
+        {activeDateScheduledTopics.length === 0 ? (
+          /* Empty State */
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 sm:p-8 text-center space-y-4">
             <div className="space-y-1">
               <h3 className="text-base font-semibold text-white">
-                Nenhum tópico na fila ativa de hoje
+                {selectedDate === today
+                  ? 'Nenhum tópico regular na fila ativa de hoje'
+                  : `Nenhum tópico agendado para ${selectedDate}`}
               </h3>
               <p className="text-xs text-slate-300 max-w-sm mx-auto">
                 O motor pedagógico seleciona conteúdos disponíveis cujos pré-requisitos já foram dominados:
               </p>
             </div>
 
-            {/* Clean time pill selector */}
+            {/* Time pill selector */}
             <div className="grid grid-cols-5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs w-full max-w-md mx-auto" role="group" aria-label="Tempo disponível para estudo">
               {(
                 [
@@ -136,8 +328,8 @@ export const TodayFocus: React.FC = () => {
             </div>
           </div>
         ) : (
-          /* Active Scheduled Topics */
-          todayScheduledTopics.map(topic => {
+          /* Active Scheduled Topics List with Reordering Controls */
+          activeDateScheduledTopics.map((topic, index) => {
             const isOverdue = topic.agendadoPara && topic.agendadoPara < today;
             const isSelectedForTimer = activeTimerTopic === topic.microtopico;
             const isSharedMBA = topic.origem && topic.origem.includes('MBA') && topic.origem.includes('Concurso');
@@ -145,6 +337,9 @@ export const TodayFocus: React.FC = () => {
             const pedStatus = getTopicPedagogicalStatus(topic);
             const unmetPrereqs = getTopicUnmetPrerequisites(topic);
             const isBlocked = pedStatus === 'Bloqueado';
+
+            const isFirst = index === 0;
+            const isLast = index === activeDateScheduledTopics.length - 1;
 
             return (
               <article
@@ -159,68 +354,114 @@ export const TodayFocus: React.FC = () => {
               >
                 <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                   
-                  {/* Left: Topic Title & Badges */}
-                  <div className="space-y-1.5 flex-1">
-                    <div className="flex flex-wrap items-center gap-1.5">
-                      
-                      {/* Origin Tags */}
-                      {topic.origem && topic.origem.map(tag => (
-                        <span
-                          key={tag}
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded ${
-                            tag === 'MBA'
-                              ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
-                              : tag === 'Matemática Base'
-                              ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
-                              : tag === 'Português Base'
-                              ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
-                              : tag === 'Leitura / Livro'
-                              ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
-                              : 'bg-slate-800 text-slate-300 border border-slate-700'
-                          }`}
-                        >
-                          {tag}
-                        </span>
-                      ))}
+                  {/* Left: Reordering buttons & Topic Title */}
+                  <div className="flex items-start gap-2.5 flex-1">
+                    
+                    {/* Reordering Up/Down Controls */}
+                    <div className="flex flex-col items-center gap-0.5 pt-0.5">
+                      <button
+                        onClick={() => moveTopicOrder(topic.id, 'up')}
+                        disabled={isFirst}
+                        aria-label={`Mover ${topic.microtopico} para cima`}
+                        className={`p-1 rounded hover:bg-slate-800 transition ${
+                          isFirst ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white'
+                        }`}
+                        title="Subir na ordem de estudo"
+                      >
+                        <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
 
-                      {isSharedMBA && (
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                          <BookmarkCheck className="w-3 h-3" aria-hidden="true" />
-                          <span>Sinergia Dupla</span>
-                        </span>
-                      )}
-
-                      <span className="text-[11px] text-slate-300 ml-1">{topic.disciplina}</span>
-
-                      {/* Pedagogical Status Badge */}
-                      {isBlocked ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-semibold">
-                          <Lock className="w-3 h-3" aria-hidden="true" />
-                          <span>Bloqueado por Pré-requisito</span>
-                        </span>
-                      ) : (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1 font-medium">
-                          <Unlock className="w-3 h-3" aria-hidden="true" />
-                          <span>Disponível (Base Segura)</span>
-                        </span>
-                      )}
-
-                      {isOverdue && (
-                        <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400">
-                          Reagendado
-                        </span>
-                      )}
+                      <button
+                        onClick={() => moveTopicOrder(topic.id, 'down')}
+                        disabled={isLast}
+                        aria-label={`Mover ${topic.microtopico} para baixo`}
+                        className={`p-1 rounded hover:bg-slate-800 transition ${
+                          isLast ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white'
+                        }`}
+                        title="Descer na ordem de estudo"
+                      >
+                        <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
+                      </button>
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
-                      {topic.microtopico}
-                    </h3>
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        
+                        {/* Origin Tags */}
+                        {topic.origem && topic.origem.map(tag => (
+                          <span
+                            key={tag}
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded ${
+                              tag === 'MBA'
+                                ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                                : tag === 'Matemática Base'
+                                ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
+                                : tag === 'Português Base'
+                                ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                                : tag === 'Ciências da Natureza'
+                                ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30'
+                                : tag === 'Leitura / Livro'
+                                ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
+                                : 'bg-slate-800 text-slate-300 border border-slate-700'
+                            }`}
+                          >
+                            {tag}
+                          </span>
+                        ))}
 
-                    {topic.anotacoes && (
-                      <p className="text-xs text-slate-300 font-mono line-clamp-1">
-                        {topic.anotacoes}
-                      </p>
-                    )}
+                        {isSharedMBA && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/10 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                            <BookmarkCheck className="w-3 h-3" aria-hidden="true" />
+                            <span>Sinergia Dupla</span>
+                          </span>
+                        )}
+
+                        <span className="text-[11px] text-slate-300 ml-1">{topic.disciplina}</span>
+
+                        {/* Pedagogical Status Badge */}
+                        {isBlocked ? (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-300 border border-amber-500/30 flex items-center gap-1 font-semibold">
+                            <Lock className="w-3 h-3" aria-hidden="true" />
+                            <span>Bloqueado por Pré-requisito</span>
+                          </span>
+                        ) : (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/25 flex items-center gap-1 font-medium">
+                            <Unlock className="w-3 h-3" aria-hidden="true" />
+                            <span>Disponível (Base Segura)</span>
+                          </span>
+                        )}
+
+                        {isOverdue && (
+                          <span className="text-[10px] px-1.5 py-0.2 rounded bg-amber-500/10 text-amber-400">
+                            Reagendado
+                          </span>
+                        )}
+                      </div>
+
+                      <h3 className="text-sm sm:text-base font-bold text-white tracking-tight">
+                        {topic.microtopico}
+                      </h3>
+
+                      {topic.anotacoes && (
+                        <p className="text-xs text-slate-300 font-mono line-clamp-1">
+                          {topic.anotacoes}
+                        </p>
+                      )}
+
+                      {topic.linkMaterial && (
+                        <div className="pt-0.5">
+                          <a
+                            href={topic.linkMaterial}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2 py-1 rounded-lg border border-emerald-500/30 transition shadow-sm"
+                          >
+                            <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                            <span>Acessar Doc no Google Drive</span>
+                          </a>
+                        </div>
+                      )}
+                    </div>
                   </div>
 
                   {/* Right: Action Buttons (Responsive Grid on Mobile) */}
@@ -312,6 +553,10 @@ export const TodayFocus: React.FC = () => {
             );
           })
         )}
+
+        {/* Item 1: Bloco Fixo de Inglês (Renderizado no fim se o usuário clicou em 'Adiar p/ fim') */}
+        {currentHabit.atEnd && renderEnglishCard()}
+
       </section>
 
       {/* Minimal Collapsible Drawer to Browse Catalog */}

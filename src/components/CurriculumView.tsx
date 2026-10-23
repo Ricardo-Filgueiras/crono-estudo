@@ -8,7 +8,8 @@ import {
   Edit3,
   BookmarkCheck,
   Lock,
-  GitFork
+  GitFork,
+  ExternalLink
 } from 'lucide-react';
 
 export const CurriculumView: React.FC = () => {
@@ -100,6 +101,7 @@ export const CurriculumView: React.FC = () => {
             { id: 'MBA', label: '🎓 MBA Dados' },
             { id: 'Matemática Base', label: '📐 Matemática' },
             { id: 'Português Base', label: '📝 Português' },
+            { id: 'Ciências da Natureza', label: '🧪 Ciências da Natureza' },
             { id: 'Leitura / Livro', label: '📖 Livros' },
             { id: 'Concurso', label: '🏛️ Concurso' },
           ].map(tag => (
@@ -224,6 +226,8 @@ export const CurriculumView: React.FC = () => {
                               ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                               : tag === 'Português Base'
                               ? 'bg-blue-500/15 text-blue-300 border border-blue-500/30'
+                              : tag === 'Ciências da Natureza'
+                              ? 'bg-teal-500/15 text-teal-300 border border-teal-500/30'
                               : tag === 'Leitura / Livro'
                               ? 'bg-rose-500/15 text-rose-300 border border-rose-500/30'
                               : 'bg-slate-800 text-slate-300 border border-slate-700'
@@ -278,6 +282,20 @@ export const CurriculumView: React.FC = () => {
                       <p className="text-xs text-slate-300 font-mono bg-slate-950/70 p-2.5 rounded-xl border border-slate-800/80">
                         <strong className="text-emerald-400">Nota: </strong>{topic.anotacoes}
                       </p>
+                    )}
+
+                    {topic.linkMaterial && (
+                      <div>
+                        <a
+                          href={topic.linkMaterial}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 transition shadow-sm"
+                        >
+                          <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Abrir Anotação no Google Docs</span>
+                        </a>
+                      </div>
                     )}
                   </div>
 
