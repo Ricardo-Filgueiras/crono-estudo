@@ -192,143 +192,140 @@ export const CurriculumView: React.FC = () => {
 
       </section>
 
-      {/* Mapa da Linhagem de Aprendizagem de Língua Portuguesa */}
-      {(selectedTag === 'Português Base' || selectedDisciplina === 'Língua Portuguesa') && (
-        <section
-          aria-labelledby="pt-lineage-heading"
-          className="bg-slate-900/95 border border-blue-500/30 rounded-3xl p-4 sm:p-5 shadow-xl space-y-4"
-        >
-          <div className="flex items-start sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-2xl bg-blue-500/15 text-blue-300 border border-blue-500/30">
-                <Layers className="w-5 h-5" aria-hidden="true" />
-              </div>
-              <div>
-                <h2 id="pt-lineage-heading" className="text-sm sm:text-base font-bold text-white">
-                  Fundação do Prédio: Linhagem de Aprendizagem de Língua Portuguesa
-                </h2>
-                <p className="text-xs text-slate-300">
-                  Do micro ao macro (Adição → Multiplicação → Potenciação): como um nível deságua obrigatoriamente no outro até a Tipologia Textual.
-                </p>
-              </div>
+      {/* Mapa Dinâmico da Linhagem de Aprendizagem (Nível 1 → Nível 4) para todas as disciplinas */}
+      <section
+        aria-labelledby="pt-lineage-heading"
+        className="bg-slate-900/95 border border-blue-500/30 rounded-3xl p-4 sm:p-5 shadow-xl space-y-4"
+      >
+        <div className="flex items-start sm:items-center justify-between gap-3">
+          <div className="flex items-center gap-3">
+            <div className="p-2.5 rounded-2xl bg-blue-500/15 text-blue-300 border border-blue-500/30">
+              <Layers className="w-5 h-5" aria-hidden="true" />
             </div>
-            <button
-              type="button"
-              onClick={() => setShowPortugueseLineageMap(prev => !prev)}
-              aria-expanded={showPortugueseLineageMap}
-              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950 text-slate-200 border border-slate-800 hover:bg-slate-800 transition flex items-center gap-1.5 flex-shrink-0"
-            >
-              <span>{showPortugueseLineageMap ? 'Ocultar Mapa' : 'Ver Mapa'}</span>
-              {showPortugueseLineageMap ? (
-                <ChevronUp className="w-4 h-4" aria-hidden="true" />
-              ) : (
-                <ChevronDown className="w-4 h-4" aria-hidden="true" />
-              )}
-            </button>
+            <div>
+              <h2 id="pt-lineage-heading" className="text-sm sm:text-base font-bold text-white">
+                Fundação do Prédio: Linhagem de Aprendizagem ({selectedDisciplina !== 'TODAS' ? selectedDisciplina : selectedTag !== 'TODAS' ? selectedTag : 'Visão Geral Multidisciplinar'})
+              </h2>
+              <p className="text-xs text-slate-300">
+                Do micro ao macro (Adição → Multiplicação → Potenciação): nenhum telhado é levantado antes de consolidar os tijolos e as vigas.
+              </p>
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => setShowPortugueseLineageMap(prev => !prev)}
+            aria-expanded={showPortugueseLineageMap}
+            className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950 text-slate-200 border border-slate-800 hover:bg-slate-800 transition flex items-center gap-1.5 flex-shrink-0"
+          >
+            <span>{showPortugueseLineageMap ? 'Ocultar Mapa' : 'Ver Mapa'}</span>
+            {showPortugueseLineageMap ? (
+              <ChevronUp className="w-4 h-4" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="w-4 h-4" aria-hidden="true" />
+            )}
+          </button>
+        </div>
 
-          {showPortugueseLineageMap && (
-            <div className="space-y-4 pt-2 border-t border-slate-800/80">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
-                {/* Nível 1 */}
-                <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-3.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
-                      Nível 1 • Os Tijolos
-                    </span>
-                    <span className="text-[11px] text-amber-300 font-semibold">⭐ Dominado</span>
+        {showPortugueseLineageMap && (
+          <div className="space-y-4 pt-2 border-t border-slate-800/80">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+              {[
+                {
+                  level: 1,
+                  badge: 'Nível 1 • Os Tijolos',
+                  title: 'Identidade e Fundamentos (A Adição)',
+                  desc: 'Unidades atômicas: Fonética/Ortografia (Português), Aritmética/Conjuntos (Mat/RLM), MER/DER e Formas Normais (BD), Big-O e Estruturas (Dev), CIDA/Criptografia (Segurança), ISO 38500 (Gov).',
+                  bridge: 'Garante a leitura correta da peça isolada antes de combiná-la.',
+                  border: 'border-amber-500/30',
+                  pill: 'text-amber-300 bg-amber-500/15 border-amber-500/30',
+                  box: 'text-amber-200/90 bg-amber-950/30 border-amber-500/20',
+                },
+                {
+                  level: 2,
+                  badge: 'Nível 2 • As Peças',
+                  title: 'A Função das Peças (Vocabulário Operacional)',
+                  desc: 'Morfologia: Verbos/Pronomes/Conjunções (Português), Polinômios/Combinatória (Mat/RLM), SQL DDL/DML/JOINs (BD), POO/Funcional/Python (Dev), UML/BPMN (Eng), COBIT/ITIL/PMBOK (Gov).',
+                  bridge: 'Dominar o papel de cada peça evita que a próxima etapa pareça adivinhação.',
+                  border: 'border-sky-500/40',
+                  pill: 'text-sky-300 bg-sky-500/15 border-sky-500/30',
+                  box: 'text-sky-200/90 bg-sky-950/30 border-sky-500/20',
+                },
+                {
+                  level: 3,
+                  badge: 'Nível 3 • As Vigas',
+                  title: 'A Estrutura em Movimento (A Multiplicação)',
+                  desc: 'Sintaxe e Período Composto (Português), Equações/Proposições/Equivalências (Mat/RLM), Transações ACID e Índices (BD), HTTP/REST/SOLID (Dev/Eng), K8s/Zero Trust (Infra/Seg), Lei 14.133 e RAG (Gov/IA).',
+                  bridge: 'Conecta as peças do Nível 2 em sistemas, orações e arquiteturas vivas.',
+                  border: 'border-indigo-500/30',
+                  pill: 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30',
+                  box: 'text-indigo-200/90 bg-indigo-950/30 border-indigo-500/20',
+                },
+                {
+                  level: 4,
+                  badge: 'Nível 4 • O Telhado',
+                  title: 'A Obra Completa (A Potenciação)',
+                  desc: 'Coesão e Tipologia Textual (Português), Geometria Dedutiva e Argumentos (Mat/RLM), NoSQL e Bancos Vetoriais HNSW (BD), OAuth2/JWT, TDD, DevSecOps, MCP e Estudos de Caso Discursivos FCC.',
+                  bridge: 'Topo da pirâmide: aplicação integrada de todos os níveis anteriores em provas de alto nível.',
+                  border: 'border-emerald-500/30',
+                  pill: 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30',
+                  box: 'text-emerald-200/90 bg-emerald-950/30 border-emerald-500/20',
+                },
+              ].map(card => {
+                const levelTopics = filteredTopics.filter(t => t.macrotema.startsWith(`Nível ${card.level}`));
+                const doneCount = levelTopics.filter(t => t.status === 'Dominado' || t.status === 'Teoria Concluída').length;
+                return (
+                  <div key={card.level} className={`bg-slate-950/80 border ${card.border} rounded-2xl p-3.5 space-y-2 flex flex-col justify-between`}>
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-[11px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md border ${card.pill}`}>
+                          {card.badge}
+                        </span>
+                        <span className="text-[11px] text-slate-300 font-semibold">
+                          {doneCount}/{levelTopics.length} concluídos
+                        </span>
+                      </div>
+                      <h3 className="text-xs font-bold text-white">{card.title}</h3>
+                      <p className="text-[11px] text-slate-300 leading-relaxed">
+                        {card.desc}
+                      </p>
+                    </div>
+                    <div className={`text-[11px] border rounded-xl p-2 ${card.box}`}>
+                      <strong>Ponte Hierárquica:</strong> {card.bridge}
+                    </div>
                   </div>
-                  <h3 className="text-xs font-bold text-white">Fonética e Ortografia</h3>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    <strong>Trilha:</strong> Fonemas e Letras (ex.: <em>&quot;am&quot;</em> em <em>tampa</em> = dígrafo) → Encontros → Separação Silábica → Tonicidade → Regras de Acentuação.
-                  </p>
-                  <div className="text-[11px] text-amber-200/90 bg-amber-950/30 border border-amber-500/20 rounded-xl p-2">
-                    <strong>Ponte p/ Nível 2:</strong> O som e a escrita garantem a identidade da palavra. Sem acento muda o sentido e a classe (<em>sábia</em> [adjetivo] vs. <em>sabia</em> [verbo]).
-                  </div>
+                );
+              })}
+            </div>
+
+            {/* Estratégias Práticas de Rotina */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <div className="bg-slate-950/90 border border-rose-500/25 rounded-2xl p-3.5 flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 flex-shrink-0">
+                  <Crosshair className="w-4 h-4" aria-hidden="true" />
                 </div>
-
-                {/* Nível 2 */}
-                <div className="bg-slate-950/80 border border-sky-500/40 rounded-2xl p-3.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded-md border border-sky-500/30">
-                      Nível 2 • As Peças
-                    </span>
-                    <span className="text-[11px] text-sky-300 font-semibold">🚀 Foco Atual</span>
-                  </div>
-                  <h3 className="text-xs font-bold text-white">A Função das Peças (Morfologia)</h3>
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-white">1. Auditoria Cirúrgica de Erros (Caminho Inverso: Nível 4 → Nível 1)</h4>
                   <p className="text-[11px] text-slate-300 leading-relaxed">
-                    <strong>Trilha:</strong> Substantivos e Adjetivos → Verbos (ações, tempos e modos) → Pronomes (substituem nomes) → Conjunções e Preposições (conectores).
+                    Ao errar uma questão complexa, faça o caminho inverso no <strong>Caderno de Erros</strong>: a falha foi na visão sistêmica/arquitetura (Nível 4), na regra de conexão/sintaxe/transação (Nível 3), no desconhecimento de uma peça/comando/conector (Nível 2) ou em leitura precipitada do tijolo básico (Nível 1)?
                   </p>
-                  <div className="text-[11px] text-sky-200/90 bg-sky-950/30 border border-sky-500/20 rounded-xl p-2">
-                    <strong>Ponte p/ Nível 3:</strong> O verbo é o motor da frase. Dominar pronomes relativos (<em>que, o qual</em>) e conjunções impede que a análise sintática pareça adivinhação.
-                  </div>
-                </div>
-
-                {/* Nível 3 */}
-                <div className="bg-slate-950/80 border border-indigo-500/30 rounded-2xl p-3.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded-md border border-indigo-500/30">
-                      Nível 3 • As Vigas
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-semibold">🔒 Aguarda Nível 2</span>
-                  </div>
-                  <h3 className="text-xs font-bold text-white">A Estrutura em Movimento (Sintaxe)</h3>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    <strong>Trilha:</strong> Achar o Verbo → Sujeito e Predicado → Transitividade → Complementos (OD/OI) → Período Composto (Coordenadas e Subordinadas).
-                  </p>
-                  <div className="text-[11px] text-indigo-200/90 bg-indigo-950/30 border border-indigo-500/20 rounded-xl p-2">
-                    <strong>Ponte p/ Nível 4:</strong> É a multiplicação acontecendo: usar a conjunção <em>&quot;embora&quot;</em> (Nível 2) para criar uma oração subordinada concessiva que dá fluidez ao texto.
-                  </div>
-                </div>
-
-                {/* Nível 4 */}
-                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-3.5 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
-                      Nível 4 • O Telhado
-                    </span>
-                    <span className="text-[11px] text-slate-400 font-semibold">⏸️ Topo da Pirâmide</span>
-                  </div>
-                  <h3 className="text-xs font-bold text-white">A Obra Completa (Texto e Tipologia)</h3>
-                  <p className="text-[11px] text-slate-300 leading-relaxed">
-                    <strong>Trilha:</strong> Coesão Referencial (pronomes) → Coesão Sequencial (conjunções) → Semântica e Figuras → Tipologia Textual.
-                  </p>
-                  <div className="text-[11px] text-emerald-200/90 bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-2">
-                    <strong>Linhagem Completa:</strong> Texto <em>Descritivo</em> = abundância de adjetivos e verbos de estado; <em>Dissertativo</em> = orações subordinadas amarradas por conjunções e pronomes.
-                  </div>
                 </div>
               </div>
 
-              {/* Estratégias Práticas de Rotina */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="bg-slate-950/90 border border-rose-500/25 rounded-2xl p-3.5 flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 flex-shrink-0">
-                    <Crosshair className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-white">1. Auditoria Cirúrgica de Erros (Caminho Inverso)</h4>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Ao errar uma questão de interpretação/tipologia, faça o caminho inverso no <strong>Caderno de Erros</strong>: a falha foi na intenção geral do autor (Nível 4), na conexão sintática entre duas frases (Nível 3), no desconhecimento de uma conjunção/pronome (Nível 2) ou em leitura precipitada (Nível 1)? Anote apenas o gatilho exato.
-                    </p>
-                  </div>
+              <div className="bg-slate-950/90 border border-emerald-500/25 rounded-2xl p-3.5 flex items-start gap-3">
+                <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0">
+                  <Compass className="w-4 h-4" aria-hidden="true" />
                 </div>
-
-                <div className="bg-slate-950/90 border border-emerald-500/25 rounded-2xl p-3.5 flex items-start gap-3">
-                  <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0">
-                    <Compass className="w-4 h-4" aria-hidden="true" />
-                  </div>
-                  <div className="space-y-1">
-                    <h4 className="text-xs font-bold text-white">2. Domínio Progressivo de Conectores (Google Keep)</h4>
-                    <p className="text-[11px] text-slate-300 leading-relaxed">
-                      Separe minutos diários para dominar famílias específicas de <strong>pronomes</strong> e <strong>conjunções</strong> (causais, concessivas, adversativas, conclusivas). Eles são o verdadeiro passaporte entre a Morfologia (Nível 2) e a Interpretação de Textos (Nível 4).
-                    </p>
-                  </div>
+                <div className="space-y-1">
+                  <h4 className="text-xs font-bold text-white">2. Destravamento de Pontes (Do Micro ao Macro)</h4>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    Use o filtro <strong>🟢 Prontos para Aprender</strong> acima para focar exclusivamente nas peças de Nível 1 e Nível 2 que já têm seus pré-requisitos cumpridos e que possuem o maior poder de destravamento (<em>Destrava X tópicos</em>).
+                  </p>
                 </div>
               </div>
             </div>
-          )}
-        </section>
-      )}
+          </div>
+        )}
+      </section>
 
       {/* Topics list */}
       <section aria-label="Lista de Tópicos do Edital" className="space-y-3">
