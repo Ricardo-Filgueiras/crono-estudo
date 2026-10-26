@@ -82,6 +82,34 @@ export const ErrorNotebook: React.FC = () => {
         </button>
       </section>
 
+      {/* Protocolo de Auditoria Cirúrgica de Erros (Caminho Inverso) */}
+      <section aria-label="Protocolo de Auditoria Cirúrgica de Erros" className="bg-slate-900/90 border border-rose-500/25 rounded-2xl p-4 shadow-md space-y-2.5">
+        <div className="flex items-center justify-between gap-2">
+          <h3 className="text-xs sm:text-sm font-bold text-rose-300 uppercase tracking-wider">
+            🔍 Protocolo de Auditoria Cirúrgica de Erros (Caminho Inverso: Nível 4 → Nível 1)
+          </h3>
+          <span className="text-[11px] text-slate-400 hidden sm:inline">Anote apenas o gatilho exato do erro</span>
+        </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 text-xs">
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <strong className="text-emerald-300 block mb-0.5">Nível 4 • Obra Completa (Texto)</strong>
+            <span className="text-slate-300 text-[11px]">Falha na compreensão da intenção geral do autor ou tipologia textual?</span>
+          </div>
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <strong className="text-indigo-300 block mb-0.5">Nível 3 • Vigas (Sintaxe)</strong>
+            <span className="text-slate-300 text-[11px]">Falha na conexão lógica entre duas frases, sujeito/verbo ou orações subordinadas?</span>
+          </div>
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <strong className="text-sky-300 block mb-0.5">Nível 2 • Peças (Morfologia)</strong>
+            <span className="text-slate-300 text-[11px]">Desconhecimento do valor de uma conjunção, pronome relativo ou tempo verbal?</span>
+          </div>
+          <div className="bg-slate-950/80 border border-slate-800 rounded-xl p-2.5">
+            <strong className="text-amber-300 block mb-0.5">Nível 1 • Tijolos (Leitura/Som)</strong>
+            <span className="text-slate-300 text-[11px]">Leitura precipitada, troca de palavra parecida ou perda de acento diferencial?</span>
+          </div>
+        </div>
+      </section>
+
       {/* List of mapped errors */}
       <section aria-label="Erros mapeados da FCC" className="space-y-4">
         {errors.length === 0 ? (
@@ -239,18 +267,26 @@ export const ErrorNotebook: React.FC = () => {
               </div>
 
               <div>
-                <label htmlFor="err-classificacao" className="block text-slate-200 font-semibold mb-1">Tipo de Erro</label>
+                <label htmlFor="err-classificacao" className="block text-slate-200 font-semibold mb-1">Gatilho / Auditoria Cirúrgica do Erro</label>
                 <select
                   id="err-classificacao"
                   value={classificacaoErro}
                   onChange={e => setClassificacaoErro(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
                 >
-                  <option value="Pegadinha de Enunciado">Pegadinha de Enunciado</option>
-                  <option value="Falta de Memorização de Regra/Exceção">Falta de Memorização de Regra/Exceção</option>
-                  <option value="Confusão Conceitual">Confusão Conceitual</option>
-                  <option value="Interpretação de Texto">Interpretação de Texto</option>
-                  <option value="Desatenção">Desatenção</option>
+                  <optgroup label="Auditoria Cirúrgica (Caminho Inverso Nível 4 → Nível 1)">
+                    <option value="Nível 4 (Texto/Tipologia): Falha na intenção geral do autor">Nível 4 (Texto/Tipologia): Falha na intenção geral do autor</option>
+                    <option value="Nível 3 (Sintaxe): Falha na conexão lógica entre frases/orações">Nível 3 (Sintaxe): Falha na conexão lógica entre frases/orações</option>
+                    <option value="Nível 2 (Morfologia): Desconhecimento de conjunção, pronome ou verbo">Nível 2 (Morfologia): Desconhecimento de conjunção, pronome ou verbo</option>
+                    <option value="Nível 1 (Fonética/Escrita): Leitura precipitada ou acentuação">Nível 1 (Fonética/Escrita): Leitura precipitada ou acentuação</option>
+                  </optgroup>
+                  <optgroup label="Classificações Gerais de Prova">
+                    <option value="Pegadinha de Enunciado">Pegadinha de Enunciado</option>
+                    <option value="Falta de Memorização de Regra/Exceção">Falta de Memorização de Regra/Exceção</option>
+                    <option value="Confusão Conceitual">Confusão Conceitual</option>
+                    <option value="Interpretação de Texto">Interpretação de Texto</option>
+                    <option value="Desatenção">Desatenção</option>
+                  </optgroup>
                 </select>
               </div>
 

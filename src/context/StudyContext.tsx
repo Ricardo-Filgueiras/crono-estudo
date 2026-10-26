@@ -59,6 +59,7 @@ const StudyContext = createContext<StudyContextType | undefined>(undefined);
 const STORAGE_KEY_TOPICS = 'crono_estudo_topics_v7';
 const STORAGE_KEY_ERRORS = 'crono_estudo_errors_v1';
 const STORAGE_KEY_HABITS = 'crono_estudo_english_habits_v1';
+const STORAGE_KEY_UPDATED_AT = 'crono_estudo_updated_at_v1';
 
 export interface WeekDayInfo {
   dateStr: string;
@@ -113,8 +114,9 @@ export const addDaysToDate = (dateStr: string, days: number): string => {
 };
 
 export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
+  const initialMap = new Map(INITIAL_TOPICS.map(t => [t.id, t]));
   const savedMap = new Map(savedTopics.map(t => [t.id, t]));
-  const initialIds = new Set(INITIAL_TOPICS.map(t => t.id));
+  const legacyIds = new Set(['math-poly-div', 'math-rec-seq']);
 
   const savedTopic1 = savedMap.get('topic-1');
   const savedTopic7 = savedMap.get('topic-7');
@@ -122,15 +124,22 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
     savedTopic1?.status === 'Em Andamento' &&
     (!savedTopic7 || savedTopic7.status === 'Pendente');
 
-  // Preserve canonical pedagogical hierarchy order from INITIAL_TOPICS while keeping user progress
-  const merged: Topic[] = INITIAL_TOPICS.map(initial => {
-    const saved = savedMap.get(initial.id);
-    if (!saved) return initial;
+  // 1. Preserve the exact order of savedTopics (so user manual reordering is never lost on refresh!)
+  const merged: Topic[] = [];
+  const processedIds = new Set<string>();
 
-    // Se Tipologia Textual (topic-1) estava em andamento antes da reordenação hierárquica,
-    // pausa-o temporariamente e transfere o foco imediato para Pronomes (topic-7).
+  for (const saved of savedTopics) {
+    if (legacyIds.has(saved.id)) continue;
+    processedIds.add(saved.id);
+
+    const initial = initialMap.get(saved.id);
+    if (!initial) {
+      merged.push(saved);
+      continue;
+    }
+
     if (shouldMigratePortugueseFocus && initial.id === 'topic-1') {
-      return {
+      merged.push({
         ...initial,
         ...saved,
         macrotema: initial.macrotema,
@@ -141,50 +150,51 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
         prerequisitos: initial.prerequisitos,
         tempoEstimadoMinutos: initial.tempoEstimadoMinutos ?? saved.tempoEstimadoMinutos,
         origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem
-      };
+      });
+      continue;
     }
 
-    if (shouldMigratePortugueseFocus && initial.id === 'topic-7') {
-      return {
+    if (shouldMigratePortugueseFocus && (initial.id === 'topic-7' || initial.id === 'topic-8')) {
+      merged.push({
         ...initial,
         ...saved,
         macrotema: initial.macrotema,
         status: 'Em Andamento',
         agendadoPara: getTodayDateString(),
         faseRecomendada: initial.faseRecomendada,
-        anotacoes:
-          saved.anotacoes === 'Aguardando teoria.' || !saved.anotacoes
-            ? initial.anotacoes
-            : saved.anotacoes,
+        anotacoes: initial.anotacoes,
         prerequisitos: initial.prerequisitos,
         tempoEstimadoMinutos: initial.tempoEstimadoMinutos ?? saved.tempoEstimadoMinutos,
         origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem
-      };
+      });
+      continue;
     }
 
-    return {
+    const isPortugueseTopic = initial.disciplina === 'Língua Portuguesa';
+
+    merged.push({
       ...initial,
       ...saved,
       macrotema: initial.macrotema,
       prerequisitos: initial.prerequisitos ?? saved.prerequisitos,
       tempoEstimadoMinutos: saved.tempoEstimadoMinutos ?? initial.tempoEstimadoMinutos,
       origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem,
+      ordemFila: saved.ordemFila,
       anotacoes:
-        saved.anotacoes === 'Aguardando teoria.' && initial.anotacoes
+        (isPortugueseTopic || saved.anotacoes === 'Aguardando teoria.') && initial.anotacoes
           ? initial.anotacoes
           : saved.anotacoes,
       faseRecomendada:
-        saved.faseRecomendada === '⏳ Pendente - Aguardando estudo.' && initial.faseRecomendada
+        (isPortugueseTopic || saved.faseRecomendada === '⏳ Pendente - Aguardando estudo.') && initial.faseRecomendada
           ? initial.faseRecomendada
           : saved.faseRecomendada
-    };
-  });
+    });
+  }
 
-  // Append any custom user-created topics that are not in INITIAL_TOPICS (excluding superseded legacy IDs)
-  const legacyIds = new Set(['math-poly-div', 'math-rec-seq']);
-  for (const saved of savedTopics) {
-    if (!initialIds.has(saved.id) && !legacyIds.has(saved.id)) {
-      merged.push(saved);
+  // 2. Append any newly added topics from INITIAL_TOPICS that were not in savedTopics yet
+  for (const initial of INITIAL_TOPICS) {
+    if (!processedIds.has(initial.id)) {
+      merged.push(initial);
     }
   }
 
@@ -280,26 +290,38 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCloudSyncError(null);
         const { data, error } = await supabase
           .from('user_study_data')
-          .select('topics, errors')
+          .select('topics, errors, updated_at')
           .eq('user_id', user.id)
           .maybeSingle();
 
         if (error) throw error;
 
         if (isMounted) {
-          if (data && Array.isArray(data.topics) && data.topics.length > 0) {
+          const localUpdatedAt = localStorage.getItem(STORAGE_KEY_UPDATED_AT);
+          const cloudUpdatedAt = data?.updated_at;
+          const isLocalNewer =
+            localUpdatedAt &&
+            cloudUpdatedAt &&
+            new Date(localUpdatedAt).getTime() > new Date(cloudUpdatedAt).getTime();
+
+          if (data && Array.isArray(data.topics) && data.topics.length > 0 && !isLocalNewer) {
             setTopics(mergeWithInitialTopics(data.topics));
             if (Array.isArray(data.errors)) {
               setErrors(data.errors);
             }
           } else {
-            // Primeiro login: salva os dados locais atuais no Supabase
-            await supabase.from('user_study_data').upsert({
-              user_id: user.id,
-              topics,
-              errors,
-              updated_at: new Date().toISOString()
-            });
+            // Primeiro login ou estado local mais recente que a nuvem: salva os dados locais atuais no Supabase
+            const nowIso = new Date().toISOString();
+            await supabase.from('user_study_data').upsert(
+              {
+                user_id: user.id,
+                topics,
+                errors,
+                updated_at: nowIso
+              },
+              { onConflict: 'user_id' }
+            );
+            localStorage.setItem(STORAGE_KEY_UPDATED_AT, nowIso);
           }
           cloudLoadedForUser.current = user.id;
         }
@@ -318,20 +340,28 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [user]);
 
-  // Sincronizar alterações locais para o Supabase (Debounced)
+  // Sincronizar alterações locais para o Supabase (Debounced rápido de 300ms)
   useEffect(() => {
     if (!user || cloudLoadedForUser.current !== user.id) return;
+
+    const nowIso = new Date().toISOString();
+    try {
+      localStorage.setItem(STORAGE_KEY_UPDATED_AT, nowIso);
+    } catch {}
 
     const timeout = setTimeout(async () => {
       try {
         setIsSyncing(true);
         setCloudSyncError(null);
-        const { error } = await supabase.from('user_study_data').upsert({
-          user_id: user.id,
-          topics,
-          errors,
-          updated_at: new Date().toISOString()
-        });
+        const { error } = await supabase.from('user_study_data').upsert(
+          {
+            user_id: user.id,
+            topics,
+            errors,
+            updated_at: nowIso
+          },
+          { onConflict: 'user_id' }
+        );
         if (error) throw error;
       } catch (err: any) {
         console.error('Erro ao salvar no Supabase:', err);
@@ -339,7 +369,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       } finally {
         setIsSyncing(false);
       }
-    }, 1200);
+    }, 300);
 
     return () => clearTimeout(timeout);
   }, [topics, errors, user]);
@@ -657,6 +687,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (idx === -1) return prev;
 
       let targetIdx = -1;
+      let nextVisibleOrder: string[] | null = null;
+
       if (visibleIds && visibleIds.length > 1) {
         const visiblePos = visibleIds.indexOf(topicId);
         if (visiblePos === -1) return prev;
@@ -664,17 +696,36 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (targetVisiblePos < 0 || targetVisiblePos >= visibleIds.length) return prev;
         const neighborId = visibleIds[targetVisiblePos];
         targetIdx = prev.findIndex(t => t.id === neighborId);
+
+        nextVisibleOrder = [...visibleIds];
+        const tempId = nextVisibleOrder[visiblePos];
+        nextVisibleOrder[visiblePos] = nextVisibleOrder[targetVisiblePos];
+        nextVisibleOrder[targetVisiblePos] = tempId;
       } else {
         targetIdx = direction === 'up' ? idx - 1 : idx + 1;
       }
 
       if (targetIdx < 0 || targetIdx >= prev.length) return prev;
 
+      const orderMap = nextVisibleOrder
+        ? new Map(nextVisibleOrder.map((id, orderIdx) => [id, orderIdx]))
+        : null;
+
       const newTopics = [...prev];
       const temp = newTopics[idx];
       newTopics[idx] = newTopics[targetIdx];
       newTopics[targetIdx] = temp;
-      return newTopics;
+
+      const finalTopics = orderMap
+        ? newTopics.map(t => (orderMap.has(t.id) ? { ...t, ordemFila: orderMap.get(t.id) } : t))
+        : newTopics;
+
+      try {
+        localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify(finalTopics));
+        localStorage.setItem(STORAGE_KEY_UPDATED_AT, new Date().toISOString());
+      } catch {}
+
+      return finalTopics;
     });
   };
 

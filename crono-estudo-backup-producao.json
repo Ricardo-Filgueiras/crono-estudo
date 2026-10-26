@@ -1,5 +1,5 @@
 {
-  "exportedAt": "2026-10-26T15:10:00.695Z",
+  "exportedAt": "2026-10-26T15:21:26.358Z",
   "version": "4.1-learning-hierarchy",
   "totalTopics": 156,
   "totalErrors": 2,
@@ -512,13 +512,13 @@
     {
       "id": "topic-4",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 1: O Som e a Escrita • Fonética e Fonologia",
+      "macrotema": "Nível 1: Os Tijolos (Fonética e Ortografia)",
       "microtopico": "Fonética, Divisão Silábica e Sílaba Tônica (Letras vs. Fonemas, Vogal Núcleo, Dígrafos e Encontros)",
       "peso": "Peso 1 (Gerais)",
       "status": "Dominado",
       "dataEstudo": "2026-09-25",
       "faseRecomendada": "⭐ Conteúdo Dominado! Letras vs Fonemas, Vogal centro da sílaba, Dígrafos, Ditongos/Hiatos e Tonicidade (Oxítona, Paroxítona, Proparoxítona).",
-      "anotacoes": "Dominado: Letras vs. Fonemas (símbolo vs som); Vogal como centro (sem sílaba sem vogal); Dígrafos vs Encontros consonantais; Ditongos (mesma sílaba) vs Hiatos (separam). Tonicidade: Oxítona, Paroxítona, Proparoxítona.",
+      "anotacoes": "Dominado: Fonemas e Letras (ex: 'am' em tampa = dígrafo, único som) → Encontros Vocálicos (Ditongos/Hiatos) e Consonantais → Separação Silábica → Tonicidade (Oxítona, Paroxítona, Proparoxítona).",
       "origem": [
         "Português Base",
         "Concurso"
@@ -528,13 +528,13 @@
     {
       "id": "topic-5",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 1: O Som e a Escrita • Ortografia e Acentuação",
+      "macrotema": "Nível 1: Os Tijolos (Fonética e Ortografia)",
       "microtopico": "Ortografia Oficial e Regras de Acentuação Gráfica (Oxítonas, Paroxítonas, Proparoxítonas e Hiatos)",
       "peso": "Peso 1 (Gerais)",
       "status": "Dominado",
       "dataEstudo": "2026-09-25",
-      "faseRecomendada": "⭐ Conteúdo Dominado! Regra do Espelho, Proparoxítonas e Hiatos tônicos.",
-      "anotacoes": "Dominado: Acentuação cruza tonicidade e terminação. Regra do Espelho: Oxítonas(-a,-e,-o,-em/ens acentuam; paroxítonas não); Paroxítonas(-i,-u,-l,-n,-r,-x,ditongos acentuam). Todas proparoxítonas acentuam. Hiato tônico (i/u sozinhos ou c/ s).",
+      "faseRecomendada": "⭐ Conteúdo Dominado! Ponte para o Nível 2: A ausência de um acento muda o sentido e a classe gramatical (sábia [adjetivo] vs sabia [verbo]).",
+      "anotacoes": "Dominado: Regra do Espelho, Proparoxítonas e Hiatos tônicos. Ponte para o Nível 2: O som e a escrita garantem a identidade da palavra (ex: sábia = adjetivo vs sabia = verbo).",
       "origem": [
         "Português Base",
         "Concurso"
@@ -547,13 +547,13 @@
     {
       "id": "topic-6",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
+      "macrotema": "Nível 2: A Função das Peças (Morfologia)",
       "microtopico": "Classes de Palavras I: Substantivo, Adjetivo, Artigo e Numeral",
       "peso": "Peso 1 (Gerais)",
       "status": "Dominado",
       "dataEstudo": "2026-10-23",
-      "faseRecomendada": "⭐ Conteúdo Dominado! Ponte da Tonicidade para Morfologia (sá-bi-a vs sa-bi-a vs sa-bi-á) e 10 classes.",
-      "anotacoes": "Dominado: 10 classes (6 variáveis: Substantivo, Artigo, Adjetivo, Numeral, Pronome, Verbo; 4 invariáveis: Advérbio, Preposição, Conjunção, Interjeição). Substantivos (4 pares opostos + coletivo), Adjetivo (caracteriza), Advérbio (modifica verbo/adj/adv).",
+      "faseRecomendada": "⭐ Conteúdo Dominado! Os nomes e suas qualidades (base para identificar textos descritivos e funções nominais).",
+      "anotacoes": "Dominado: 10 classes (6 variáveis: Substantivo, Artigo, Adjetivo, Numeral, Pronome, Verbo; 4 invariáveis: Advérbio, Preposição, Conjunção, Interjeição). Substantivos (os nomes) e Adjetivos (suas qualidades).",
       "origem": [
         "Português Base",
         "Concurso"
@@ -564,33 +564,15 @@
       "tempoEstimadoMinutos": 30
     },
     {
-      "id": "topic-7",
+      "id": "topic-8",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
-      "microtopico": "Classes de Palavras II: Pronomes (Classificação e Colocação Pronominal)",
+      "macrotema": "Nível 2: A Função das Peças (Morfologia)",
+      "microtopico": "Classes de Palavras III: Verbos (Tempos, Modos, Vozes e Correlação Verbal)",
       "peso": "Peso 1 (Gerais)",
       "status": "Em Andamento",
       "agendadoPara": "2026-10-26",
-      "faseRecomendada": "🎯 Meta Imediata (Nível 2 - Morfologia): Pré-requisito crucial para Coesão Referencial e Sintaxe (pronomes relativos e oblíquos).",
-      "anotacoes": "Meta imediata reordenada: dominar pronomes (pessoais, relativos, demonstrativos) antes de avançar para Sintaxe e Coesão Textual.",
-      "origem": [
-        "Português Base",
-        "Concurso"
-      ],
-      "prerequisitos": [
-        "topic-6"
-      ],
-      "tempoEstimadoMinutos": 35
-    },
-    {
-      "id": "topic-8",
-      "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
-      "microtopico": "Classes de Palavras III: Verbos (Tempos, Modos, Vozes e Correlação Verbal)",
-      "peso": "Peso 1 (Gerais)",
-      "status": "Pendente",
-      "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): O coração da língua portuguesa. Essencial para destravar toda a Sintaxe.",
-      "anotacoes": "Próximo passo imediato da Morfologia junto com Pronomes. É impossível analisar uma oração sem primeiro identificar o verbo, seu tempo e seu modo.",
+      "faseRecomendada": "🎯 Meta Imediata (Nível 2 - Morfologia): O verbo é o motor de qualquer frase (ações, estado, tempos e modos).",
+      "anotacoes": "Ponte para o Nível 3: O verbo é o motor da frase. É impossível analisar sujeito, predicado ou transitividade sem antes dominar ações, estados, tempos e modos verbais.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -601,14 +583,33 @@
       "tempoEstimadoMinutos": 45
     },
     {
+      "id": "topic-7",
+      "disciplina": "Língua Portuguesa",
+      "macrotema": "Nível 2: A Função das Peças (Morfologia)",
+      "microtopico": "Classes de Palavras II: Pronomes (Classificação e Colocação Pronominal)",
+      "peso": "Peso 1 (Gerais)",
+      "status": "Em Andamento",
+      "agendadoPara": "2026-10-26",
+      "faseRecomendada": "🎯 Meta Imediata (Nível 2 - Morfologia): Palavras que substituem os nomes. Entender pronomes relativos (que, o qual) destrava Subordinação e Coesão Referencial.",
+      "anotacoes": "Ponte para os Níveis 3 e 4: Entender o que é um pronome relativo (que, o qual) aqui no Nível 2 permite compreender como ele introduz uma nova oração no Nível 3 e evita repetição de palavras na Coesão Referencial (Nível 4).",
+      "origem": [
+        "Português Base",
+        "Concurso"
+      ],
+      "prerequisitos": [
+        "topic-6"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
       "id": "topic-9",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
+      "macrotema": "Nível 2: A Função das Peças (Morfologia)",
       "microtopico": "Classes de Palavras IV: Conjunções Coordenativas e Subordinativas (Valores Semânticos)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): O cimento do texto. Valores semânticos (causa, consequência, oposição).",
-      "anotacoes": "O cimento do texto. Carregam os valores semânticos essenciais para Período Composto, Coesão Sequencial e Interpretação de Texto.",
+      "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): Os conectores de ideias. Passaporte direto entre a Morfologia e a Interpretação de Textos.",
+      "anotacoes": "Ponte para o Nível 3: Dominar conjunções e preposições nesta fase é o que impede que a análise sintática e a interpretação pareçam adivinhação. Separar minutos diários para dominar famílias de conectores.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -621,12 +622,12 @@
     {
       "id": "topic-10",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe do Período Simples",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe)",
       "microtopico": "Termos Essenciais: Sujeito e Predicado",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando domínio de Verbos (Nível 2).",
-      "anotacoes": "Aguardando teoria. Só se acha o sujeito perguntando ao verbo.",
+      "faseRecomendada": "⏳ Pendente - Passo 1 e 2 da Sintaxe: Achar o Verbo → Identificar Sujeito e Predicado.",
+      "anotacoes": "A estrutura em movimento: 1º Achar o Verbo (motor da frase) → 2º Perguntar ao verbo para identificar Sujeito e Predicado.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -640,12 +641,12 @@
     {
       "id": "topic-11",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe do Período Simples",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe)",
       "microtopico": "Termos Integrantes: Objeto Direto/Indireto, Complemento Nominal e Agente da Passiva",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando Termos Essenciais (Sujeito e Predicado).",
-      "anotacoes": "Aguardando teoria. Requer domínio de transitividade verbal e preposições.",
+      "faseRecomendada": "⏳ Pendente - Passo 3 e 4 da Sintaxe: Analisar a Transitividade → Mapear os Complementos.",
+      "anotacoes": "Analisar a transitividade (o verbo precisa de complemento?) → Mapear Objeto Direto, Objeto Indireto, Complemento Nominal e Agente da Passiva.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -658,12 +659,12 @@
     {
       "id": "topic-12",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe do Período Simples",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe)",
       "microtopico": "Termos Acessórios: Adjunto Adnominal, Adverbial, Aposto e Vocativo",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
       "faseRecomendada": "⏳ Pendente - Aguardando Termos Essenciais (Sujeito e Predicado).",
-      "anotacoes": "Aguardando teoria.",
+      "anotacoes": "Aguardando teoria. Termos que caracterizam, circunstanciam ou explicam os núcleos da oração.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -676,12 +677,12 @@
     {
       "id": "topic-13",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe do Período Composto",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe)",
       "microtopico": "Coordenação: Orações Coordenadas Sindéticas e Assindéticas",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando Conjunções e Termos Essenciais.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "⏳ Pendente - Período Composto: Amarração de orações independentes via conjunções coordenativas.",
+      "anotacoes": "Aguardando teoria. Aplicação das conjunções aditivas, adversativas, alternativas, conclusivas e explicativas no período composto.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -695,12 +696,12 @@
     {
       "id": "topic-14",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe do Período Composto",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe)",
       "microtopico": "Subordinação I: Orações Subordinadas Substantivas e Adjetivas",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando Pronomes, Conjunções e Sintaxe do Período Simples.",
-      "anotacoes": "Aguardando teoria. Requer domínio de pronomes relativos (adjetivas) e funções sintáticas substantivas.",
+      "faseRecomendada": "⏳ Pendente - Como o pronome relativo (que, o qual) e a conjunção integrante introduzem novas orações.",
+      "anotacoes": "Aplicação direta dos pronomes relativos (Nível 2) introduzindo orações adjetivas e das funções sintáticas do período simples em forma de oração.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -716,12 +717,12 @@
     {
       "id": "topic-15",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe do Período Composto",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe)",
       "microtopico": "Subordinação II: Orações Subordinadas Adverbiais (Causais, Concessivas etc.)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando Conjunções e Termos Acessórios.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "⏳ Pendente - Ponte para o Nível 4: Usar conectores (ex: 'embora') para criar relações lógicas entre frases.",
+      "anotacoes": "Ponte para o Nível 4: É aqui que você pega a conjunção 'embora' (aprendida no Nível 2) e usa para criar uma oração subordinada concessiva, gerando a lógica e fluidez do texto longo.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -736,7 +737,7 @@
     {
       "id": "topic-16",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Pontuação",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Pontuação)",
       "microtopico": "Emprego da Vírgula e Demais Sinais de Pontuação em Texto",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -758,7 +759,7 @@
     {
       "id": "topic-17",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Concordância",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Concordância)",
       "microtopico": "Concordância Verbal (Regras Gerais, Sujeito Composto, Partícula SE, Haver/Fazer)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -779,7 +780,7 @@
     {
       "id": "topic-18",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Concordância",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Concordância)",
       "microtopico": "Concordância Nominal (Adjetivos, Expressões Especiais)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -799,7 +800,7 @@
     {
       "id": "topic-19",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Regência",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Regência)",
       "microtopico": "Regência Verbal e Pronomes Relativos (Verbos Típicos FCC)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -819,7 +820,7 @@
     {
       "id": "topic-20",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Regência",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Regência)",
       "microtopico": "Regência Nominal e Preposições",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -838,7 +839,7 @@
     {
       "id": "topic-21",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Crase",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Crase)",
       "microtopico": "Crase: Regras Gerais e Casos Proibitivos",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -857,7 +858,7 @@
     {
       "id": "topic-22",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 3: Sintaxe • Crase",
+      "macrotema": "Nível 3: A Estrutura em Movimento (Sintaxe • Crase)",
       "microtopico": "Crase: Casos Facultativos e Casos Especiais",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
@@ -875,12 +876,12 @@
     {
       "id": "topic-2",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+      "macrotema": "Nível 4: A Obra Completa (Texto, Coesão e Tipologia)",
       "microtopico": "Coesão Textual (Referencial, Sequencial e Marcadores Discursivos)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente (Nível 4 - Texto) - Requer Pronomes e Conjunções (Nível 2).",
-      "anotacoes": "A coesão referencial é feita quase inteiramente por Pronomes (Nível 2), e a sequencial por Conjunções (Nível 2).",
+      "faseRecomendada": "⏳ Pendente (Nível 4 - A Obra Completa) - Requer Pronomes e Conjunções (Nível 2).",
+      "anotacoes": "Coesão Referencial (usar pronomes para não repetir palavras) → Coesão Sequencial (usar conjunções para o texto avançar).",
       "origem": [
         "Português Base",
         "Concurso"
@@ -894,12 +895,12 @@
     {
       "id": "topic-3",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+      "macrotema": "Nível 4: A Obra Completa (Texto, Coesão e Tipologia)",
       "microtopico": "Coerência, Semântica e Figuras de Linguagem da Banca FCC",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente (Nível 4 - Texto) - Requer Coesão e Sintaxe (Nível 3).",
-      "anotacoes": "Depende de entender a Coesão Textual e as relações lógicas construídas na Sintaxe (Nível 3).",
+      "faseRecomendada": "⏳ Pendente (Nível 4 - A Obra Completa) - Requer Coesão e Sintaxe do Período Composto (Nível 3).",
+      "anotacoes": "Depende da Coesão Textual e da amarração lógica entre frases construída nas orações coordenadas e subordinadas (Nível 3).",
       "origem": [
         "Português Base",
         "Concurso"
@@ -907,19 +908,20 @@
       "prerequisitos": [
         "topic-2",
         "topic-10",
-        "topic-13"
+        "topic-13",
+        "topic-15"
       ],
       "tempoEstimadoMinutos": 35
     },
     {
       "id": "topic-1",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+      "macrotema": "Nível 4: A Obra Completa (Texto, Coesão e Tipologia)",
       "microtopico": "Tipologia e Gêneros Textuais (Narrativo, Descritivo, Dissertativo/Argumentativo)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pausado (Nível 4 - A Cereja do Bolo): Destravar Morfologia (Pronomes/Verbos), Sintaxe e Coesão antes.",
-      "anotacoes": "Meta pausada temporariamente para respeitar a hierarquia de aprendizagem. Identificar tipologia textual depende de observar a predominância de verbos de ação ou de estado, adjetivos, sintaxe e coesão/coerência (Níveis 2 e 3).",
+      "faseRecomendada": "⏳ Pausado (Nível 4 - Topo da Pirâmide): Depende de toda a linhagem anterior (Morfologia, Sintaxe e Coesão).",
+      "anotacoes": "A Linhagem Completa: Você só reconhece um texto Descritivo pela abundância de adjetivos (Nível 2) e verbos de estado (Níveis 2 e 3); e só domina um texto Dissertativo-Argumentativo acompanhando as orações subordinadas (Nível 3) amarradas por conjunções conclusivas/adversativas e pronomes (Nível 2).",
       "origem": [
         "Português Base",
         "Concurso"
@@ -927,7 +929,10 @@
       "prerequisitos": [
         "topic-6",
         "topic-8",
+        "topic-7",
+        "topic-9",
         "topic-10",
+        "topic-15",
         "topic-2",
         "topic-3"
       ],

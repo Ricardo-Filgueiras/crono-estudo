@@ -9,7 +9,12 @@ import {
   BookmarkCheck,
   Lock,
   GitFork,
-  ExternalLink
+  ExternalLink,
+  Layers,
+  ChevronDown,
+  ChevronUp,
+  Compass,
+  Crosshair
 } from 'lucide-react';
 
 export const CurriculumView: React.FC = () => {
@@ -28,6 +33,7 @@ export const CurriculumView: React.FC = () => {
   const [selectedTag, setSelectedTag] = useState<string>('TODAS');
   const [selectedStatus, setSelectedStatus] = useState<string>('TODOS');
   const [selectedDisciplina, setSelectedDisciplina] = useState<string>('TODAS');
+  const [showPortugueseLineageMap, setShowPortugueseLineageMap] = useState<boolean>(true);
 
   // Unique disciplines filtered by selected Trilha
   const disciplinas = useMemo(() => {
@@ -185,6 +191,144 @@ export const CurriculumView: React.FC = () => {
         </div>
 
       </section>
+
+      {/* Mapa da Linhagem de Aprendizagem de Língua Portuguesa */}
+      {(selectedTag === 'Português Base' || selectedDisciplina === 'Língua Portuguesa') && (
+        <section
+          aria-labelledby="pt-lineage-heading"
+          className="bg-slate-900/95 border border-blue-500/30 rounded-3xl p-4 sm:p-5 shadow-xl space-y-4"
+        >
+          <div className="flex items-start sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 rounded-2xl bg-blue-500/15 text-blue-300 border border-blue-500/30">
+                <Layers className="w-5 h-5" aria-hidden="true" />
+              </div>
+              <div>
+                <h2 id="pt-lineage-heading" className="text-sm sm:text-base font-bold text-white">
+                  Fundação do Prédio: Linhagem de Aprendizagem de Língua Portuguesa
+                </h2>
+                <p className="text-xs text-slate-300">
+                  Do micro ao macro (Adição → Multiplicação → Potenciação): como um nível deságua obrigatoriamente no outro até a Tipologia Textual.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowPortugueseLineageMap(prev => !prev)}
+              aria-expanded={showPortugueseLineageMap}
+              className="px-3 py-1.5 rounded-xl text-xs font-medium bg-slate-950 text-slate-200 border border-slate-800 hover:bg-slate-800 transition flex items-center gap-1.5 flex-shrink-0"
+            >
+              <span>{showPortugueseLineageMap ? 'Ocultar Mapa' : 'Ver Mapa'}</span>
+              {showPortugueseLineageMap ? (
+                <ChevronUp className="w-4 h-4" aria-hidden="true" />
+              ) : (
+                <ChevronDown className="w-4 h-4" aria-hidden="true" />
+              )}
+            </button>
+          </div>
+
+          {showPortugueseLineageMap && (
+            <div className="space-y-4 pt-2 border-t border-slate-800/80">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3">
+                {/* Nível 1 */}
+                <div className="bg-slate-950/80 border border-amber-500/30 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-amber-300 bg-amber-500/15 px-2 py-0.5 rounded-md border border-amber-500/30">
+                      Nível 1 • Os Tijolos
+                    </span>
+                    <span className="text-[11px] text-amber-300 font-semibold">⭐ Dominado</span>
+                  </div>
+                  <h3 className="text-xs font-bold text-white">Fonética e Ortografia</h3>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    <strong>Trilha:</strong> Fonemas e Letras (ex.: <em>&quot;am&quot;</em> em <em>tampa</em> = dígrafo) → Encontros → Separação Silábica → Tonicidade → Regras de Acentuação.
+                  </p>
+                  <div className="text-[11px] text-amber-200/90 bg-amber-950/30 border border-amber-500/20 rounded-xl p-2">
+                    <strong>Ponte p/ Nível 2:</strong> O som e a escrita garantem a identidade da palavra. Sem acento muda o sentido e a classe (<em>sábia</em> [adjetivo] vs. <em>sabia</em> [verbo]).
+                  </div>
+                </div>
+
+                {/* Nível 2 */}
+                <div className="bg-slate-950/80 border border-sky-500/40 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-sky-300 bg-sky-500/15 px-2 py-0.5 rounded-md border border-sky-500/30">
+                      Nível 2 • As Peças
+                    </span>
+                    <span className="text-[11px] text-sky-300 font-semibold">🚀 Foco Atual</span>
+                  </div>
+                  <h3 className="text-xs font-bold text-white">A Função das Peças (Morfologia)</h3>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    <strong>Trilha:</strong> Substantivos e Adjetivos → Verbos (ações, tempos e modos) → Pronomes (substituem nomes) → Conjunções e Preposições (conectores).
+                  </p>
+                  <div className="text-[11px] text-sky-200/90 bg-sky-950/30 border border-sky-500/20 rounded-xl p-2">
+                    <strong>Ponte p/ Nível 3:</strong> O verbo é o motor da frase. Dominar pronomes relativos (<em>que, o qual</em>) e conjunções impede que a análise sintática pareça adivinhação.
+                  </div>
+                </div>
+
+                {/* Nível 3 */}
+                <div className="bg-slate-950/80 border border-indigo-500/30 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-indigo-300 bg-indigo-500/15 px-2 py-0.5 rounded-md border border-indigo-500/30">
+                      Nível 3 • As Vigas
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-semibold">🔒 Aguarda Nível 2</span>
+                  </div>
+                  <h3 className="text-xs font-bold text-white">A Estrutura em Movimento (Sintaxe)</h3>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    <strong>Trilha:</strong> Achar o Verbo → Sujeito e Predicado → Transitividade → Complementos (OD/OI) → Período Composto (Coordenadas e Subordinadas).
+                  </p>
+                  <div className="text-[11px] text-indigo-200/90 bg-indigo-950/30 border border-indigo-500/20 rounded-xl p-2">
+                    <strong>Ponte p/ Nível 4:</strong> É a multiplicação acontecendo: usar a conjunção <em>&quot;embora&quot;</em> (Nível 2) para criar uma oração subordinada concessiva que dá fluidez ao texto.
+                  </div>
+                </div>
+
+                {/* Nível 4 */}
+                <div className="bg-slate-950/80 border border-emerald-500/30 rounded-2xl p-3.5 space-y-2">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-300 bg-emerald-500/15 px-2 py-0.5 rounded-md border border-emerald-500/30">
+                      Nível 4 • O Telhado
+                    </span>
+                    <span className="text-[11px] text-slate-400 font-semibold">⏸️ Topo da Pirâmide</span>
+                  </div>
+                  <h3 className="text-xs font-bold text-white">A Obra Completa (Texto e Tipologia)</h3>
+                  <p className="text-[11px] text-slate-300 leading-relaxed">
+                    <strong>Trilha:</strong> Coesão Referencial (pronomes) → Coesão Sequencial (conjunções) → Semântica e Figuras → Tipologia Textual.
+                  </p>
+                  <div className="text-[11px] text-emerald-200/90 bg-emerald-950/30 border border-emerald-500/20 rounded-xl p-2">
+                    <strong>Linhagem Completa:</strong> Texto <em>Descritivo</em> = abundância de adjetivos e verbos de estado; <em>Dissertativo</em> = orações subordinadas amarradas por conjunções e pronomes.
+                  </div>
+                </div>
+              </div>
+
+              {/* Estratégias Práticas de Rotina */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div className="bg-slate-950/90 border border-rose-500/25 rounded-2xl p-3.5 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-rose-500/15 text-rose-300 border border-rose-500/30 flex-shrink-0">
+                    <Crosshair className="w-4 h-4" aria-hidden="true" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-white">1. Auditoria Cirúrgica de Erros (Caminho Inverso)</h4>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Ao errar uma questão de interpretação/tipologia, faça o caminho inverso no <strong>Caderno de Erros</strong>: a falha foi na intenção geral do autor (Nível 4), na conexão sintática entre duas frases (Nível 3), no desconhecimento de uma conjunção/pronome (Nível 2) ou em leitura precipitada (Nível 1)? Anote apenas o gatilho exato.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="bg-slate-950/90 border border-emerald-500/25 rounded-2xl p-3.5 flex items-start gap-3">
+                  <div className="p-2 rounded-xl bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex-shrink-0">
+                    <Compass className="w-4 h-4" aria-hidden="true" />
+                  </div>
+                  <div className="space-y-1">
+                    <h4 className="text-xs font-bold text-white">2. Domínio Progressivo de Conectores (Google Keep)</h4>
+                    <p className="text-[11px] text-slate-300 leading-relaxed">
+                      Separe minutos diários para dominar famílias específicas de <strong>pronomes</strong> e <strong>conjunções</strong> (causais, concessivas, adversativas, conclusivas). Eles são o verdadeiro passaporte entre a Morfologia (Nível 2) e a Interpretação de Textos (Nível 4).
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+        </section>
+      )}
 
       {/* Topics list */}
       <section aria-label="Lista de Tópicos do Edital" className="space-y-3">

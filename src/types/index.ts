@@ -34,6 +34,7 @@ export interface Topic {
   anotacoes?: string;
   proximaRevisao?: string; // YYYY-MM-DD
   agendadoPara?: string; // YYYY-MM-DD
+  ordemFila?: number;    // Ordem explícita na fila de estudo do dia
   prioridade?: 'baixa' | 'media' | 'alta';
   linkMaterial?: string; // Google Drive / Keep / Livro
 

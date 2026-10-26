@@ -11,13 +11,16 @@ import {
   CheckCircle, 
   Sparkles, 
   X,
-  Target
+  Target,
+  Coffee,
+  FastForward
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudy, getTodayDateString } from '../context/StudyContext';
 
 interface StudyTimerProps {
-  currentTopicTitle?: string;
+  onRunningChange?: (running: boolean) => void;
+  autoStartTrigger?: number;
 }
 
 export const formatStudyDuration = (totalSeconds?: number, fallbackMinutes?: number): string => {
@@ -35,7 +38,9 @@ export const formatStudyDuration = (totalSeconds?: number, fallbackMinutes?: num
   return `${remSecs}s`;
 };
 
-export const StudyTimer: React.FC<StudyTimerProps> = () => {
+type TimerPhase = 'study' | 'block_done' | 'break' | 'break_done';
+
+export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoStartTrigger }) => {
   const { 
     activeTimerTarget, 
     setActiveTimerTarget, 
@@ -46,45 +51,66 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
     englishHabits
   } = useStudy();
 
-  const [mode, setMode] = useState<'pomodoro' | 'free' | 'stopwatch' | 'custom'>('pomodoro');
+  const [mode, setMode] = useState<'20m' | '25m' | '30m' | 'stopwatch' | 'custom'>('25m');
+  const [studyDurationMinutes, setStudyDurationMinutes] = useState(25);
   const [timeLeft, setTimeLeft] = useState(25 * 60); // In seconds
   const [stopwatchSeconds, setStopwatchSeconds] = useState(0); // For progressive stopwatch
-  const [customMinutes, setCustomMinutes] = useState(20);
+  const [customMinutes, setCustomMinutes] = useState(15);
   const [isRunning, setIsRunning] = useState(false);
   const [isZenMode, setIsZenMode] = useState(false);
   const [countDirection, setCountDirection] = useState<'down' | 'up'>('down');
-  const [sessionCompleted, setSessionCompleted] = useState(false);
+  const [phase, setPhase] = useState<TimerPhase>('study');
+  const [breakMinutes, setBreakMinutes] = useState(5);
 
   const lastTargetIdRef = useRef<string | null>(null);
 
-  // Sync preset duration when user clicks "Focar" on a new item with estimatedMinutes
+  // Notify parent when running state changes (for anti-distraction mode)
+  useEffect(() => {
+    onRunningChange?.(isRunning);
+  }, [isRunning, onRunningChange]);
+
+  // When user clicks "Focar" on a card, bind duration and start immediately
   useEffect(() => {
     if (!activeTimerTarget) {
       lastTargetIdRef.current = null;
       return;
     }
-    if (lastTargetIdRef.current !== activeTimerTarget.id) {
+
+    const isNewTarget = lastTargetIdRef.current !== activeTimerTarget.id;
+    if (isNewTarget) {
       lastTargetIdRef.current = activeTimerTarget.id;
-      setSessionCompleted(false);
-      if (!isRunning && activeTimerTarget.estimatedMinutes) {
-        const est = activeTimerTarget.estimatedMinutes;
-        if (est === 25) {
-          setMode('pomodoro');
-          setTimeLeft(25 * 60);
-          setCountDirection('down');
-        } else if (est === 45) {
-          setMode('free');
-          setTimeLeft(45 * 60);
-          setCountDirection('down');
-        } else {
-          setMode('custom');
-          setCustomMinutes(est);
-          setTimeLeft(est * 60);
-          setCountDirection('down');
-        }
+      setPhase('study');
+
+      const est = activeTimerTarget.estimatedMinutes || 25;
+      if (est === 20) {
+        setMode('20m');
+        setStudyDurationMinutes(20);
+        setTimeLeft(20 * 60);
+        setCountDirection('down');
+      } else if (est === 25) {
+        setMode('25m');
+        setStudyDurationMinutes(25);
+        setTimeLeft(25 * 60);
+        setCountDirection('down');
+      } else if (est === 30) {
+        setMode('30m');
+        setStudyDurationMinutes(30);
+        setTimeLeft(30 * 60);
+        setCountDirection('down');
+      } else {
+        setMode('custom');
+        setCustomMinutes(est);
+        setStudyDurationMinutes(est);
+        setTimeLeft(est * 60);
+        setCountDirection('down');
       }
     }
-  }, [activeTimerTarget, isRunning]);
+
+    if (autoStartTrigger && autoStartTrigger > 0) {
+      setPhase('study');
+      setIsRunning(true);
+    }
+  }, [activeTimerTarget, autoStartTrigger]);
 
   // ESC key to exit Zen mode
   useEffect(() => {
@@ -97,27 +123,31 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isZenMode]);
 
-  // Unified 1-second tick for timer + automatic accounting to activeTimerTarget
+  // Unified 1-second tick for study & break phases
   useEffect(() => {
     if (!isRunning) return;
 
     const timer = setInterval(() => {
-      // Account 1 second to the linked item in real time
-      if (activeTimerTarget) {
+      // Only account study time during the 'study' phase
+      if (phase === 'study' && activeTimerTarget) {
         recordStudySeconds(activeTimerTarget, 1);
       }
 
-      if (mode === 'stopwatch' || countDirection === 'up') {
+      if (phase === 'study' && (mode === 'stopwatch' || countDirection === 'up')) {
         setStopwatchSeconds(prev => prev + 1);
       } else {
         setTimeLeft(prev => {
           if (prev <= 1) {
             setIsRunning(false);
-            setSessionCompleted(true);
-            try {
-              confetti({ particleCount: 70, spread: 60, origin: { y: 0.75 } });
-            } catch {
-              // noop
+            if (phase === 'study') {
+              setPhase('block_done');
+              try {
+                confetti({ particleCount: 70, spread: 60, origin: { y: 0.75 } });
+              } catch {
+                // noop
+              }
+            } else if (phase === 'break') {
+              setPhase('break_done');
             }
             return 0;
           }
@@ -127,48 +157,77 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, mode, countDirection, activeTimerTarget, recordStudySeconds]);
+  }, [isRunning, mode, countDirection, phase, activeTimerTarget, recordStudySeconds]);
 
-  const switchMode = (newMode: 'pomodoro' | 'free' | 'stopwatch' | 'custom', customMin?: number) => {
-    setMode(newMode);
+  const selectPresetMinutes = (mins: 20 | 25 | 30) => {
+    setPhase('study');
     setIsRunning(false);
-    setSessionCompleted(false);
-    if (newMode === 'pomodoro') {
-      setTimeLeft(25 * 60);
-      setCountDirection('down');
-    }
-    if (newMode === 'free') {
-      setTimeLeft(45 * 60);
-      setCountDirection('down');
-    }
-    if (newMode === 'stopwatch') {
-      setStopwatchSeconds(0);
-      setCountDirection('up');
-    }
-    if (newMode === 'custom') {
-      const mins = customMin ?? customMinutes;
-      setTimeLeft(mins * 60);
-      setCountDirection('down');
-    }
+    setMode(`${mins}m` as '20m' | '25m' | '30m');
+    setStudyDurationMinutes(mins);
+    setTimeLeft(mins * 60);
+    setCountDirection('down');
+  };
+
+  const selectStopwatchMode = () => {
+    setPhase('study');
+    setIsRunning(false);
+    setMode('stopwatch');
+    setStopwatchSeconds(0);
+    setCountDirection('up');
+  };
+
+  const selectCustomMode = (mins?: number) => {
+    const val = mins ?? customMinutes;
+    setPhase('study');
+    setIsRunning(false);
+    setMode('custom');
+    setCustomMinutes(val);
+    setStudyDurationMinutes(val);
+    setTimeLeft(val * 60);
+    setCountDirection('down');
   };
 
   const resetTimer = () => {
     setIsRunning(false);
-    setSessionCompleted(false);
-    if (mode === 'pomodoro') setTimeLeft(25 * 60);
-    if (mode === 'free') setTimeLeft(45 * 60);
-    if (mode === 'stopwatch') setStopwatchSeconds(0);
-    if (mode === 'custom') setTimeLeft(customMinutes * 60);
+    if (phase === 'break' || phase === 'break_done') {
+      setPhase('break');
+      setTimeLeft(breakMinutes * 60);
+      return;
+    }
+    setPhase('study');
+    if (mode === 'stopwatch') {
+      setStopwatchSeconds(0);
+    } else {
+      setTimeLeft(studyDurationMinutes * 60);
+    }
     setStopwatchSeconds(0);
+  };
+
+  const startBreak = (mins: 5 | 10) => {
+    setBreakMinutes(mins);
+    setPhase('break');
+    setCountDirection('down');
+    setTimeLeft(mins * 60);
+    setIsRunning(true);
+  };
+
+  const resumeStudyBlock = () => {
+    setPhase('study');
+    setCountDirection(mode === 'stopwatch' ? 'up' : 'down');
+    if (mode !== 'stopwatch') {
+      setTimeLeft(studyDurationMinutes * 60);
+    }
+    setIsRunning(true);
   };
 
   const handleCustomMinuteChange = (mins: number) => {
     const val = Math.max(1, Math.min(300, mins));
     setCustomMinutes(val);
+    setStudyDurationMinutes(val);
     if (mode === 'custom') {
+      setPhase('study');
       setTimeLeft(val * 60);
       setIsRunning(false);
-      setSessionCompleted(false);
     }
   };
 
@@ -183,8 +242,11 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
     } else if (activeTimerTarget.type === 'topic') {
       quickCompleteTopic(activeTimerTarget.id, activeTimerTarget.dateStr || getTodayDateString());
     }
-    setSessionCompleted(false);
     setIsRunning(false);
+    setPhase('study');
+    setTimeLeft(studyDurationMinutes * 60);
+    setActiveTimerTarget(null);
+    setIsZenMode(false);
   };
 
   // Get live accumulated time for the currently linked target
@@ -203,7 +265,7 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
   const accumulatedLabel = getLinkedTargetAccumulatedLabel();
 
   // Format display
-  const totalSecs = countDirection === 'up' ? stopwatchSeconds : timeLeft;
+  const totalSecs = phase === 'study' && countDirection === 'up' ? stopwatchSeconds : timeLeft;
   const hours = Math.floor(totalSecs / 3600);
   const minutes = Math.floor((totalSecs % 3600) / 60);
   const seconds = totalSecs % 60;
@@ -212,41 +274,136 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
     ? `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`
     : `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
+  const isBreakPhase = phase === 'break' || phase === 'break_done';
+
+  // Reusable Post-Block / Break Transition Controls
+  const renderTransitionActions = (isFullscreen: boolean) => {
+    if (phase === 'block_done') {
+      return (
+        <div className={`${isFullscreen ? 'max-w-xl mx-auto' : ''} bg-emerald-950/50 border border-emerald-500/40 rounded-2xl p-4 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in`}>
+          <div className="text-xs sm:text-sm text-emerald-100 flex items-center gap-2 text-center sm:text-left">
+            <Sparkles className="w-4 h-4 text-emerald-400 flex-shrink-0" aria-hidden="true" />
+            <span>
+              <strong>Bloco concluído!</strong> Deseja iniciar um intervalo ou concluir o item?
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              onClick={() => startBreak(5)}
+              className="text-xs bg-sky-600 hover:bg-sky-500 text-white font-semibold px-3 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+            >
+              <Coffee className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Intervalo (5m)</span>
+            </button>
+            <button
+              onClick={() => startBreak(10)}
+              className="text-xs bg-slate-800 hover:bg-slate-700 text-sky-300 border border-sky-500/30 font-medium px-3 py-2 rounded-xl transition flex items-center gap-1.5"
+            >
+              <Coffee className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>10m</span>
+            </button>
+            <button
+              onClick={resumeStudyBlock}
+              className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-3 py-2 rounded-xl border border-slate-700 transition"
+            >
+              +1 Bloco ({studyDurationMinutes}m)
+            </button>
+            {activeTimerTarget && (
+              <button
+                onClick={handleCompleteLinkedItem}
+                className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm"
+              >
+                <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Marcar Concluído</span>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    if (phase === 'break' || phase === 'break_done') {
+      return (
+        <div className={`${isFullscreen ? 'max-w-xl mx-auto' : ''} bg-sky-950/40 border border-sky-500/30 rounded-2xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in`}>
+          <div className="text-xs sm:text-sm text-sky-200 flex items-center gap-2">
+            <Coffee className="w-4 h-4 text-sky-400 flex-shrink-0" aria-hidden="true" />
+            <span>
+              {phase === 'break_done'
+                ? '☕ Intervalo finalizado! Pronto para retomar ou já concluiu este tópico?'
+                : `☕ Intervalo de descanso (${breakMinutes}m) em andamento — relaxe a mente.`}
+            </span>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
+            <button
+              onClick={resumeStudyBlock}
+              className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
+            >
+              <FastForward className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Continuar Estudando ({studyDurationMinutes}m)</span>
+            </button>
+            {activeTimerTarget && (
+              <button
+                onClick={handleCompleteLinkedItem}
+                className="text-xs bg-slate-800 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 font-semibold px-3 py-1.5 rounded-xl transition flex items-center gap-1.5"
+              >
+                <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                <span>Marcar Item Concluído</span>
+              </button>
+            )}
+          </div>
+        </div>
+      );
+    }
+
+    return null;
+  };
+
   return (
     <>
-      {/* Zen Fullscreen Modal */}
+      {/* Zen Fullscreen Modal (Ocupa a tela inteira sem distrações) */}
       {isZenMode && (
         <div 
-          className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-between p-8 sm:p-12 animate-fade-in select-none"
+          className="fixed inset-0 z-[100] bg-slate-950 flex flex-col items-center justify-between p-6 sm:p-12 animate-fade-in select-none"
           role="dialog"
           aria-modal="true"
           aria-label="Modo Foco Zen em Tela Cheia"
         >
           {/* Top Bar in Zen Mode */}
           <div className="w-full max-w-3xl flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-widest text-emerald-400 flex items-center gap-2">
-              <Sparkles className="w-4 h-4" aria-hidden="true" />
-              <span>Modo Foco Zen • Contabilização Automática</span>
+            <span className={`text-xs font-semibold uppercase tracking-widest flex items-center gap-2 ${
+              isBreakPhase ? 'text-sky-400' : 'text-emerald-400'
+            }`}>
+              {isBreakPhase ? (
+                <>
+                  <Coffee className="w-4 h-4" aria-hidden="true" />
+                  <span>Intervalo de Descanso • Sem Distrações</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4" aria-hidden="true" />
+                  <span>Modo Foco em Tela Cheia • Imersão Total</span>
+                </>
+              )}
             </span>
             <button
               onClick={() => setIsZenMode(false)}
-              aria-label="Sair do Modo Zen de foco (pressione Escape)"
-              className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 px-3 py-1.5 rounded-xl border border-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+              aria-label="Sair da Tela Cheia (pressione Escape)"
+              className="flex items-center gap-1.5 text-xs text-slate-300 hover:text-white bg-slate-900 hover:bg-slate-800 px-3.5 py-2 rounded-xl border border-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
             >
               <Minimize2 className="w-4 h-4" aria-hidden="true" />
-              <span>Sair do Modo Zen (Esc)</span>
+              <span>Reduzir Tela (Esc)</span>
             </button>
           </div>
 
           {/* Central Big Typography Clock */}
-          <div className="text-center space-y-6">
+          <div className="text-center space-y-6 my-auto">
             <div className="space-y-2">
-              <div className="text-slate-200 text-base sm:text-lg font-bold max-w-lg mx-auto line-clamp-2">
-                {activeTimerTarget ? activeTimerTarget.title : 'Sessão Livre de Estudo (Sem item vinculado)'}
+              <div className="text-slate-100 text-lg sm:text-2xl font-bold max-w-xl mx-auto">
+                {activeTimerTarget ? activeTimerTarget.title : 'Sessão de Foco Pomodoro'}
               </div>
               {activeTimerTarget && accumulatedLabel && (
                 <div className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-300 bg-emerald-500/10 border border-emerald-500/30 px-3 py-1 rounded-full">
-                  <span>⏱️ Tempo acumulado neste item: <strong>{accumulatedLabel}</strong></span>
+                  <span>⏱️ Tempo total investido neste item: <strong>{accumulatedLabel}</strong></span>
                 </div>
               )}
             </div>
@@ -254,36 +411,52 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
             <div 
               role="timer"
               aria-label={`Tempo: ${timeFormatted}`}
-              className="font-mono text-7xl sm:text-9xl font-black text-white tracking-tighter drop-shadow-2xl"
+              className={`font-mono text-7xl sm:text-9xl font-black tracking-tighter drop-shadow-2xl ${
+                isBreakPhase ? 'text-sky-300' : 'text-white'
+              }`}
             >
               {timeFormatted}
             </div>
 
-            {/* Direction toggle */}
-            <div className="inline-flex items-center gap-2 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 text-xs text-slate-300">
-              <span>Contagem:</span>
+            {/* Quick Block Duration Selector & Direction inside Fullscreen */}
+            <div className="flex flex-wrap items-center justify-center gap-2">
+              {([20, 25, 30] as const).map(mins => (
+                <button
+                  key={mins}
+                  onClick={() => selectPresetMinutes(mins)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                    phase === 'study' && mode === `${mins}m`
+                      ? 'bg-emerald-600 text-white border-emerald-500'
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                  }`}
+                >
+                  {mins}m
+                </button>
+              ))}
               <button
                 onClick={() => setCountDirection(countDirection === 'down' ? 'up' : 'down')}
-                aria-label={`Alterar contagem para ${countDirection === 'down' ? 'progressiva' : 'regressiva'}`}
-                className="text-emerald-400 hover:text-emerald-300 font-semibold flex items-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 rounded"
+                className="inline-flex items-center gap-1 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 text-xs text-slate-300 hover:text-white transition"
               >
                 {countDirection === 'down' ? (
                   <>
-                    <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Regressiva (Decrescente)</span>
+                    <ArrowDown className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                    <span>Regressivo</span>
                   </>
                 ) : (
                   <>
-                    <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
-                    <span>Progressiva (Crescente)</span>
+                    <ArrowUp className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                    <span>Progressivo</span>
                   </>
                 )}
               </button>
             </div>
+
+            {/* Transition controls if block or break ended */}
+            {renderTransitionActions(true)}
           </div>
 
           {/* Zen Bottom Controls */}
-          <div className="flex flex-wrap items-center justify-center gap-4">
+          <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4">
             <button
               onClick={() => setIsRunning(!isRunning)}
               aria-label={isRunning ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
@@ -294,76 +467,88 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
               }`}
             >
               {isRunning ? <Pause className="w-5 h-5" aria-hidden="true" /> : <Play className="w-5 h-5 ml-0.5" aria-hidden="true" />}
-              <span>{isRunning ? 'Pausar' : 'Iniciar'}</span>
+              <span>{isRunning ? 'Pausar' : 'Iniciar Foco'}</span>
+            </button>
+
+            <button
+              onClick={resetTimer}
+              aria-label="Reiniciar cronômetro"
+              className="px-4 py-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center gap-2 text-sm font-medium"
+              title="Reiniciar tempo do bloco atual"
+            >
+              <RotateCcw className="w-4 h-4" aria-hidden="true" />
+              <span>Reiniciar</span>
             </button>
 
             {activeTimerTarget && (
               <button
-                onClick={() => {
-                  handleCompleteLinkedItem();
-                  setIsZenMode(false);
-                }}
-                className="px-6 py-3.5 rounded-2xl font-bold text-sm bg-slate-900 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 transition flex items-center gap-2"
+                onClick={handleCompleteLinkedItem}
+                className="px-5 py-3.5 rounded-2xl font-bold text-sm bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/40 transition flex items-center gap-2"
+                title="Marcar item como concluído hoje com 1 clique"
               >
                 <CheckCircle className="w-5 h-5" aria-hidden="true" />
-                <span>Concluir Tarefa e Sair</span>
+                <span>Concluir Item</span>
               </button>
             )}
-
-            <button
-              onClick={resetTimer}
-              aria-label="Zerar cronômetro"
-              className="p-3.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
-              title="Zerar Timer"
-            >
-              <RotateCcw className="w-5 h-5" aria-hidden="true" />
-            </button>
           </div>
         </div>
       )}
 
-      {/* Normal In-page Timer Bar */}
+      {/* In-Page Timer Bar */}
       <section 
-        aria-label="Cronômetro de Estudo" 
-        className={`border rounded-2xl p-4 flex flex-col gap-3 shadow-lg transition ${
-          isRunning 
+        aria-label="Cronômetro de Estudo Pomodoro" 
+        className={`border rounded-2xl p-4 sm:p-5 flex flex-col gap-3.5 shadow-lg transition ${
+          isBreakPhase
+            ? 'bg-sky-950/20 border-sky-500/40 ring-1 ring-sky-500/20'
+            : isRunning 
             ? 'bg-emerald-950/20 border-emerald-500/50 ring-1 ring-emerald-500/20' 
             : activeTimerTarget
-            ? 'bg-slate-900/95 border-emerald-500/30'
+            ? 'bg-slate-900 border-emerald-500/30'
             : 'bg-slate-900/90 border-slate-800/80'
         }`}
       >
         <div className="flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3 w-full md:w-auto">
+          {/* Left: Current Target & Accumulated Time */}
+          <div className="flex items-center gap-3 w-full md:w-auto min-w-0">
             <div 
-              className={`p-2.5 rounded-xl border transition ${
-                isRunning 
+              className={`p-2.5 rounded-xl border transition flex-shrink-0 ${
+                isBreakPhase
+                  ? 'bg-sky-500/20 text-sky-300 border-sky-500/30'
+                  : isRunning 
                   ? 'bg-emerald-500 text-slate-950 border-emerald-400 animate-pulse' 
                   : 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20'
               }`} 
               aria-hidden="true"
             >
-              <Target className="w-5 h-5" />
+              {isBreakPhase ? <Coffee className="w-5 h-5" /> : <Target className="w-5 h-5" />}
             </div>
+
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400 flex flex-wrap items-center gap-2">
                 <span className="flex items-center gap-1">
                   <TimerIcon className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>{countDirection === 'up' ? 'Contador Progressivo' : 'Modo Foco Vinculado'}</span>
+                  <span>
+                    {isBreakPhase
+                      ? `Intervalo (${breakMinutes}m)`
+                      : countDirection === 'up'
+                      ? 'Cronômetro Progressivo'
+                      : 'Pomodoro Regressivo'}
+                  </span>
                 </span>
                 {activeTimerTarget && accumulatedLabel && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
-                    ⏱️ Contabilizado: {accumulatedLabel}
+                    ⏱️ Total investido: {accumulatedLabel}
                   </span>
                 )}
               </div>
-              <div className="text-xs sm:text-sm font-medium text-slate-200 flex items-center gap-2 mt-0.5">
+
+              <div className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2 mt-0.5">
                 <span className="truncate">
                   {activeTimerTarget 
-                    ? `🎯 Focando em: ${activeTimerTarget.title}` 
-                    : 'Clique em "Focar" em uma tarefa abaixo para contabilizar o tempo nela'}
+                    ? activeTimerTarget.title 
+                    : 'Clique em "Focar" em uma tarefa abaixo para iniciar seu bloco'}
                 </span>
-                {activeTimerTarget && (
+                {activeTimerTarget && !isRunning && (
                   <button
                     onClick={() => setActiveTimerTarget(null)}
                     className="text-slate-400 hover:text-white p-0.5 rounded hover:bg-slate-800 flex-shrink-0"
@@ -377,52 +562,41 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2.5 justify-center w-full md:w-auto">
-            {/* Mode pills */}
-            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs" role="group" aria-label="Modos do cronômetro">
+          {/* Right: Block Duration Pills, Digital Clock & Controls */}
+          <div className="flex flex-wrap items-center gap-2.5 justify-center md:justify-end w-full md:w-auto">
+            {/* Pomodoro Block Pills (20m, 25m, 30m, Livre, Manual) */}
+            <div className="flex bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs" role="group" aria-label="Duração do bloco Pomodoro">
+              {([20, 25, 30] as const).map(mins => (
+                <button
+                  key={mins}
+                  onClick={() => selectPresetMinutes(mins)}
+                  aria-pressed={phase === 'study' && mode === `${mins}m`}
+                  className={`px-2.5 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                    phase === 'study' && mode === `${mins}m`
+                      ? 'bg-emerald-600 text-white'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {mins}m
+                </button>
+              ))}
               <button
-                onClick={() => switchMode('custom', 15)}
-                aria-pressed={mode === 'custom' && customMinutes === 15}
-                className={`px-2 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                  mode === 'custom' && customMinutes === 15 ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
-                }`}
-                title="15 minutos (Ideal para Micro-hábito de Inglês)"
-              >
-                15m
-              </button>
-              <button
-                onClick={() => switchMode('pomodoro')}
-                aria-pressed={mode === 'pomodoro'}
-                className={`px-2.5 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                  mode === 'pomodoro' ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                25m
-              </button>
-              <button
-                onClick={() => switchMode('free')}
-                aria-pressed={mode === 'free'}
-                className={`px-2.5 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                  mode === 'free' ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
-                }`}
-              >
-                45m
-              </button>
-              <button
-                onClick={() => switchMode('stopwatch')}
+                onClick={selectStopwatchMode}
                 aria-pressed={mode === 'stopwatch'}
-                className={`px-2.5 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                  mode === 'stopwatch' ? 'bg-emerald-600 text-white shadow-sm' : 'text-slate-300 hover:text-white'
+                className={`px-2 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                  mode === 'stopwatch' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
+                title="Contagem progressiva livre"
               >
-                ⏱️ Livre
+                Livre
               </button>
               <button
-                onClick={() => switchMode('custom')}
-                aria-pressed={mode === 'custom' && customMinutes !== 15}
-                className={`px-2.5 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                  mode === 'custom' && customMinutes !== 15 ? 'bg-emerald-600 text-white' : 'text-slate-300 hover:text-white'
+                onClick={() => selectCustomMode()}
+                aria-pressed={mode === 'custom'}
+                className={`px-2 py-1 rounded-lg font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                  mode === 'custom' ? 'bg-emerald-600 text-white' : 'text-slate-400 hover:text-white'
                 }`}
+                title="Definir minutos manualmente"
               >
                 Manual
               </button>
@@ -444,48 +618,60 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
               </div>
             )}
 
-            {/* Clock Display & Controls Group (Mobile-friendly) */}
+            {/* Clock Display & Controls Group */}
             <div className="flex items-center gap-2">
-              {/* Clock Display */}
               <div 
                 role="timer"
-                aria-label={`Tempo do cronômetro: ${timeFormatted}`}
-                className="font-mono text-xl sm:text-2xl font-bold text-white px-3 py-1 sm:py-0.5 bg-slate-950 rounded-xl border border-slate-800 min-w-[85px] text-center"
+                aria-label={`Tempo restante: ${timeFormatted}`}
+                className={`font-mono text-xl sm:text-2xl font-bold px-3.5 py-1 bg-slate-950 rounded-xl border min-w-[92px] text-center ${
+                  isBreakPhase ? 'text-sky-300 border-sky-500/30' : 'text-white border-slate-800'
+                }`}
               >
                 {timeFormatted}
               </div>
 
-              {/* Play/Pause/Reset Controls */}
               <div className="flex items-center gap-1.5">
+                {/* Play / Pause */}
                 <button
-                  onClick={() => {
-                    setSessionCompleted(false);
-                    setIsRunning(!isRunning);
-                  }}
+                  onClick={() => setIsRunning(!isRunning)}
                   aria-label={isRunning ? 'Pausar cronômetro' : 'Iniciar cronômetro'}
-                  className={`p-2.5 sm:p-2 rounded-xl font-medium transition flex items-center justify-center text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-                    isRunning ? 'bg-amber-600 hover:bg-amber-700' : 'bg-emerald-600 hover:bg-emerald-700'
+                  className={`px-3 py-2 rounded-xl font-semibold text-xs transition flex items-center gap-1.5 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                    isRunning ? 'bg-amber-600 hover:bg-amber-500' : 'bg-emerald-600 hover:bg-emerald-500'
                   }`}
-                  title={isRunning ? 'Pausar' : 'Iniciar'}
+                  title={isRunning ? 'Pausar (Reexibe a lista de tarefas)' : 'Iniciar bloco de foco'}
                 >
-                  {isRunning ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4 ml-0.5" aria-hidden="true" />}
+                  {isRunning ? <Pause className="w-4 h-4" aria-hidden="true" /> : <Play className="w-4 h-4" aria-hidden="true" />}
+                  <span className="hidden sm:inline">{isRunning ? 'Pausar' : 'Iniciar'}</span>
                 </button>
 
+                {/* 1-Click Complete Linked Item directly from Timer */}
+                {activeTimerTarget && (
+                  <button
+                    onClick={handleCompleteLinkedItem}
+                    aria-label="Marcar tarefa em foco como concluída hoje"
+                    className="p-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white border border-emerald-500/30 transition"
+                    title="Concluir esta tarefa agora (1 clique)"
+                  >
+                    <CheckCircle className="w-4 h-4" aria-hidden="true" />
+                  </button>
+                )}
+
+                {/* Reset Timer */}
                 <button
                   onClick={resetTimer}
-                  aria-label="Zerar cronômetro"
-                  className="p-2.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
-                  title="Zerar Timer"
+                  aria-label="Reiniciar cronômetro"
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+                  title="Reiniciar Cronômetro"
                 >
                   <RotateCcw className="w-4 h-4" aria-hidden="true" />
                 </button>
 
-                {/* Zen Fullscreen Trigger */}
+                {/* Expand to Fullscreen Zen Mode */}
                 <button
                   onClick={() => setIsZenMode(true)}
-                  aria-label="Entrar no Modo Foco Zen em tela cheia"
-                  className="p-2.5 sm:p-2 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
-                  title="Entrar no Modo Foco Zen (Tela Cheia Limpa)"
+                  aria-label="Expandir cronômetro para tela inteira"
+                  className="p-2 rounded-xl bg-slate-800 hover:bg-emerald-600 text-slate-300 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+                  title="Expandir cronômetro para ocupar a tela inteira (Modo Zen)"
                 >
                   <Maximize2 className="w-4 h-4" aria-hidden="true" />
                 </button>
@@ -494,47 +680,8 @@ export const StudyTimer: React.FC<StudyTimerProps> = () => {
           </div>
         </div>
 
-        {/* Post-Session Action Banner (Replaces blocking browser alert) */}
-        {sessionCompleted && (
-          <div className="bg-emerald-950/60 border border-emerald-500/40 rounded-xl p-3 flex flex-col sm:flex-row items-center justify-between gap-3 animate-fade-in">
-            <div className="text-xs text-emerald-200 flex items-center gap-2">
-              <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" aria-hidden="true" />
-              <span>
-                <strong>Sessão concluída!</strong>{' '}
-                {activeTimerTarget 
-                  ? `O tempo foi contabilizado em "${activeTimerTarget.title}". Deseja concluir esta tarefa agora?`
-                  : 'Excelente foco! Vincule uma tarefa para registrar seus minutos.'}
-              </span>
-            </div>
-            <div className="flex items-center gap-2 w-full sm:w-auto justify-end">
-              {activeTimerTarget && (
-                <button
-                  onClick={handleCompleteLinkedItem}
-                  className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3 py-1.5 rounded-lg transition flex items-center gap-1 shadow-sm"
-                >
-                  <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                  <span>Sim, Marcar Concluído</span>
-                </button>
-              )}
-              <button
-                onClick={() => {
-                  setTimeLeft(5 * 60);
-                  setSessionCompleted(false);
-                  setIsRunning(true);
-                }}
-                className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 transition"
-              >
-                +5 min
-              </button>
-              <button
-                onClick={() => setSessionCompleted(false)}
-                className="text-xs text-slate-400 hover:text-white px-2 py-1.5"
-              >
-                Fechar
-              </button>
-            </div>
-          </div>
-        )}
+        {/* Smooth Block / Break Transition Bar */}
+        {renderTransitionActions(false)}
       </section>
     </>
   );
