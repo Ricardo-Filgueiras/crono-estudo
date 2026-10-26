@@ -92,4 +92,15 @@ export interface ErrorItem {
   prerequisitoRelacionado?: string; // Investigação de lacuna (Fase 1)
 }
 
+export interface StudySessionLog {
+  id: string;
+  topicId?: string;
+  targetTitle: string;
+  origem?: StudyContextTag[];
+  dateStr: string; // YYYY-MM-DD
+  secondsStudied: number;
+  type: 'topic' | 'english';
+  timestamp: string; // ISO
+}
+
 export type ActiveTab = 'hoje' | 'edital' | 'revisoes' | 'erros' | 'estatisticas';

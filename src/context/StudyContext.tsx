@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
-import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem, EnglishHabitDay, ActiveTimerTarget } from '../types';
+import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem, EnglishHabitDay, ActiveTimerTarget, StudySessionLog } from '../types';
 import { INITIAL_TOPICS, INITIAL_ERRORS } from '../data/initialData';
 import { 
   buildTopicMap, 
@@ -15,6 +15,7 @@ import confetti from 'canvas-confetti';
 interface StudyContextType {
   topics: Topic[];
   errors: ErrorItem[];
+  sessionLogs: StudySessionLog[];
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   updateTopic: (id: string, updates: Partial<Topic>) => void;
@@ -59,6 +60,7 @@ const StudyContext = createContext<StudyContextType | undefined>(undefined);
 const STORAGE_KEY_TOPICS = 'crono_estudo_topics_v7';
 const STORAGE_KEY_ERRORS = 'crono_estudo_errors_v1';
 const STORAGE_KEY_HABITS = 'crono_estudo_english_habits_v1';
+const STORAGE_KEY_SESSION_LOGS = 'crono_estudo_session_logs_v1';
 const STORAGE_KEY_UPDATED_AT = 'crono_estudo_updated_at_v1';
 
 export interface WeekDayInfo {
@@ -247,6 +249,36 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return {};
   });
 
+  const [sessionLogs, setSessionLogs] = useState<StudySessionLog[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_SESSION_LOGS);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (e) {
+      console.error('Erro ao ler logs de sessão do localStorage', e);
+    }
+    // Sintetizar histórico base inicial a partir dos tópicos com dataEstudo registrada
+    const initialLogs: StudySessionLog[] = [];
+    for (const t of INITIAL_TOPICS) {
+      const secs = t.tempoEstudadoSegundos || (t.tempoEstudadoMinutos ? t.tempoEstudadoMinutos * 60 : 0);
+      if (t.dataEstudo && secs > 0) {
+        initialLogs.push({
+          id: `${t.dataEstudo}_topic_${t.id}`,
+          topicId: t.id,
+          targetTitle: t.microtopico || t.macrotema || t.disciplina,
+          origem: t.origem,
+          dateStr: t.dataEstudo,
+          secondsStudied: secs,
+          type: 'topic',
+          timestamp: new Date(t.dataEstudo + 'T20:00:00Z').toISOString()
+        });
+      }
+    }
+    return initialLogs;
+  });
+
   const { user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
@@ -277,6 +309,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [englishHabits]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_SESSION_LOGS, JSON.stringify(sessionLogs));
+    } catch (e) {
+      console.error('Falha ao salvar logs de sessão no storage', e);
+    }
+  }, [sessionLogs]);
+
   // Carregar dados do Supabase quando o usuário autenticar
   useEffect(() => {
     if (!user) {
@@ -293,12 +333,13 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setCloudSyncError(null);
 
         // 1. Tentar carregar das tabelas relacionais normalizadas
-        const [topicsRes, prereqsRes, progressRes, errorsRes, habitsRes] = await Promise.all([
+        const [topicsRes, prereqsRes, progressRes, errorsRes, habitsRes, sessionsRes] = await Promise.all([
           supabase.from('topics').select('*'),
           supabase.from('topic_prerequisites').select('*'),
           supabase.from('user_topic_progress').select('*').eq('user_id', user.id),
           supabase.from('user_study_errors').select('*').eq('user_id', user.id),
-          supabase.from('user_english_habits').select('*').eq('user_id', user.id)
+          supabase.from('user_english_habits').select('*').eq('user_id', user.id),
+          supabase.from('user_study_sessions').select('*').eq('user_id', user.id)
         ]);
 
         const hasRelationalData = 
@@ -379,6 +420,19 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setEnglishHabits(habitsObj);
           }
 
+          if (sessionsRes.data && sessionsRes.data.length > 0) {
+            setSessionLogs(sessionsRes.data.map((s: any) => ({
+              id: s.id,
+              topicId: s.topic_id || undefined,
+              targetTitle: s.target_title,
+              origem: s.origem || [],
+              dateStr: s.date_str,
+              secondsStudied: s.seconds_studied || 0,
+              type: s.type || 'topic',
+              timestamp: s.timestamp || new Date().toISOString()
+            })));
+          }
+
           cloudLoadedForUser.current = user.id;
           return;
         }
@@ -386,7 +440,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         // Fallback: caso não tenha dados relacionais ainda, consulta a tabela de backup user_study_data
         const { data, error } = await supabase
           .from('user_study_data')
-          .select('topics, errors, updated_at')
+          .select('topics, errors, session_logs, updated_at')
           .eq('user_id', user.id)
           .maybeSingle();
 
@@ -404,6 +458,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             setTopics(mergeWithInitialTopics(data.topics));
             if (Array.isArray(data.errors)) {
               setErrors(data.errors);
+            }
+            if (Array.isArray(data.session_logs) && data.session_logs.length > 0) {
+              setSessionLogs(data.session_logs);
             }
           }
           cloudLoadedForUser.current = user.id;
@@ -479,12 +536,32 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           if (habitError) console.error('Erro ao salvar hábitos relacionais:', habitError);
         }
 
-        // 3. Backup na tabela snapshot user_study_data (dupla segurança)
+        // 3. Upsert relacional de sessões de estudo
+        if (sessionLogs.length > 0) {
+          const sessionRows = sessionLogs.map(s => ({
+            id: s.id,
+            user_id: user.id,
+            topic_id: s.topicId || null,
+            target_title: s.targetTitle,
+            origem: s.origem || [],
+            date_str: s.dateStr,
+            seconds_studied: s.secondsStudied || 0,
+            type: s.type,
+            timestamp: s.timestamp || nowIso
+          }));
+          const { error: sessError } = await supabase
+            .from('user_study_sessions')
+            .upsert(sessionRows, { onConflict: 'user_id,id' });
+          if (sessError) console.error('Erro ao salvar sessões relacionais:', sessError);
+        }
+
+        // 4. Backup na tabela snapshot user_study_data (dupla segurança)
         const { error: snapError } = await supabase.from('user_study_data').upsert(
           {
             user_id: user.id,
             topics,
             errors,
+            session_logs: sessionLogs,
             updated_at: nowIso
           },
           { onConflict: 'user_id' }
@@ -499,7 +576,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }, 400);
 
     return () => clearTimeout(timeout);
-  }, [topics, errors, englishHabits, user]);
+  }, [topics, errors, englishHabits, sessionLogs, user]);
 
   // Mapa otimizado de tópicos para consulta de grafos
   const topicMap = useMemo(() => buildTopicMap(topics), [topics]);
@@ -631,8 +708,39 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const recordStudySeconds = (target: ActiveTimerTarget, secondsToAdd: number) => {
     if (secondsToAdd <= 0) return;
 
+    const dateKey = target.dateStr || getTodayDateString();
+    const nowIso = new Date().toISOString();
+
+    // 1. Registra no histórico de sessões com granularidade por dia e alvo
+    setSessionLogs(prev => {
+      const logId = `${dateKey}_${target.type}_${target.id}`;
+      const existingIdx = prev.findIndex(l => l.id === logId);
+      if (existingIdx !== -1) {
+        const updated = [...prev];
+        const item = updated[existingIdx];
+        updated[existingIdx] = {
+          ...item,
+          secondsStudied: (item.secondsStudied || 0) + secondsToAdd,
+          timestamp: nowIso
+        };
+        return updated;
+      } else {
+        const matchingTopic = target.type === 'topic' ? topics.find(t => t.id === target.id) : null;
+        const newLog: StudySessionLog = {
+          id: logId,
+          topicId: target.type === 'topic' ? target.id : undefined,
+          targetTitle: target.title || matchingTopic?.microtopico || (target.type === 'english' ? 'Hábito Diário de Inglês' : 'Sessão de Estudo'),
+          origem: matchingTopic?.origem || (target.type === 'english' ? ['Concurso'] : []),
+          dateStr: dateKey,
+          secondsStudied: secondsToAdd,
+          type: target.type,
+          timestamp: nowIso
+        };
+        return [newLog, ...prev];
+      }
+    });
+
     if (target.type === 'english') {
-      const dateKey = target.dateStr || getTodayDateString();
       setEnglishHabits(prev => {
         const current = prev[dateKey] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
         const totalSeconds = (current.secondsStudied || (current.minutesStudied || 0) * 60) + secondsToAdd;
@@ -661,6 +769,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             ...t,
             tempoEstudadoSegundos: nextSecs,
             tempoEstudadoMinutos: nextMins,
+            dataEstudo: t.dataEstudo || dateKey,
             status: t.status === 'Pendente' ? 'Em Andamento' : t.status
           };
         }
@@ -774,9 +883,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const exportBackup = () => {
     const data = {
       exportedAt: new Date().toISOString(),
-      version: '4.0-concept-graph',
+      version: '4.1-session-logs',
       topics,
-      errors
+      errors,
+      englishHabits,
+      sessionLogs
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -797,6 +908,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setTopics(data.topics);
         if (Array.isArray(data.errors)) {
           setErrors(data.errors);
+        }
+        if (data.englishHabits && typeof data.englishHabits === 'object') {
+          setEnglishHabits(data.englishHabits);
+        }
+        if (Array.isArray(data.sessionLogs)) {
+          setSessionLogs(data.sessionLogs);
         }
         return true;
       }
@@ -888,8 +1005,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     if (window.confirm('Tem certeza que deseja restaurar os dados originais? Todas as alterações manuais serão resetadas.')) {
       setTopics(INITIAL_TOPICS);
       setErrors(INITIAL_ERRORS);
+      setEnglishHabits({});
+      setSessionLogs([]);
       localStorage.removeItem(STORAGE_KEY_TOPICS);
       localStorage.removeItem(STORAGE_KEY_ERRORS);
+      localStorage.removeItem(STORAGE_KEY_HABITS);
+      localStorage.removeItem(STORAGE_KEY_SESSION_LOGS);
     }
   };
 
@@ -898,6 +1019,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       value={{
         topics,
         errors,
+        sessionLogs,
         activeTab,
         setActiveTab,
         updateTopic,
