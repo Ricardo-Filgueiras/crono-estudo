@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
-import { useStudy, getTodayDateString, addDaysToDate } from '../context/StudyContext';
-import { Printer, X, Calendar } from 'lucide-react';
+import { useStudy, getTodayDateString, getWeekDays } from '../context/StudyContext';
+import { Printer, X, Calendar, CheckSquare, Square } from 'lucide-react';
 
 interface WeeklyPrintModalProps {
   isOpen: boolean;
@@ -8,7 +8,7 @@ interface WeeklyPrintModalProps {
 }
 
 export const WeeklyPrintModal: React.FC<WeeklyPrintModalProps> = ({ isOpen, onClose }) => {
-  const { topics } = useStudy();
+  const { topics, englishHabits } = useStudy();
 
   // Close on Escape key
   useEffect(() => {
@@ -24,18 +24,20 @@ export const WeeklyPrintModal: React.FC<WeeklyPrintModalProps> = ({ isOpen, onCl
   if (!isOpen) return null;
 
   const today = getTodayDateString();
-  const daysOfWeek = [
-    { label: 'Segunda-feira', offset: 0 },
-    { label: 'Terça-feira', offset: 1 },
-    { label: 'Quarta-feira', offset: 2 },
-    { label: 'Quinta-feira', offset: 3 },
-    { label: 'Sexta-feira', offset: 4 },
-    { label: 'Sábado', offset: 5 },
-    { label: 'Domingo (Revisão & Planejamento)', offset: 6 },
+  const weekDays = getWeekDays(today);
+  const fullDayLabels = [
+    'Segunda-feira',
+    'Terça-feira',
+    'Quarta-feira',
+    'Quinta-feira',
+    'Sexta-feira',
+    'Sábado',
+    'Domingo (Revisão & Planejamento)'
   ];
 
-  // Distribute pending topics across the week (prioritizing base + specifics)
-  const pending = topics.filter(t => t.status === 'Pendente');
+  // Pool of unscheduled pending topics to suggest only for empty days
+  const unscheduledPending = topics.filter(t => t.status === 'Pendente' && !t.agendadoPara);
+  let fallbackIdx = 0;
 
   const handlePrint = () => {
     window.print();
@@ -58,7 +60,7 @@ export const WeeklyPrintModal: React.FC<WeeklyPrintModalProps> = ({ isOpen, onCl
             </div>
             <div>
               <h2 id="weekly-print-title" className="text-base font-bold text-white">Cronograma Semanal para Impressão</h2>
-              <p className="text-xs text-slate-300">Pronto para imprimir e colar no seu mural ou mesa de estudos</p>
+              <p className="text-xs text-slate-300">Sincronizado com os tópicos reais agendados na sua semana</p>
             </div>
           </div>
 
@@ -91,67 +93,87 @@ export const WeeklyPrintModal: React.FC<WeeklyPrintModalProps> = ({ isOpen, onCl
                 Planejador Semanal de Estudos
               </h1>
               <p className="text-xs text-slate-300 print:text-gray-700 font-medium">
-                Semana iniciada em: {today} • Foco & Carga Cognitiva Equilibrada
+                Semana de {weekDays[0]?.dateStr.split('-').reverse().join('/')} a {weekDays[6]?.dateStr.split('-').reverse().join('/')} • Carga Cognitiva Equilibrada
               </p>
             </div>
             <div className="text-right text-[11px] text-slate-300 print:text-gray-700">
               <span className="font-semibold text-emerald-400 print:text-black">Micro-hábito diário: </span>
-              15m Inglês + 20m Leitura
+              15m Inglês Técnico
             </div>
           </div>
 
           {/* Days Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 print:grid-cols-2 print:gap-3">
-            {daysOfWeek.map((day, idx) => {
-              const dayDate = addDaysToDate(today, day.offset);
-              // Pick 1 or 2 pending topics for each day
-              const dayTopic1 = pending[idx * 2];
-              const dayTopic2 = pending[idx * 2 + 1];
+            {weekDays.map((day, idx) => {
+              const dayDate = day.dateStr;
+              const formattedDate = dayDate.split('-').reverse().join('/');
+              const habitDone = englishHabits[dayDate]?.done || false;
+
+              // Topics explicitly scheduled or completed on this day
+              const realDayTopics = topics.filter(t => {
+                if (t.dataEstudo === dayDate && (t.status === 'Teoria Concluída' || t.status === 'Dominado')) return true;
+                if (day.isToday) {
+                  return t.status !== 'Dominado' && (t.agendadoPara === dayDate || (t.agendadoPara && t.agendadoPara < dayDate));
+                }
+                return t.status !== 'Dominado' && t.agendadoPara === dayDate;
+              });
+
+              const displayTopics =
+                realDayTopics.length > 0
+                  ? realDayTopics.map(t => ({ topic: t, isSuggested: false }))
+                  : [unscheduledPending[fallbackIdx++], unscheduledPending[fallbackIdx++]]
+                      .filter(Boolean)
+                      .map(t => ({ topic: t, isSuggested: true }));
 
               return (
                 <div
-                  key={day.label}
+                  key={dayDate}
                   className="border border-slate-800 print:border-gray-400 rounded-xl p-3.5 bg-slate-950/40 print:bg-white text-xs space-y-2.5"
                 >
                   <div className="flex items-center justify-between border-b border-slate-800 print:border-gray-300 pb-1.5 font-bold">
                     <span className="text-emerald-400 print:text-black uppercase text-[11px] tracking-wider">
-                      {day.label}
+                      {fullDayLabels[idx]} {day.isToday ? '(Hoje)' : ''}
                     </span>
                     <span className="text-slate-400 print:text-gray-500 font-mono text-[10px]">
-                      {dayDate}
+                      {formattedDate}
                     </span>
                   </div>
 
                   <div className="space-y-2">
                     {/* Habit checkbox */}
                     <div className="flex items-start gap-2 text-slate-200 print:text-black">
-                      <div className="w-4 h-4 border border-slate-600 print:border-black rounded mt-0.5 flex-shrink-0" aria-hidden="true" />
-                      <div>
+                      {habitDone ? (
+                        <CheckSquare className="w-4 h-4 text-emerald-400 print:text-black mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      ) : (
+                        <Square className="w-4 h-4 text-slate-500 print:text-black mt-0.5 flex-shrink-0" aria-hidden="true" />
+                      )}
+                      <div className={habitDone ? 'line-through text-slate-400 print:text-gray-600' : ''}>
                         <span className="font-semibold">[Hábito Diário]</span> 15 min de Inglês
                       </div>
                     </div>
 
-                    {/* Topic 1 */}
-                    {dayTopic1 && (
-                      <div className="flex items-start gap-2 text-slate-200 print:text-black">
-                        <div className="w-4 h-4 border border-slate-600 print:border-black rounded mt-0.5 flex-shrink-0" aria-hidden="true" />
-                        <div>
-                          <span className="font-semibold text-sky-400 print:text-black">[{dayTopic1.disciplina}]</span>{' '}
-                          {dayTopic1.microtopico}
+                    {/* Real or Suggested Topics */}
+                    {displayTopics.map(({ topic, isSuggested }) => {
+                      const isDone = (topic.status === 'Teoria Concluída' || topic.status === 'Dominado') && topic.dataEstudo === dayDate;
+                      return (
+                        <div key={topic.id} className="flex items-start gap-2 text-slate-200 print:text-black">
+                          {isDone ? (
+                            <CheckSquare className="w-4 h-4 text-emerald-400 print:text-black mt-0.5 flex-shrink-0" aria-hidden="true" />
+                          ) : (
+                            <Square className="w-4 h-4 text-slate-500 print:text-black mt-0.5 flex-shrink-0" aria-hidden="true" />
+                          )}
+                          <div className={isDone ? 'line-through text-slate-400 print:text-gray-600' : ''}>
+                            <span className="font-semibold text-sky-400 print:text-black">[{topic.disciplina}]</span>{' '}
+                            {topic.microtopico}
+                            {isSuggested && (
+                              <span className="ml-1.5 text-[10px] text-slate-400 print:text-gray-500 italic">
+                                (Sugestão)
+                              </span>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    )}
-
-                    {/* Topic 2 */}
-                    {dayTopic2 && (
-                      <div className="flex items-start gap-2 text-slate-200 print:text-black">
-                        <div className="w-4 h-4 border border-slate-600 print:border-black rounded mt-0.5 flex-shrink-0" aria-hidden="true" />
-                        <div>
-                          <span className="font-semibold text-amber-400 print:text-black">[{dayTopic2.disciplina}]</span>{' '}
-                          {dayTopic2.microtopico}
-                        </div>
-                      </div>
-                    )}
+                      );
+                    })}
 
                     {/* Blank line for hand-written notes */}
                     <div className="pt-2 border-t border-dashed border-slate-800 print:border-gray-300 flex items-center justify-between text-[10px] text-slate-400 print:text-gray-500">

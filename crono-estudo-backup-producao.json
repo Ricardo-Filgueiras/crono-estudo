@@ -1,9 +1,353 @@
 {
-  "exportedAt": "2026-10-23T20:29:35.350Z",
-  "version": "4.0-concept-graph",
-  "totalTopics": 136,
+  "exportedAt": "2026-10-26T15:10:00.695Z",
+  "version": "4.1-learning-hierarchy",
+  "totalTopics": 156,
   "totalErrors": 2,
   "topics": [
+    {
+      "id": "science-fis-u01",
+      "disciplina": "Física (Módulo 01)",
+      "macrotema": "Fundamentos & Cinemática",
+      "microtopico": "Grandezas Físicas, Escalares e Vetoriais, Velocidade Média e SI",
+      "peso": "Ciências da Natureza Base",
+      "origem": [
+        "Ciências da Natureza"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-23",
+      "linkMaterial": "https://docs.google.com/document/d/1qBeCkpzaV9URACx927iF0DtzWwylE6n60-AYXSzL8rQ/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Vetores, conversão km/h <-> m/s e circuito fechado.",
+      "anotacoes": "Definição de grandezas escalares vs vetoriais, velocidade média escalar vs vetorial, deslocamento Delta x = v * Delta t, fator 3,6 e trajetória fechada com Delta x = 0. NotebookLM 1. Física."
+    },
+    {
+      "id": "science-fis-u02",
+      "disciplina": "Física (Módulo 01)",
+      "macrotema": "Fundamentos & Cinemática",
+      "microtopico": "Movimento Unidimensional, Cinemática Escalar e Inversão de Sentido",
+      "peso": "Ciências da Natureza Base",
+      "origem": [
+        "Ciências da Natureza"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-23",
+      "linkMaterial": "https://docs.google.com/document/d/1ifKIjIegIXmuT8Drq5mMVk5PVUiG9OA4vx0HYuGe4m4/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Marco zero s(t), Delta s vs distância d, e rapidez média.",
+      "anotacoes": "Referencial 1D, deslocamento escalar Delta s vs distância acumulada d, movimento progressivo (v>0) vs retrógrado (v<0), cálculo com inversão de sentido. NotebookLM 1. Física."
+    },
+    {
+      "id": "science-qui-u01",
+      "disciplina": "Química (Módulo 01)",
+      "macrotema": "Matéria & Estrutura Atômica",
+      "microtopico": "Origem dos Elementos, Estrutura Atômica Fundamental, Íons e Nuclídeos",
+      "peso": "Ciências da Natureza Base",
+      "origem": [
+        "Ciências da Natureza"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-23",
+      "linkMaterial": "https://docs.google.com/document/d/15moHIySxVyz5mCUVdDuG-envsRHTfBxHEYFtkjCE6uk/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Nucleossíntese estelar, prótons, nêutrons, elétrons e íons.",
+      "anotacoes": "Nucleossíntese primordial e estelar (1H, 4He), número atômico Z = p, número de massa A = Z + n, cátions (p > e-), ânions (e- > p), reações químicas vs nucleares. NotebookLM 1. Química."
+    },
+    {
+      "id": "science-bio-u01",
+      "disciplina": "Biologia (Módulo 01)",
+      "macrotema": "Bioquímica Celular & Citologia",
+      "microtopico": "Bioquímica Celular, Biomoléculas e Estrutura Celular",
+      "peso": "Ciências da Natureza Base",
+      "origem": [
+        "Ciências da Natureza"
+      ],
+      "status": "Pendente",
+      "linkMaterial": "https://gemini.google.com/notebook/12206f4e-2ec3-4d09-9daf-b46ebd304198",
+      "faseRecomendada": "⏳ Estrutura pronta no Google Drive (03_Biologia) e NotebookLM. Aguardando anotações no Google Keep.",
+      "anotacoes": "Caderno no NotebookLM: 1. Biologia — Bioquímica Celular & Citologia. Repositório 03_Biologia no Google Drive."
+    },
+    {
+      "id": "math-m01-u01",
+      "disciplina": "Matemática (Módulo 01)",
+      "macrotema": "Aritmética Fundamental",
+      "microtopico": "Aritmética e Fundamentos: Números Inteiros, Frações e Decimais",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-20",
+      "linkMaterial": "https://docs.google.com/document/d/1LIAv3HLr14nyB5KVnrFRpyQXty7QH08PwdGSOwATIOc/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Manutenção e treino rápido.",
+      "anotacoes": "Números inteiros (Z), regras de sinais, frações mistas/impróprias, MMC e alinhamento de decimais. NotebookLM Módulos 01 e 02."
+    },
+    {
+      "id": "math-m01-u02",
+      "disciplina": "Matemática (Módulo 01)",
+      "macrotema": "Aritmética Fundamental",
+      "microtopico": "Reta Numérica, Simetria e Valor Absoluto (|x|)",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-20",
+      "linkMaterial": "https://docs.google.com/document/d/19lS9AEIpUv74MFlPYZZT5Dzps9ZOuIQAXO4gYNmUFec/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Interpretação geométrica como distância escalar.",
+      "anotacoes": "Reta numérica, números opostos, valor absoluto (|a| >= 0), simetria de distância (|a-b| = |b-a|)."
+    },
+    {
+      "id": "math-m02-u01",
+      "disciplina": "Matemática (Módulo 02)",
+      "macrotema": "Aritmética Avançada",
+      "microtopico": "Potenciação, Expoentes Inteiros e Notação Científica",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-21",
+      "linkMaterial": "https://docs.google.com/document/d/1MHF51MEwNOvtzlGI5U3BHbCCBeNMs7xjQeOTFxjU1_4/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Propriedades de mesma base, a^0=1, expoente negativo.",
+      "anotacoes": "Propriedades da potenciação, expoentes inteiros (a^-n = 1/a^n), notação científica normalizada (a * 10^n)."
+    },
+    {
+      "id": "math-m02-u02",
+      "disciplina": "Matemática (Módulo 02)",
+      "macrotema": "Aritmética Avançada",
+      "microtopico": "Radiciação, Operação Inversa e Expoentes Fracionários",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-21",
+      "linkMaterial": "https://docs.google.com/document/d/1mVhs7iWiJ835k02WPTPPcQDEp3XHz-wRVhjNsVcqAIY/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Equivalência x^(m/n) e simplificação de radicais.",
+      "anotacoes": "Cancelamento inverso, expoentes fracionários (raiz n-ésima de x^m = x^(m/n)), produto e quociente de radicais."
+    },
+    {
+      "id": "math-m02-u03",
+      "disciplina": "Matemática (Módulo 02)",
+      "macrotema": "Aritmética Avançada",
+      "microtopico": "Sequências e Progressões Recursivas (PA, PG e Mistas)",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1bj9vTqqOwrEl7GBerJ2FZAPkVrpFUzcFWtZWEcGjAzI/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Conversão de fórmula recursiva para forma explícita fechada.",
+      "anotacoes": "Fórmulas recursivas (termo inicial e passo an = f(an-1)). Diferenciação: PG (multiplicação de razão q) vs PA (adição de r). Forma explícita fechada."
+    },
+    {
+      "id": "math-m03-u01",
+      "disciplina": "Matemática (Módulo 03)",
+      "macrotema": "Proporcionalidade & Matemática Comercial",
+      "microtopico": "Relações Proporcionais, Regra de Três e Fatores de Porcentagem",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/16xR7U5TzP0_r-M8yZ00M9qVvD3jQ4x5y/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Grandezas diretas e inversas, regra de três simples/composta e porcentagem.",
+      "anotacoes": "Propriedade fundamental a*d = b*c, proporcionalidade direta e inversa, regra de três e multiplicadores de porcentagem (1 +- p/100)."
+    },
+    {
+      "id": "math-m04-u01",
+      "disciplina": "Matemática (Módulo 04)",
+      "macrotema": "Introdução à Álgebra",
+      "microtopico": "Introdução à Álgebra, Polinômios, FOIL e Modelo de Áreas",
+      "peso": "Matemática Base",
+      "origem": [
+        "Matemática Base"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1dQ2KdXiL9dzZ-cP_W7sTwNaGZCXq6d2WOCtWD4I-0aA/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Monômios, polinômios, comutatividade e produto de Stevin.",
+      "anotacoes": "Terminologia polinomial, operações fundamentais, distributiva (FOIL), modelo geométrico de áreas e produto de Stevin (x+a)(x+b)."
+    },
+    {
+      "id": "math-m04-u02",
+      "disciplina": "Matemática (Módulo 04)",
+      "macrotema": "Introdução à Álgebra",
+      "microtopico": "Fatoração, Produtos Notáveis e Método AC por Agrupamento",
+      "peso": "Matemática Base",
+      "origem": [
+        "Matemática Base"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1ljZzkwLVBPV4gLwp2CebI2IyukTq2OXD4cCe6Jd7He0/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Fator comum, soma e produto, trinômio quadrado perfeito e método AC de Sal Khan.",
+      "anotacoes": "Propriedade do Produto Nulo, diferença de quadrados, fatoração de trinômios do 2º grau e método AC para a != 1."
+    },
+    {
+      "id": "math-m04-u03",
+      "disciplina": "Matemática (Módulo 04)",
+      "macrotema": "Introdução à Álgebra",
+      "microtopico": "Divisão de Polinômios pelo Método da Chave e Teorema do Resto",
+      "peso": "Matemática Base",
+      "origem": [
+        "Matemática Base"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1CTPEZKw6wh6yfRoCOXkYO_--_HwojmbauKz49ZOXhew/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Divisão euclidiana, prova real e D’Alembert P(-3)=-18.",
+      "anotacoes": "Algoritmo euclidiano da chave com ordenação decrescente de graus, critério de parada grau(R) < grau(D) e verificação de D’Alembert."
+    },
+    {
+      "id": "math-m05-u01",
+      "disciplina": "Matemática (Módulo 05)",
+      "macrotema": "Equações, Sistemas & Funções Lineares",
+      "microtopico": "Equações e Inequações do 1º Grau (SPD, SI e SPI)",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/15EeQHAfV761Om5Z607AJl4cbY2vwIQnv8Cv8V7W02K8/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Classificação de soluções e inequações na reta real.",
+      "anotacoes": "Princípio de equivalência, SPD (única), SI (impossível 0x=k), SPI (indeterminada 0x=0) e inversão de desigualdade com negativo."
+    },
+    {
+      "id": "math-m05-u02",
+      "disciplina": "Matemática (Módulo 05)",
+      "macrotema": "Equações, Sistemas & Funções Lineares",
+      "microtopico": "Sistemas de Equações: Métodos da Substituição e Adição",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1J_FNHWd6tG-eZnKKvNBnGsiD3D_wu2s2fU4bLh8ATHg/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Sistemas consistentes independentes, dependentes e inconsistentes.",
+      "anotacoes": "Método da substituição e adição/eliminação, interpretação gráfica de retas concorrentes, coincidentes e paralelas."
+    },
+    {
+      "id": "math-m05-u03",
+      "disciplina": "Matemática (Módulo 05)",
+      "macrotema": "Equações, Sistemas & Funções Lineares",
+      "microtopico": "Equações Lineares, Inclinação (m = dy/dx) e Retas no Plano",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1_adOXQ125mkNZQ-xB1dU9aQqd9IrKSOsAhn-toX2Kek/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Coeficiente angular, forma reduzida y=ax+b e perpendicularismo.",
+      "anotacoes": "Taxa de variação m = dy/dx, interceptos x e y, paralelismo m1=m2 e perpendicularismo analítico m1 * m2 = -1."
+    },
+    {
+      "id": "math-m05-u04",
+      "disciplina": "Matemática (Módulo 05)",
+      "macrotema": "Equações, Sistemas & Funções Lineares",
+      "microtopico": "Funções e Modelos Lineares: Notação f(x) e Aplicações Reais",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1RBjXT8g70hChPubdjsAe4Z5WlxyoEQQNVLDlYJ4jWww/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Teste da reta vertical e contraste entre linearidade e aceleração.",
+      "anotacoes": "Conceito formal de função f(x), teste da reta vertical, modelagem contextual (tarifas, esvaziamento linear) e restrições de domínio."
+    },
+    {
+      "id": "math-m06-u01",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Geometria Euclidiana",
+      "microtopico": "Definições Geométricas: Ponto, Reta, Semirreta e Segmentos",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/19bLj-mitcps7oJw-GuLoSlzoL4DYurQJH8tIPC42WA4/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Método axiomático de Euclides e posições relativas.",
+      "anotacoes": "Entes primitivos, distinção entre reta, semirreta e segmento, congruência de segmentos, ponto médio e perpendicularidade."
+    },
+    {
+      "id": "math-m06-u02",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Geometria Euclidiana",
+      "microtopico": "Estudo dos Ângulos, Relações e Ângulos Opostos pelo Vértice (OPV)",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1a1UDv80agdIzWPIiPl_8cyrTP3RMzBLteVMvE1JMhE0/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Ângulos complementares, suplementares e prova dedutiva de OPV.",
+      "anotacoes": "Classificação (agudo, reto, obtuso, raso), ângulos complementares (90°) e suplementares (180°), demonstração de OPV."
+    },
+    {
+      "id": "math-m06-u03",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Geometria Euclidiana",
+      "microtopico": "Área, Perímetro e Métodos de Decomposição de Figuras Planas",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1GYhQZ5rUlcl4-C40msfWUBYk0nLHMWDMLJBeWUQy8Bc/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Equidecomposição de Sal Khan e partição aditiva/subtrativa.",
+      "anotacoes": "Grandezas 2D, fórmulas poligonais (triângulos, paralelogramos, trapézios, círculos), partição aditiva e decomposição subtrativa."
+    },
+    {
+      "id": "math-m06-u04",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Geometria Euclidiana",
+      "microtopico": "Volume, Área de Superfície e Efeito de Escala Cúbica (k³)",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1M1J7LRFVrG0_2SjDl99mTMDdNMqIvLefA1jhcTh8eXw/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Prisma retangular, conversões SI e efeito de escala k³.",
+      "anotacoes": "Volume V = c*l*h, área superficial, conversões volumétricas (1 m³ = 1.000 L) e variação proporcional ao cubo (V’ = k³ * V)."
+    },
+    {
+      "id": "math-m06-u05",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Geometria Euclidiana",
+      "microtopico": "Paralelogramos, Bissetrizes e Prova Dedutiva de Losangos",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Dominado",
+      "dataEstudo": "2026-10-22",
+      "linkMaterial": "https://docs.google.com/document/d/1uWfK5enBaIYRux5JGiaNpePYBSbe2hTMBkuAZVEKwxM/edit",
+      "faseRecomendada": "⭐ Dominado no Google Drive! Demonstração dedutiva de Sal Khan e ortogonalidade das diagonais.",
+      "anotacoes": "Definições, propriedades de paralelogramos, bissetriz como lugar geométrico, prova de diagonais bissetrizes exclusivas de Losango/Quadrado."
+    },
     {
       "id": "mba-sql",
       "disciplina": "Linguagem SQL para Data Analytics",
@@ -40,13 +384,15 @@
       "disciplina": "Governança de Dados",
       "macrotema": "MBA Ciência de Dados & Analytics",
       "microtopico": "DAMA-DMBOK, Qualidade de Dados, Metadados e Gestão Estratégica",
-      "peso": "MBA (40h)",
+      "peso": "MBA (40h) • Sinergia com Concurso",
       "origem": [
         "MBA",
         "Concurso"
       ],
-      "status": "Pendente",
-      "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
+      "status": "Dominado",
+      "dataEstudo": "2026-10-23",
+      "faseRecomendada": "⭐ Disciplina do MBA Concluída com Sucesso (40h)! DAMA-DMBOK, Governança e Qualidade de Dados.",
+      "anotacoes": "40 horas do MBA em Ciência de Dados concluídas. DAMA-DMBOK, ciclo de vida dos dados, qualidade, linhagem e metadados. Base consolidada para a governança corporativa e concursos."
     },
     {
       "id": "mba-spark",
@@ -164,80 +510,9 @@
       "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
     },
     {
-      "id": "math-poly-div",
-      "disciplina": "Matemática (Módulo 04)",
-      "macrotema": "Introdução à Álgebra (Google Drive)",
-      "microtopico": "Divisão Euclidiana de Polinômios pelo Método da Chave",
-      "peso": "Matemática Base",
-      "origem": [
-        "Matemática Base"
-      ],
-      "status": "Dominado",
-      "dataEstudo": "2026-10-22",
-      "faseRecomendada": "⭐ Dominado! Resolução detalhada de polinômios, Teorema do Resto e D’Alembert no Google Drive.",
-      "anotacoes": "Documento no Drive: Anotacao_Matematica_Modulo04_Unidade03_Divisao_de_Polinomios. Q(x) e resto R(x)."
-    },
-    {
-      "id": "math-rec-seq",
-      "disciplina": "Matemática (Módulo 02)",
-      "macrotema": "Aritmética Avançada (Google Drive)",
-      "microtopico": "Sequências e Progressões Recursivas (PA, PG e Mistas)",
-      "peso": "Matemática Base",
-      "origem": [
-        "Matemática Base"
-      ],
-      "status": "Dominado",
-      "dataEstudo": "2026-10-22",
-      "faseRecomendada": "⭐ Dominado! Conversão de fórmula recursiva para forma explícita fechada.",
-      "anotacoes": "Documento no Drive: Anotacao_Matematica_Modulo02_Unidade03_Sequencias_e_Progressoes_Recursivas. NotebookLM integrado."
-    },
-    {
-      "id": "topic-1",
-      "disciplina": "Língua Portuguesa",
-      "macrotema": "Interpretação e Compreensão de Texto",
-      "microtopico": "Tipologia e Gêneros Textuais (Narrativo, Descritivo, Dissertativo/Argumentativo)",
-      "peso": "Peso 1 (Gerais)",
-      "status": "Em Andamento",
-      "faseRecomendada": "🎯 Foco de Hoje: Teoria e Reconhecimento dos Padrões FCC (Dissertativo-Argumentativo vs Narrativo/Descritivo).",
-      "anotacoes": "Meta de estudo imediata. Pular etapas anteriores dominadas e focar na tipologia textual da FCC.",
-      "agendadoPara": "2026-10-23",
-      "origem": [
-        "Português Base",
-        "Concurso"
-      ]
-    },
-    {
-      "id": "topic-2",
-      "disciplina": "Língua Portuguesa",
-      "macrotema": "Interpretação e Compreensão de Texto",
-      "microtopico": "Coesão Textual (Referencial, Sequencial e Marcadores Discursivos)",
-      "peso": "Peso 1 (Gerais)",
-      "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
-      "origem": [
-        "Português Base",
-        "Concurso"
-      ]
-    },
-    {
-      "id": "topic-3",
-      "disciplina": "Língua Portuguesa",
-      "macrotema": "Interpretação e Compreensão de Texto",
-      "microtopico": "Coerência, Semântica e Figuras de Linguagem da Banca FCC",
-      "peso": "Peso 1 (Gerais)",
-      "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
-      "origem": [
-        "Português Base",
-        "Concurso"
-      ]
-    },
-    {
       "id": "topic-4",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Fonética e Fonologia",
+      "macrotema": "Nível 1: O Som e a Escrita • Fonética e Fonologia",
       "microtopico": "Fonética, Divisão Silábica e Sílaba Tônica (Letras vs. Fonemas, Vogal Núcleo, Dígrafos e Encontros)",
       "peso": "Peso 1 (Gerais)",
       "status": "Dominado",
@@ -247,12 +522,13 @@
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "tempoEstimadoMinutos": 25
     },
     {
       "id": "topic-5",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Ortografia e Acentuação",
+      "macrotema": "Nível 1: O Som e a Escrita • Ortografia e Acentuação",
       "microtopico": "Ortografia Oficial e Regras de Acentuação Gráfica (Oxítonas, Paroxítonas, Proparoxítonas e Hiatos)",
       "peso": "Peso 1 (Gerais)",
       "status": "Dominado",
@@ -271,7 +547,7 @@
     {
       "id": "topic-6",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Morfologia",
+      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
       "microtopico": "Classes de Palavras I: Substantivo, Adjetivo, Artigo e Numeral",
       "peso": "Peso 1 (Gerais)",
       "status": "Dominado",
@@ -290,12 +566,13 @@
     {
       "id": "topic-7",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Morfologia",
+      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
       "microtopico": "Classes de Palavras II: Pronomes (Classificação e Colocação Pronominal)",
       "peso": "Peso 1 (Gerais)",
-      "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "status": "Em Andamento",
+      "agendadoPara": "2026-10-26",
+      "faseRecomendada": "🎯 Meta Imediata (Nível 2 - Morfologia): Pré-requisito crucial para Coesão Referencial e Sintaxe (pronomes relativos e oblíquos).",
+      "anotacoes": "Meta imediata reordenada: dominar pronomes (pessoais, relativos, demonstrativos) antes de avançar para Sintaxe e Coesão Textual.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -308,12 +585,12 @@
     {
       "id": "topic-8",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Morfologia",
+      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
       "microtopico": "Classes de Palavras III: Verbos (Tempos, Modos, Vozes e Correlação Verbal)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): O coração da língua portuguesa. Essencial para destravar toda a Sintaxe.",
+      "anotacoes": "Próximo passo imediato da Morfologia junto com Pronomes. É impossível analisar uma oração sem primeiro identificar o verbo, seu tempo e seu modo.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -326,12 +603,12 @@
     {
       "id": "topic-9",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Morfologia",
+      "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
       "microtopico": "Classes de Palavras IV: Conjunções Coordenativas e Subordinativas (Valores Semânticos)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): O cimento do texto. Valores semânticos (causa, consequência, oposição).",
+      "anotacoes": "O cimento do texto. Carregam os valores semânticos essenciais para Período Composto, Coesão Sequencial e Interpretação de Texto.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -344,12 +621,12 @@
     {
       "id": "topic-10",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe do Período Simples",
+      "macrotema": "Nível 3: Sintaxe do Período Simples",
       "microtopico": "Termos Essenciais: Sujeito e Predicado",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "⏳ Pendente - Aguardando domínio de Verbos (Nível 2).",
+      "anotacoes": "Aguardando teoria. Só se acha o sujeito perguntando ao verbo.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -363,12 +640,12 @@
     {
       "id": "topic-11",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe do Período Simples",
+      "macrotema": "Nível 3: Sintaxe do Período Simples",
       "microtopico": "Termos Integrantes: Objeto Direto/Indireto, Complemento Nominal e Agente da Passiva",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Termos Essenciais (Sujeito e Predicado).",
+      "anotacoes": "Aguardando teoria. Requer domínio de transitividade verbal e preposições.",
       "origem": [
         "Português Base",
         "Concurso"
@@ -381,11 +658,11 @@
     {
       "id": "topic-12",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe do Período Simples",
+      "macrotema": "Nível 3: Sintaxe do Período Simples",
       "microtopico": "Termos Acessórios: Adjunto Adnominal, Adverbial, Aposto e Vocativo",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Termos Essenciais (Sujeito e Predicado).",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
@@ -399,11 +676,11 @@
     {
       "id": "topic-13",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe do Período Composto",
+      "macrotema": "Nível 3: Sintaxe do Período Composto",
       "microtopico": "Coordenação: Orações Coordenadas Sindéticas e Assindéticas",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Conjunções e Termos Essenciais.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
@@ -418,128 +695,243 @@
     {
       "id": "topic-14",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe do Período Composto",
+      "macrotema": "Nível 3: Sintaxe do Período Composto",
       "microtopico": "Subordinação I: Orações Subordinadas Substantivas e Adjetivas",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Pronomes, Conjunções e Sintaxe do Período Simples.",
+      "anotacoes": "Aguardando teoria. Requer domínio de pronomes relativos (adjetivas) e funções sintáticas substantivas.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-7",
+        "topic-9",
+        "topic-11",
+        "topic-12"
+      ],
+      "tempoEstimadoMinutos": 40
     },
     {
       "id": "topic-15",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe do Período Composto",
+      "macrotema": "Nível 3: Sintaxe do Período Composto",
       "microtopico": "Subordinação II: Orações Subordinadas Adverbiais (Causais, Concessivas etc.)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Conjunções e Termos Acessórios.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-9",
+        "topic-12",
+        "topic-13"
+      ],
+      "tempoEstimadoMinutos": 40
     },
     {
       "id": "topic-16",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Sintaxe e Pontuação",
+      "macrotema": "Nível 3: Sintaxe • Pontuação",
       "microtopico": "Emprego da Vírgula e Demais Sinais de Pontuação em Texto",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-      "anotacoes": "Aguardando teoria.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Sintaxe do Período Simples e Composto.",
+      "anotacoes": "Aguardando teoria. Pontuação em português é 100% baseada na ordem sintática dos termos e orações.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-11",
+        "topic-12",
+        "topic-13",
+        "topic-14",
+        "topic-15"
+      ],
+      "tempoEstimadoMinutos": 35
     },
     {
       "id": "topic-17",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Concordância",
+      "macrotema": "Nível 3: Sintaxe • Concordância",
       "microtopico": "Concordância Verbal (Regras Gerais, Sujeito Composto, Partícula SE, Haver/Fazer)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Verbos, Pronomes e Sintaxe do Período Simples.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-7",
+        "topic-8",
+        "topic-10",
+        "topic-11"
+      ],
+      "tempoEstimadoMinutos": 40
     },
     {
       "id": "topic-18",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Concordância",
+      "macrotema": "Nível 3: Sintaxe • Concordância",
       "microtopico": "Concordância Nominal (Adjetivos, Expressões Especiais)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Sintaxe do Período Simples.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-6",
+        "topic-10",
+        "topic-12"
+      ],
+      "tempoEstimadoMinutos": 30
     },
     {
       "id": "topic-19",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Regência",
+      "macrotema": "Nível 3: Sintaxe • Regência",
       "microtopico": "Regência Verbal e Pronomes Relativos (Verbos Típicos FCC)",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Pronomes, Verbos e Termos Integrantes.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-7",
+        "topic-8",
+        "topic-11"
+      ],
+      "tempoEstimadoMinutos": 40
     },
     {
       "id": "topic-20",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Regência",
+      "macrotema": "Nível 3: Sintaxe • Regência",
       "microtopico": "Regência Nominal e Preposições",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Termos Integrantes (Complemento Nominal).",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-6",
+        "topic-11"
+      ],
+      "tempoEstimadoMinutos": 30
     },
     {
       "id": "topic-21",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Crase",
+      "macrotema": "Nível 3: Sintaxe • Crase",
       "microtopico": "Crase: Regras Gerais e Casos Proibitivos",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Regência Verbal e Nominal.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-19",
+        "topic-20"
+      ],
+      "tempoEstimadoMinutos": 35
     },
     {
       "id": "topic-22",
       "disciplina": "Língua Portuguesa",
-      "macrotema": "Crase",
+      "macrotema": "Nível 3: Sintaxe • Crase",
       "microtopico": "Crase: Casos Facultativos e Casos Especiais",
       "peso": "Peso 1 (Gerais)",
       "status": "Pendente",
-      "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+      "faseRecomendada": "⏳ Pendente - Aguardando Regras Gerais de Crase.",
       "anotacoes": "Aguardando teoria.",
       "origem": [
         "Português Base",
         "Concurso"
-      ]
+      ],
+      "prerequisitos": [
+        "topic-21"
+      ],
+      "tempoEstimadoMinutos": 30
+    },
+    {
+      "id": "topic-2",
+      "disciplina": "Língua Portuguesa",
+      "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+      "microtopico": "Coesão Textual (Referencial, Sequencial e Marcadores Discursivos)",
+      "peso": "Peso 1 (Gerais)",
+      "status": "Pendente",
+      "faseRecomendada": "⏳ Pendente (Nível 4 - Texto) - Requer Pronomes e Conjunções (Nível 2).",
+      "anotacoes": "A coesão referencial é feita quase inteiramente por Pronomes (Nível 2), e a sequencial por Conjunções (Nível 2).",
+      "origem": [
+        "Português Base",
+        "Concurso"
+      ],
+      "prerequisitos": [
+        "topic-7",
+        "topic-9"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
+      "id": "topic-3",
+      "disciplina": "Língua Portuguesa",
+      "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+      "microtopico": "Coerência, Semântica e Figuras de Linguagem da Banca FCC",
+      "peso": "Peso 1 (Gerais)",
+      "status": "Pendente",
+      "faseRecomendada": "⏳ Pendente (Nível 4 - Texto) - Requer Coesão e Sintaxe (Nível 3).",
+      "anotacoes": "Depende de entender a Coesão Textual e as relações lógicas construídas na Sintaxe (Nível 3).",
+      "origem": [
+        "Português Base",
+        "Concurso"
+      ],
+      "prerequisitos": [
+        "topic-2",
+        "topic-10",
+        "topic-13"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
+      "id": "topic-1",
+      "disciplina": "Língua Portuguesa",
+      "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+      "microtopico": "Tipologia e Gêneros Textuais (Narrativo, Descritivo, Dissertativo/Argumentativo)",
+      "peso": "Peso 1 (Gerais)",
+      "status": "Pendente",
+      "faseRecomendada": "⏳ Pausado (Nível 4 - A Cereja do Bolo): Destravar Morfologia (Pronomes/Verbos), Sintaxe e Coesão antes.",
+      "anotacoes": "Meta pausada temporariamente para respeitar a hierarquia de aprendizagem. Identificar tipologia textual depende de observar a predominância de verbos de ação ou de estado, adjetivos, sintaxe e coesão/coerência (Níveis 2 e 3).",
+      "origem": [
+        "Português Base",
+        "Concurso"
+      ],
+      "prerequisitos": [
+        "topic-6",
+        "topic-8",
+        "topic-10",
+        "topic-2",
+        "topic-3"
+      ],
+      "tempoEstimadoMinutos": 40
     },
     {
       "id": "topic-23",

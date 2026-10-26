@@ -507,52 +507,9 @@ export const INITIAL_TOPICS: Topic[] = [
     "faseRecomendada": "⏳ Standby (Próximos módulos do MBA)."
   },
   {
-    "id": "topic-1",
-    "disciplina": "Língua Portuguesa",
-    "macrotema": "Interpretação e Compreensão de Texto",
-    "microtopico": "Tipologia e Gêneros Textuais (Narrativo, Descritivo, Dissertativo/Argumentativo)",
-    "peso": "Peso 1 (Gerais)",
-    "status": "Em Andamento",
-    "faseRecomendada": "🎯 Foco de Hoje: Teoria e Reconhecimento dos Padrões FCC (Dissertativo-Argumentativo vs Narrativo/Descritivo).",
-    "anotacoes": "Meta de estudo imediata. Pular etapas anteriores dominadas e focar na tipologia textual da FCC.",
-    "agendadoPara": "2026-10-23",
-    "origem": [
-      "Português Base",
-      "Concurso"
-    ]
-  },
-  {
-    "id": "topic-2",
-    "disciplina": "Língua Portuguesa",
-    "macrotema": "Interpretação e Compreensão de Texto",
-    "microtopico": "Coesão Textual (Referencial, Sequencial e Marcadores Discursivos)",
-    "peso": "Peso 1 (Gerais)",
-    "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
-    "origem": [
-      "Português Base",
-      "Concurso"
-    ]
-  },
-  {
-    "id": "topic-3",
-    "disciplina": "Língua Portuguesa",
-    "macrotema": "Interpretação e Compreensão de Texto",
-    "microtopico": "Coerência, Semântica e Figuras de Linguagem da Banca FCC",
-    "peso": "Peso 1 (Gerais)",
-    "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
-    "origem": [
-      "Português Base",
-      "Concurso"
-    ]
-  },
-  {
     "id": "topic-4",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Fonética e Fonologia",
+    "macrotema": "Nível 1: O Som e a Escrita • Fonética e Fonologia",
     "microtopico": "Fonética, Divisão Silábica e Sílaba Tônica (Letras vs. Fonemas, Vogal Núcleo, Dígrafos e Encontros)",
     "peso": "Peso 1 (Gerais)",
     "status": "Dominado",
@@ -562,12 +519,13 @@ export const INITIAL_TOPICS: Topic[] = [
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "tempoEstimadoMinutos": 25
   },
   {
     "id": "topic-5",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Ortografia e Acentuação",
+    "macrotema": "Nível 1: O Som e a Escrita • Ortografia e Acentuação",
     "microtopico": "Ortografia Oficial e Regras de Acentuação Gráfica (Oxítonas, Paroxítonas, Proparoxítonas e Hiatos)",
     "peso": "Peso 1 (Gerais)",
     "status": "Dominado",
@@ -586,7 +544,7 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-6",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Morfologia",
+    "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
     "microtopico": "Classes de Palavras I: Substantivo, Adjetivo, Artigo e Numeral",
     "peso": "Peso 1 (Gerais)",
     "status": "Dominado",
@@ -605,12 +563,13 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-7",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Morfologia",
+    "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
     "microtopico": "Classes de Palavras II: Pronomes (Classificação e Colocação Pronominal)",
     "peso": "Peso 1 (Gerais)",
-    "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "status": "Em Andamento",
+    "agendadoPara": "2026-10-26",
+    "faseRecomendada": "🎯 Meta Imediata (Nível 2 - Morfologia): Pré-requisito crucial para Coesão Referencial e Sintaxe (pronomes relativos e oblíquos).",
+    "anotacoes": "Meta imediata reordenada: dominar pronomes (pessoais, relativos, demonstrativos) antes de avançar para Sintaxe e Coesão Textual.",
     "origem": [
       "Português Base",
       "Concurso"
@@ -623,12 +582,12 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-8",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Morfologia",
+    "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
     "microtopico": "Classes de Palavras III: Verbos (Tempos, Modos, Vozes e Correlação Verbal)",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): O coração da língua portuguesa. Essencial para destravar toda a Sintaxe.",
+    "anotacoes": "Próximo passo imediato da Morfologia junto com Pronomes. É impossível analisar uma oração sem primeiro identificar o verbo, seu tempo e seu modo.",
     "origem": [
       "Português Base",
       "Concurso"
@@ -641,12 +600,12 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-9",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Morfologia",
+    "macrotema": "Nível 2: Morfologia (As Peças Isoladas)",
     "microtopico": "Classes de Palavras IV: Conjunções Coordenativas e Subordinativas (Valores Semânticos)",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "faseRecomendada": "🟢 Disponível (Nível 2 - Morfologia): O cimento do texto. Valores semânticos (causa, consequência, oposição).",
+    "anotacoes": "O cimento do texto. Carregam os valores semânticos essenciais para Período Composto, Coesão Sequencial e Interpretação de Texto.",
     "origem": [
       "Português Base",
       "Concurso"
@@ -659,12 +618,12 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-10",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe do Período Simples",
+    "macrotema": "Nível 3: Sintaxe do Período Simples",
     "microtopico": "Termos Essenciais: Sujeito e Predicado",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "faseRecomendada": "⏳ Pendente - Aguardando domínio de Verbos (Nível 2).",
+    "anotacoes": "Aguardando teoria. Só se acha o sujeito perguntando ao verbo.",
     "origem": [
       "Português Base",
       "Concurso"
@@ -678,12 +637,12 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-11",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe do Período Simples",
+    "macrotema": "Nível 3: Sintaxe do Período Simples",
     "microtopico": "Termos Integrantes: Objeto Direto/Indireto, Complemento Nominal e Agente da Passiva",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Termos Essenciais (Sujeito e Predicado).",
+    "anotacoes": "Aguardando teoria. Requer domínio de transitividade verbal e preposições.",
     "origem": [
       "Português Base",
       "Concurso"
@@ -696,11 +655,11 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-12",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe do Período Simples",
+    "macrotema": "Nível 3: Sintaxe do Período Simples",
     "microtopico": "Termos Acessórios: Adjunto Adnominal, Adverbial, Aposto e Vocativo",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Termos Essenciais (Sujeito e Predicado).",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
@@ -714,11 +673,11 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-13",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe do Período Composto",
+    "macrotema": "Nível 3: Sintaxe do Período Composto",
     "microtopico": "Coordenação: Orações Coordenadas Sindéticas e Assindéticas",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Conjunções e Termos Essenciais.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
@@ -733,128 +692,243 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-14",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe do Período Composto",
+    "macrotema": "Nível 3: Sintaxe do Período Composto",
     "microtopico": "Subordinação I: Orações Subordinadas Substantivas e Adjetivas",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Pronomes, Conjunções e Sintaxe do Período Simples.",
+    "anotacoes": "Aguardando teoria. Requer domínio de pronomes relativos (adjetivas) e funções sintáticas substantivas.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-7",
+      "topic-9",
+      "topic-11",
+      "topic-12"
+    ],
+    "tempoEstimadoMinutos": 40
   },
   {
     "id": "topic-15",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe do Período Composto",
+    "macrotema": "Nível 3: Sintaxe do Período Composto",
     "microtopico": "Subordinação II: Orações Subordinadas Adverbiais (Causais, Concessivas etc.)",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Conjunções e Termos Acessórios.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-9",
+      "topic-12",
+      "topic-13"
+    ],
+    "tempoEstimadoMinutos": 40
   },
   {
     "id": "topic-16",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Sintaxe e Pontuação",
+    "macrotema": "Nível 3: Sintaxe • Pontuação",
     "microtopico": "Emprego da Vírgula e Demais Sinais de Pontuação em Texto",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
-    "anotacoes": "Aguardando teoria.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Sintaxe do Período Simples e Composto.",
+    "anotacoes": "Aguardando teoria. Pontuação em português é 100% baseada na ordem sintática dos termos e orações.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-11",
+      "topic-12",
+      "topic-13",
+      "topic-14",
+      "topic-15"
+    ],
+    "tempoEstimadoMinutos": 35
   },
   {
     "id": "topic-17",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Concordância",
+    "macrotema": "Nível 3: Sintaxe • Concordância",
     "microtopico": "Concordância Verbal (Regras Gerais, Sujeito Composto, Partícula SE, Haver/Fazer)",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Verbos, Pronomes e Sintaxe do Período Simples.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-7",
+      "topic-8",
+      "topic-10",
+      "topic-11"
+    ],
+    "tempoEstimadoMinutos": 40
   },
   {
     "id": "topic-18",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Concordância",
+    "macrotema": "Nível 3: Sintaxe • Concordância",
     "microtopico": "Concordância Nominal (Adjetivos, Expressões Especiais)",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Sintaxe do Período Simples.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-6",
+      "topic-10",
+      "topic-12"
+    ],
+    "tempoEstimadoMinutos": 30
   },
   {
     "id": "topic-19",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Regência",
+    "macrotema": "Nível 3: Sintaxe • Regência",
     "microtopico": "Regência Verbal e Pronomes Relativos (Verbos Típicos FCC)",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Pronomes, Verbos e Termos Integrantes.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-7",
+      "topic-8",
+      "topic-11"
+    ],
+    "tempoEstimadoMinutos": 40
   },
   {
     "id": "topic-20",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Regência",
+    "macrotema": "Nível 3: Sintaxe • Regência",
     "microtopico": "Regência Nominal e Preposições",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Termos Integrantes (Complemento Nominal).",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-6",
+      "topic-11"
+    ],
+    "tempoEstimadoMinutos": 30
   },
   {
     "id": "topic-21",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Crase",
+    "macrotema": "Nível 3: Sintaxe • Crase",
     "microtopico": "Crase: Regras Gerais e Casos Proibitivos",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Regência Verbal e Nominal.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-19",
+      "topic-20"
+    ],
+    "tempoEstimadoMinutos": 35
   },
   {
     "id": "topic-22",
     "disciplina": "Língua Portuguesa",
-    "macrotema": "Crase",
+    "macrotema": "Nível 3: Sintaxe • Crase",
     "microtopico": "Crase: Casos Facultativos e Casos Especiais",
     "peso": "Peso 1 (Gerais)",
     "status": "Pendente",
-    "faseRecomendada": "⏳ Pendente - Aguardando estudo.",
+    "faseRecomendada": "⏳ Pendente - Aguardando Regras Gerais de Crase.",
     "anotacoes": "Aguardando teoria.",
     "origem": [
       "Português Base",
       "Concurso"
-    ]
+    ],
+    "prerequisitos": [
+      "topic-21"
+    ],
+    "tempoEstimadoMinutos": 30
+  },
+  {
+    "id": "topic-2",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+    "microtopico": "Coesão Textual (Referencial, Sequencial e Marcadores Discursivos)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente (Nível 4 - Texto) - Requer Pronomes e Conjunções (Nível 2).",
+    "anotacoes": "A coesão referencial é feita quase inteiramente por Pronomes (Nível 2), e a sequencial por Conjunções (Nível 2).",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": [
+      "topic-7",
+      "topic-9"
+    ],
+    "tempoEstimadoMinutos": 35
+  },
+  {
+    "id": "topic-3",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+    "microtopico": "Coerência, Semântica e Figuras de Linguagem da Banca FCC",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pendente (Nível 4 - Texto) - Requer Coesão e Sintaxe (Nível 3).",
+    "anotacoes": "Depende de entender a Coesão Textual e as relações lógicas construídas na Sintaxe (Nível 3).",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": [
+      "topic-2",
+      "topic-10",
+      "topic-13"
+    ],
+    "tempoEstimadoMinutos": 35
+  },
+  {
+    "id": "topic-1",
+    "disciplina": "Língua Portuguesa",
+    "macrotema": "Nível 4: Texto e Sentido Global (Interpretação)",
+    "microtopico": "Tipologia e Gêneros Textuais (Narrativo, Descritivo, Dissertativo/Argumentativo)",
+    "peso": "Peso 1 (Gerais)",
+    "status": "Pendente",
+    "faseRecomendada": "⏳ Pausado (Nível 4 - A Cereja do Bolo): Destravar Morfologia (Pronomes/Verbos), Sintaxe e Coesão antes.",
+    "anotacoes": "Meta pausada temporariamente para respeitar a hierarquia de aprendizagem. Identificar tipologia textual depende de observar a predominância de verbos de ação ou de estado, adjetivos, sintaxe e coesão/coerência (Níveis 2 e 3).",
+    "origem": [
+      "Português Base",
+      "Concurso"
+    ],
+    "prerequisitos": [
+      "topic-6",
+      "topic-8",
+      "topic-10",
+      "topic-2",
+      "topic-3"
+    ],
+    "tempoEstimadoMinutos": 40
   },
   {
     "id": "topic-23",

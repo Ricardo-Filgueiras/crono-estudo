@@ -29,11 +29,14 @@ export const CurriculumView: React.FC = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('TODOS');
   const [selectedDisciplina, setSelectedDisciplina] = useState<string>('TODAS');
 
-  // Unique disciplines
+  // Unique disciplines filtered by selected Trilha
   const disciplinas = useMemo(() => {
-    const list = Array.from(new Set(topics.map(t => t.disciplina)));
+    const base = selectedTag === 'TODAS'
+      ? topics
+      : topics.filter(t => t.origem && t.origem.includes(selectedTag as StudyContextTag));
+    const list = Array.from(new Set(base.map(t => t.disciplina)));
     return ['TODAS', ...list];
-  }, [topics]);
+  }, [topics, selectedTag]);
 
   // Filtered topics
   const filteredTopics = useMemo(() => {
@@ -107,7 +110,10 @@ export const CurriculumView: React.FC = () => {
           ].map(tag => (
             <button
               key={tag.id}
-              onClick={() => setSelectedTag(tag.id)}
+              onClick={() => {
+                setSelectedTag(tag.id);
+                setSelectedDisciplina('TODAS');
+              }}
               aria-pressed={selectedTag === tag.id}
               className={`px-3 py-1.5 rounded-xl text-xs font-medium border transition flex-shrink-0 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
                 selectedTag === tag.id
@@ -157,6 +163,7 @@ export const CurriculumView: React.FC = () => {
               <option value="Dominado">⭐ Dominados (Bagagem Prévia)</option>
               <option value="Em Andamento">🚀 Em Andamento</option>
               <option value="Teoria Concluída">📖 Teoria Concluída</option>
+              <option value="Em Exercícios">📝 Em Exercícios</option>
               <option value="Pendente">⏳ Pendente</option>
               <option value="Precisa Revisar">⚠️ Precisa Revisar</option>
             </select>

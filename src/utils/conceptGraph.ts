@@ -12,7 +12,7 @@ export const buildTopicMap = (topics: Topic[]): Map<string, Topic> => {
  * para fins de liberação de dependências.
  */
 export const isTopicMasteredOrCompleted = (topic: Topic): boolean => {
-  return topic.status === 'Dominado' || topic.status === 'Teoria Concluída';
+  return topic.status === 'Dominado' || topic.status === 'Teoria Concluída' || topic.status === 'Em Exercícios';
 };
 
 /**
@@ -77,11 +77,12 @@ export const getDirectDependents = (topicId: string, allTopics: Topic[]): Topic[
 
 /**
  * Calcula o poder de desbloqueio (alcance transitivo) de um conceito no grafo.
- * Indica quantos conceitos futuros dependem dele direta ou indiretamente.
+ * Indica quantos conceitos futuros ainda não dominados dependem dele direta ou indiretamente.
  */
 export const getUnlockPower = (topicId: string, allTopics: Topic[]): number => {
-  const visited = new Set<string>();
+  const visited = new Set<string>([topicId]);
   const queue: string[] = [topicId];
+  let activeDependentsCount = 0;
 
   while (queue.length > 0) {
     const currentId = queue.shift()!;
@@ -90,12 +91,15 @@ export const getUnlockPower = (topicId: string, allTopics: Topic[]): number => {
     for (const dep of directDependents) {
       if (!visited.has(dep.id)) {
         visited.add(dep.id);
+        if (dep.status !== 'Dominado') {
+          activeDependentsCount++;
+        }
         queue.push(dep.id);
       }
     }
   }
 
-  return visited.size;
+  return activeDependentsCount;
 };
 
 /**
@@ -108,6 +112,10 @@ export const generateRecommendationExplanation = (
 ): string => {
   const unlockCount = getUnlockPower(topic.id, allTopics);
   const prereqCount = topic.prerequisitos ? topic.prerequisitos.length : 0;
+
+  if (topic.status === 'Precisa Revisar') {
+    return `Tópico marcado para revisão prioritária para consolidar retenção.`;
+  }
 
   if (prereqCount === 0 && unlockCount > 0) {
     return `Fundamento-chave: Não possui pré-requisitos e desbloqueia ${unlockCount} conceito${unlockCount > 1 ? 's posteriores' : ' posterior'}.`;
@@ -126,8 +134,8 @@ export const generateRecommendationExplanation = (
     return `Base necessária dominada (${prereqNames}). Conteúdo liberado para aprendizado com alicerces sólidos.`;
   }
 
-  if (topic.peso && topic.peso.includes('Peso 2')) {
-    return `Conteúdo de alta relevância estratégica (Peso 2) pronto para assimilação.`;
+  if (topic.peso && (topic.peso.includes('Peso 2') || topic.peso.includes('Discursiva'))) {
+    return `Conteúdo de alta relevância estratégica (${topic.peso}) pronto para assimilação.`;
   }
 
   return `Conteúdo disponível e alinhado ao seu plano de estudos.`;
@@ -136,8 +144,8 @@ export const generateRecommendationExplanation = (
 /**
  * Motor de recomendação inteligente:
  * 1. Filtra apenas conteúdos não concluídos que estejam pedagogicamente desbloqueados.
- * 2. Prioriza conceitos fundamentais que possuem maior poder de desbloqueio.
- * 3. Considera o tempo disponível estimado.
+ * 2. Prioriza conceitos em andamento/revisão e fundamentos que possuem maior poder de desbloqueio.
+ * 3. Considera o tempo disponível estimado sem violar o teto de minutos.
  */
 export const recommendNextSteps = (
   topics: Topic[],
@@ -146,7 +154,7 @@ export const recommendNextSteps = (
   const { maxItems = 3, availableMinutes } = options;
   const topicMap = buildTopicMap(topics);
 
-  // Considerar apenas tópicos não dominados e não concluídos
+  // Considerar apenas tópicos pendentes, em andamento ou que precisam revisar
   const activeTopics = topics.filter(t => !isTopicMasteredOrCompleted(t));
 
   const eligibleItems: RecommendationItem[] = [];
@@ -166,25 +174,40 @@ export const recommendNextSteps = (
     });
   }
 
-  // Filtrar apenas os que estão 'Disponível' ou 'Em Andamento' (NÃO bloqueados)
-  const availableCandidates = eligibleItems.filter(item => item.status === 'Disponível' || item.status === 'Em Andamento');
+  // Filtrar apenas os que não estão bloqueados ('Disponível', 'Em Andamento', 'Precisa Revisar')
+  const availableCandidates = eligibleItems.filter(
+    item => item.status === 'Disponível' || item.status === 'Em Andamento' || item.status === 'Precisa Revisar'
+  );
 
   // Ordenação por relevância pedagógica:
-  // 1. Tópicos que estão 'Em Andamento' têm prioridade para evitar alternância excessiva.
+  // 1. Tópicos 'Em Andamento' ou 'Precisa Revisar' têm prioridade para fechar ciclos abertos.
   // 2. Tópicos com maior poder de desbloqueio (fundamentos que destravam mais conteúdos).
-  // 3. Tópicos com Peso 2 / Alta relevância.
+  // 3. Prioridade alta e Sinergia Dupla (MBA + Concurso).
+  // 4. Peso 2 / Discursiva.
   availableCandidates.sort((a, b) => {
-    if (a.status === 'Em Andamento' && b.status !== 'Em Andamento') return -1;
-    if (b.status === 'Em Andamento' && a.status !== 'Em Andamento') return 1;
+    const aActive = a.status === 'Em Andamento' || a.status === 'Precisa Revisar' ? 1 : 0;
+    const bActive = b.status === 'Em Andamento' || b.status === 'Precisa Revisar' ? 1 : 0;
+    if (bActive !== aActive) return bActive - aActive;
 
     // Maior poder de desbloqueio primeiro
     if (b.unlockCount !== a.unlockCount) {
       return b.unlockCount - a.unlockCount;
     }
 
-    // Se tiver Peso 2
-    const aIsP2 = a.topic.peso?.includes('Peso 2') ? 1 : 0;
-    const bIsP2 = b.topic.peso?.includes('Peso 2') ? 1 : 0;
+    // Prioridade explícita
+    const prioScore = (p?: 'baixa' | 'media' | 'alta') => (p === 'alta' ? 3 : p === 'media' ? 2 : 1);
+    const aPrio = prioScore(a.topic.prioridade);
+    const bPrio = prioScore(b.topic.prioridade);
+    if (bPrio !== aPrio) return bPrio - aPrio;
+
+    // Sinergia multi-trilha (ex: MBA + Concurso)
+    const aSynergy = (a.topic.origem?.length || 0) > 1 ? 1 : 0;
+    const bSynergy = (b.topic.origem?.length || 0) > 1 ? 1 : 0;
+    if (bSynergy !== aSynergy) return bSynergy - aSynergy;
+
+    // Peso 2 ou Discursiva
+    const aIsP2 = a.topic.peso?.includes('Peso 2') || a.topic.peso?.includes('Discursiva') ? 1 : 0;
+    const bIsP2 = b.topic.peso?.includes('Peso 2') || b.topic.peso?.includes('Discursiva') ? 1 : 0;
     if (bIsP2 !== aIsP2) {
       return bIsP2 - aIsP2;
     }
@@ -199,11 +222,19 @@ export const recommendNextSteps = (
 
     for (const item of availableCandidates) {
       const estimated = item.topic.tempoEstimadoMinutos || 25;
-      if (accumulatedTime + estimated <= availableMinutes || timeSelected.length === 0) {
+      if (accumulatedTime + estimated <= availableMinutes) {
         timeSelected.push(item);
         accumulatedTime += estimated;
       }
       if (timeSelected.length >= maxItems) break;
+    }
+
+    // Fallback caso todos os candidatos tenham duração maior que o tempo disponível
+    if (timeSelected.length === 0 && availableCandidates.length > 0) {
+      const shortest = [...availableCandidates].sort(
+        (a, b) => (a.topic.tempoEstimadoMinutos || 25) - (b.topic.tempoEstimadoMinutos || 25)
+      )[0];
+      return [shortest];
     }
 
     return timeSelected;

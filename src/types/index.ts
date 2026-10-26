@@ -40,9 +40,26 @@ export interface Topic {
   // === GRAFO DE DEPENDÊNCIAS CONCEITUAIS (FASE 1) ===
   prerequisitos?: string[];           // IDs dos tópicos necessários antes deste
   tempoEstimadoMinutos?: number;      // Tempo estimado de dedicação (ex: 20, 30, 45)
-  tempoEstudadoMinutos?: number;      // Tempo real acumulado no cronômetro
+  tempoEstudadoMinutos?: number;      // Tempo real acumulado no cronômetro (minutos)
+  tempoEstudadoSegundos?: number;     // Tempo real acumulado no cronômetro (segundos exatos)
   evidencias?: LearningEvidence;      // Evidências qualitativas de domínio
   justificativaRecomendacao?: string; // Motivo transparente pelo qual foi indicado pelo motor
+}
+
+export interface EnglishHabitDay {
+  done: boolean;
+  atEnd: boolean;
+  minutesStudied?: number;
+  secondsStudied?: number;
+  completedAt?: string;
+}
+
+export interface ActiveTimerTarget {
+  type: 'topic' | 'english';
+  id: string; // topic.id or 'english-YYYY-MM-DD'
+  title: string;
+  dateStr?: string;
+  estimatedMinutes?: number;
 }
 
 export type PedagogicalStatus = 

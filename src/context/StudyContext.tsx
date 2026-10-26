@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
-import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem } from '../types';
+import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem, EnglishHabitDay, ActiveTimerTarget } from '../types';
 import { INITIAL_TOPICS, INITIAL_ERRORS } from '../data/initialData';
 import { 
   buildTopicMap, 
@@ -18,7 +18,9 @@ interface StudyContextType {
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
   updateTopic: (id: string, updates: Partial<Topic>) => void;
-  markAsMastered: (id: string) => void;
+  markAsMastered: (id: string, completedDateStr?: string) => void;
+  quickCompleteTopic: (id: string, completedDateStr?: string) => void;
+  reopenTopicForDate: (id: string, dateStr: string) => void;
   rescheduleTopic: (id: string, daysOffsetOrDate: number | string) => void;
   scheduleForToday: (id: string) => void;
   completeRevision: (id: string, nextIntervalDays?: number) => void;
@@ -42,11 +44,14 @@ interface StudyContextType {
   getRecommendedMission: (availableMinutes?: number) => RecommendationItem[];
   schedulePedagogicalMission: (availableMinutes?: number) => void;
 
-  // === HÁBITO DIÁRIO DE INGLÊS & REORDENAÇÃO ===
-  englishHabits: Record<string, { done: boolean; atEnd: boolean }>;
+  // === HÁBITO DIÁRIO DE INGLÊS, CRONÔMETRO VINCULADO & REORDENAÇÃO ===
+  englishHabits: Record<string, EnglishHabitDay>;
   toggleEnglishDone: (dateStr: string) => void;
   toggleEnglishAtEnd: (dateStr: string) => void;
-  moveTopicOrder: (topicId: string, direction: 'up' | 'down') => void;
+  moveTopicOrder: (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => void;
+  activeTimerTarget: ActiveTimerTarget | null;
+  setActiveTimerTarget: (target: ActiveTimerTarget | null) => void;
+  recordStudySeconds: (target: ActiveTimerTarget, secondsToAdd: number) => void;
 }
 
 const StudyContext = createContext<StudyContextType | undefined>(undefined);
@@ -107,18 +112,100 @@ export const addDaysToDate = (dateStr: string, days: number): string => {
   return `${year}-${month}-${day}`;
 };
 
+export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
+  const savedMap = new Map(savedTopics.map(t => [t.id, t]));
+  const initialIds = new Set(INITIAL_TOPICS.map(t => t.id));
+
+  const savedTopic1 = savedMap.get('topic-1');
+  const savedTopic7 = savedMap.get('topic-7');
+  const shouldMigratePortugueseFocus =
+    savedTopic1?.status === 'Em Andamento' &&
+    (!savedTopic7 || savedTopic7.status === 'Pendente');
+
+  // Preserve canonical pedagogical hierarchy order from INITIAL_TOPICS while keeping user progress
+  const merged: Topic[] = INITIAL_TOPICS.map(initial => {
+    const saved = savedMap.get(initial.id);
+    if (!saved) return initial;
+
+    // Se Tipologia Textual (topic-1) estava em andamento antes da reordenação hierárquica,
+    // pausa-o temporariamente e transfere o foco imediato para Pronomes (topic-7).
+    if (shouldMigratePortugueseFocus && initial.id === 'topic-1') {
+      return {
+        ...initial,
+        ...saved,
+        macrotema: initial.macrotema,
+        status: 'Pendente',
+        agendadoPara: undefined,
+        faseRecomendada: initial.faseRecomendada,
+        anotacoes: initial.anotacoes,
+        prerequisitos: initial.prerequisitos,
+        tempoEstimadoMinutos: initial.tempoEstimadoMinutos ?? saved.tempoEstimadoMinutos,
+        origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem
+      };
+    }
+
+    if (shouldMigratePortugueseFocus && initial.id === 'topic-7') {
+      return {
+        ...initial,
+        ...saved,
+        macrotema: initial.macrotema,
+        status: 'Em Andamento',
+        agendadoPara: getTodayDateString(),
+        faseRecomendada: initial.faseRecomendada,
+        anotacoes:
+          saved.anotacoes === 'Aguardando teoria.' || !saved.anotacoes
+            ? initial.anotacoes
+            : saved.anotacoes,
+        prerequisitos: initial.prerequisitos,
+        tempoEstimadoMinutos: initial.tempoEstimadoMinutos ?? saved.tempoEstimadoMinutos,
+        origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem
+      };
+    }
+
+    return {
+      ...initial,
+      ...saved,
+      macrotema: initial.macrotema,
+      prerequisitos: initial.prerequisitos ?? saved.prerequisitos,
+      tempoEstimadoMinutos: saved.tempoEstimadoMinutos ?? initial.tempoEstimadoMinutos,
+      origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem,
+      anotacoes:
+        saved.anotacoes === 'Aguardando teoria.' && initial.anotacoes
+          ? initial.anotacoes
+          : saved.anotacoes,
+      faseRecomendada:
+        saved.faseRecomendada === '⏳ Pendente - Aguardando estudo.' && initial.faseRecomendada
+          ? initial.faseRecomendada
+          : saved.faseRecomendada
+    };
+  });
+
+  // Append any custom user-created topics that are not in INITIAL_TOPICS (excluding superseded legacy IDs)
+  const legacyIds = new Set(['math-poly-div', 'math-rec-seq']);
+  for (const saved of savedTopics) {
+    if (!initialIds.has(saved.id) && !legacyIds.has(saved.id)) {
+      merged.push(saved);
+    }
+  }
+
+  return merged;
+};
+
 export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [topics, setTopics] = useState<Topic[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_TOPICS);
       if (saved) {
-        return JSON.parse(saved);
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return mergeWithInitialTopics(parsed);
+        }
       }
     } catch (e) {
       console.error('Erro ao ler tópicos do localStorage', e);
     }
     const today = getTodayDateString();
-    return INITIAL_TOPICS.map(t => t.id === 'topic-1' ? { ...t, agendadoPara: today } : t);
+    return INITIAL_TOPICS.map(t => t.id === 'topic-7' ? { ...t, agendadoPara: today } : t);
   });
 
   const [errors, setErrors] = useState<ErrorItem[]>(() => {
@@ -135,8 +222,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [activeTab, setActiveTab] = useState<ActiveTab>('hoje');
   const [selectedTopicForModal, setSelectedTopicForModal] = useState<Topic | null>(null);
+  const [activeTimerTarget, setActiveTimerTarget] = useState<ActiveTimerTarget | null>(null);
 
-  const [englishHabits, setEnglishHabits] = useState<Record<string, { done: boolean; atEnd: boolean }>>(() => {
+  const [englishHabits, setEnglishHabits] = useState<Record<string, EnglishHabitDay>>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_HABITS);
       if (saved) return JSON.parse(saved);
@@ -200,7 +288,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         if (isMounted) {
           if (data && Array.isArray(data.topics) && data.topics.length > 0) {
-            setTopics(data.topics);
+            setTopics(mergeWithInitialTopics(data.topics));
             if (Array.isArray(data.errors)) {
               setErrors(data.errors);
             }
@@ -312,14 +400,17 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setTopics(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
   };
 
-  const markAsMastered = (id: string) => {
+  const markAsMastered = (id: string, completedDateStr?: string) => {
+    const today = getTodayDateString();
+    const effectiveDate = completedDateStr || today;
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
           status: 'Dominado',
+          dataEstudo: effectiveDate,
           faseRecomendada: '⭐ Conteúdo dominado! Alicerce consolidado para conteúdos dependentes.',
-          agendadoPara: undefined // Remove da fila de hoje
+          agendadoPara: undefined // Remove da fila pendente
         };
       }
       return t;
@@ -333,6 +424,91 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     } catch {
       // Ignora se confetti falhar
+    }
+  };
+
+  const quickCompleteTopic = (id: string, completedDateStr?: string) => {
+    const today = getTodayDateString();
+    const effectiveDate = completedDateStr || today;
+    const nextRevDate = addDaysToDate(effectiveDate, 7);
+
+    setTopics(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          status: t.status === 'Dominado' ? 'Dominado' : 'Teoria Concluída',
+          dataEstudo: effectiveDate,
+          proximaRevisao: t.proximaRevisao || nextRevDate,
+          agendadoPara: undefined,
+          faseRecomendada: '✅ Concluído no Foco do Dia! Revisão agendada (D+7).'
+        };
+      }
+      return t;
+    }));
+
+    try {
+      confetti({
+        particleCount: 55,
+        spread: 60,
+        origin: { y: 0.65 }
+      });
+    } catch {
+      // noop
+    }
+  };
+
+  const reopenTopicForDate = (id: string, dateStr: string) => {
+    setTopics(prev => prev.map(t => {
+      if (t.id === id) {
+        return {
+          ...t,
+          status: 'Em Andamento',
+          agendadoPara: dateStr,
+          dataEstudo: undefined
+        };
+      }
+      return t;
+    }));
+  };
+
+  const recordStudySeconds = (target: ActiveTimerTarget, secondsToAdd: number) => {
+    if (secondsToAdd <= 0) return;
+
+    if (target.type === 'english') {
+      const dateKey = target.dateStr || getTodayDateString();
+      setEnglishHabits(prev => {
+        const current = prev[dateKey] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+        const totalSeconds = (current.secondsStudied || (current.minutesStudied || 0) * 60) + secondsToAdd;
+        const totalMinutes = Math.floor(totalSeconds / 60);
+        return {
+          ...prev,
+          [dateKey]: {
+            ...current,
+            secondsStudied: totalSeconds,
+            minutesStudied: totalMinutes
+          }
+        };
+      });
+      return;
+    }
+
+    if (target.type === 'topic') {
+      setTopics(prev => prev.map(t => {
+        if (t.id === target.id) {
+          const prevSecs = t.tempoEstudadoSegundos !== undefined
+            ? t.tempoEstudadoSegundos
+            : (t.tempoEstudadoMinutos || 0) * 60;
+          const nextSecs = prevSecs + secondsToAdd;
+          const nextMins = Math.floor(nextSecs / 60);
+          return {
+            ...t,
+            tempoEstudadoSegundos: nextSecs,
+            tempoEstudadoMinutos: nextMins,
+            status: t.status === 'Pendente' ? 'Em Andamento' : t.status
+          };
+        }
+        return t;
+      }));
     }
   };
 
@@ -456,7 +632,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       return {
         ...prev,
-        [dateStr]: { ...current, done: nextDone }
+        [dateStr]: {
+          ...current,
+          done: nextDone,
+          completedAt: nextDone ? new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : undefined
+        }
       };
     });
   };
@@ -471,12 +651,23 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
   };
 
-  const moveTopicOrder = (topicId: string, direction: 'up' | 'down') => {
+  const moveTopicOrder = (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => {
     setTopics(prev => {
       const idx = prev.findIndex(t => t.id === topicId);
       if (idx === -1) return prev;
-      
-      const targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+
+      let targetIdx = -1;
+      if (visibleIds && visibleIds.length > 1) {
+        const visiblePos = visibleIds.indexOf(topicId);
+        if (visiblePos === -1) return prev;
+        const targetVisiblePos = direction === 'up' ? visiblePos - 1 : visiblePos + 1;
+        if (targetVisiblePos < 0 || targetVisiblePos >= visibleIds.length) return prev;
+        const neighborId = visibleIds[targetVisiblePos];
+        targetIdx = prev.findIndex(t => t.id === neighborId);
+      } else {
+        targetIdx = direction === 'up' ? idx - 1 : idx + 1;
+      }
+
       if (targetIdx < 0 || targetIdx >= prev.length) return prev;
 
       const newTopics = [...prev];
@@ -505,6 +696,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setActiveTab,
         updateTopic,
         markAsMastered,
+        quickCompleteTopic,
+        reopenTopicForDate,
         rescheduleTopic,
         scheduleForToday,
         completeRevision,
@@ -526,7 +719,10 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         englishHabits,
         toggleEnglishDone,
         toggleEnglishAtEnd,
-        moveTopicOrder
+        moveTopicOrder,
+        activeTimerTarget,
+        setActiveTimerTarget,
+        recordStudySeconds
       }}
     >
       {children}

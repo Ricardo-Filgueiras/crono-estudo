@@ -9,6 +9,7 @@ export const TopicModal: React.FC = () => {
   const [status, setStatus] = useState<TopicStatus>('Teoria Concluída');
   const [dataEstudo, setDataEstudo] = useState(getTodayDateString());
   const [acertos, setAcertos] = useState<string>('');
+  const [tempoEstudado, setTempoEstudado] = useState<string>('');
   const [anotacoes, setAnotacoes] = useState('');
   const [proximaRevisao, setProximaRevisao] = useState('');
   const [agendadoPara, setAgendadoPara] = useState('');
@@ -35,9 +36,14 @@ export const TopicModal: React.FC = () => {
 
   useEffect(() => {
     if (selectedTopicForModal) {
-      setStatus(selectedTopicForModal.status === 'Pendente' ? 'Teoria Concluída' : selectedTopicForModal.status);
+      setStatus(
+        selectedTopicForModal.status === 'Pendente' || selectedTopicForModal.status === 'Em Andamento'
+          ? 'Teoria Concluída'
+          : selectedTopicForModal.status
+      );
       setDataEstudo(selectedTopicForModal.dataEstudo || getTodayDateString());
       setAcertos(selectedTopicForModal.acertosExercicios !== undefined ? String(selectedTopicForModal.acertosExercicios) : '');
+      setTempoEstudado(selectedTopicForModal.tempoEstudadoMinutos !== undefined ? String(selectedTopicForModal.tempoEstudadoMinutos) : '');
       setAnotacoes(selectedTopicForModal.anotacoes || '');
       setProximaRevisao(selectedTopicForModal.proximaRevisao || addDaysToDate(getTodayDateString(), 7));
       setAgendadoPara(selectedTopicForModal.agendadoPara || '');
@@ -62,12 +68,16 @@ export const TopicModal: React.FC = () => {
 
   const handleSave = (e: React.FormEvent) => {
     e.preventDefault();
+    const parsedMinutes = tempoEstudado ? parseInt(tempoEstudado, 10) : selectedTopicForModal.tempoEstudadoMinutos;
+    const isCompletedStatus = status === 'Teoria Concluída' || status === 'Dominado';
 
     if (status === 'Dominado') {
-      markAsMastered(selectedTopicForModal.id);
+      markAsMastered(selectedTopicForModal.id, dataEstudo || getTodayDateString());
       updateTopic(selectedTopicForModal.id, {
         evidencias,
         anotacoes,
+        tempoEstudadoMinutos: parsedMinutes,
+        tempoEstudadoSegundos: parsedMinutes !== undefined ? parsedMinutes * 60 : selectedTopicForModal.tempoEstudadoSegundos,
         acertosExercicios: acertos ? parseFloat(acertos) : undefined
       });
       setSelectedTopicForModal(null);
@@ -76,12 +86,14 @@ export const TopicModal: React.FC = () => {
 
     updateTopic(selectedTopicForModal.id, {
       status,
-      dataEstudo,
+      dataEstudo: isCompletedStatus ? (dataEstudo || getTodayDateString()) : dataEstudo,
       acertosExercicios: acertos ? parseFloat(acertos) : undefined,
+      tempoEstudadoMinutos: parsedMinutes,
+      tempoEstudadoSegundos: parsedMinutes !== undefined ? parsedMinutes * 60 : selectedTopicForModal.tempoEstudadoSegundos,
       anotacoes,
       evidencias,
       proximaRevisao: proximaRevisao || undefined,
-      agendadoPara: agendadoPara || undefined,
+      agendadoPara: isCompletedStatus ? undefined : (agendadoPara || undefined),
       faseRecomendada: status === 'Teoria Concluída' 
         ? '📖 Teoria pronta! Fazer bateria de questões.' 
         : status === 'Em Exercícios'
@@ -109,7 +121,7 @@ export const TopicModal: React.FC = () => {
             <span className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">
               {selectedTopicForModal.disciplina} • {selectedTopicForModal.macrotema}
             </span>
-            <h3 id="modal-topic-title" className="text-base font-bold text-white mt-0.5 line-clamp-1">
+            <h3 id="modal-topic-title" className="text-base font-bold text-white mt-0.5">
               {selectedTopicForModal.microtopico}
             </h3>
           </div>
@@ -131,7 +143,7 @@ export const TopicModal: React.FC = () => {
               Status do Conceito
             </legend>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 text-xs" role="radiogroup" aria-label="Status do Tópico">
-              {(['Pendente', 'Em Andamento', 'Teoria Concluída', 'Em Exercícios', 'Dominado'] as TopicStatus[]).map(st => (
+              {(['Pendente', 'Em Andamento', 'Teoria Concluída', 'Em Exercícios', 'Precisa Revisar', 'Dominado'] as TopicStatus[]).map(st => (
                 <button
                   type="button"
                   key={st}
@@ -162,6 +174,8 @@ export const TopicModal: React.FC = () => {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs">
               <button
                 type="button"
+                role="checkbox"
+                aria-checked={!!evidencias.reconhecimento}
                 onClick={() => toggleEvidence('reconhecimento')}
                 className={`p-2 rounded-xl border flex items-center gap-2 text-left transition ${
                   evidencias.reconhecimento 
@@ -175,6 +189,8 @@ export const TopicModal: React.FC = () => {
 
               <button
                 type="button"
+                role="checkbox"
+                aria-checked={!!evidencias.execucao}
                 onClick={() => toggleEvidence('execucao')}
                 className={`p-2 rounded-xl border flex items-center gap-2 text-left transition ${
                   evidencias.execucao 
@@ -188,6 +204,8 @@ export const TopicModal: React.FC = () => {
 
               <button
                 type="button"
+                role="checkbox"
+                aria-checked={!!evidencias.explicacao}
                 onClick={() => toggleEvidence('explicacao')}
                 className={`p-2 rounded-xl border flex items-center gap-2 text-left transition ${
                   evidencias.explicacao 
@@ -201,6 +219,8 @@ export const TopicModal: React.FC = () => {
 
               <button
                 type="button"
+                role="checkbox"
+                aria-checked={!!evidencias.transferencia}
                 onClick={() => toggleEvidence('transferencia')}
                 className={`p-2 rounded-xl border flex items-center gap-2 text-left transition ${
                   evidencias.transferencia 
@@ -258,23 +278,44 @@ export const TopicModal: React.FC = () => {
             </div>
           </div>
 
-          {/* Exercise % */}
-          <div>
-            <label htmlFor="topic-acertos" className="block text-xs font-semibold text-slate-200 mb-1">
-              % de Acertos em Exercícios (Opcional)
-            </label>
-            <div className="relative">
-              <input
-                id="topic-acertos"
-                type="number"
-                min="0"
-                max="100"
-                placeholder="Ex: 85"
-                value={acertos}
-                onChange={e => setAcertos(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 pr-8 text-xs text-white placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus:border-emerald-500"
-              />
-              <span className="absolute right-3 top-2 text-xs text-slate-400" aria-hidden="true">%</span>
+          {/* Exercise % & Time Studied */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label htmlFor="topic-acertos" className="block text-xs font-semibold text-slate-200 mb-1">
+                % de Acertos em Exercícios (Opcional)
+              </label>
+              <div className="relative">
+                <input
+                  id="topic-acertos"
+                  type="number"
+                  min="0"
+                  max="100"
+                  placeholder="Ex: 85"
+                  value={acertos}
+                  onChange={e => setAcertos(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 pr-8 text-xs text-white placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus:border-emerald-500"
+                />
+                <span className="absolute right-3 top-2 text-xs text-slate-400" aria-hidden="true">%</span>
+              </div>
+            </div>
+
+            <div>
+              <label htmlFor="topic-tempo-estudado" className="block text-xs font-semibold text-slate-200 mb-1">
+                Tempo Dedicado / Cronometrado (min)
+              </label>
+              <div className="relative">
+                <input
+                  id="topic-tempo-estudado"
+                  type="number"
+                  min="0"
+                  max="10000"
+                  placeholder="Ex: 25"
+                  value={tempoEstudado}
+                  onChange={e => setTempoEstudado(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 pr-10 text-xs text-white placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus:border-emerald-500"
+                />
+                <span className="absolute right-3 top-2 text-xs text-slate-400" aria-hidden="true">min</span>
+              </div>
             </div>
           </div>
 

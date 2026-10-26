@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useStudy, getTodayDateString, getWeekDays } from '../context/StudyContext';
-import { StudyTimer } from './StudyTimer';
+import { StudyTimer, formatStudyDuration } from './StudyTimer';
 import { WeeklyPrintModal } from './WeeklyPrintModal';
 import { 
   CheckCircle, 
@@ -22,13 +22,18 @@ import {
   ArrowDownToLine,
   ArrowUp,
   ArrowDown,
-  CalendarDays
+  CalendarDays,
+  RotateCcw,
+  FileEdit,
+  CheckCheck
 } from 'lucide-react';
 
 export const TodayFocus: React.FC = () => {
   const { 
     topics, 
     markAsMastered, 
+    quickCompleteTopic,
+    reopenTopicForDate,
     rescheduleTopic, 
     scheduleForToday, 
     setSelectedTopicForModal,
@@ -38,13 +43,15 @@ export const TodayFocus: React.FC = () => {
     englishHabits,
     toggleEnglishDone,
     toggleEnglishAtEnd,
-    moveTopicOrder
+    moveTopicOrder,
+    activeTimerTarget,
+    setActiveTimerTarget
   } = useStudy();
 
-  const [activeTimerTopic, setActiveTimerTopic] = useState<string | undefined>(undefined);
   const [sessionDuration, setSessionDuration] = useState<'micro' | 'curta' | 'media' | 'longa' | 'livre'>('media');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
   const [showCatalogDrawer, setShowCatalogDrawer] = useState(false);
+  const [showCompletedSection, setShowCompletedSection] = useState(true);
   
   const today = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(today);
@@ -52,14 +59,39 @@ export const TodayFocus: React.FC = () => {
   // Dias da semana atual (Segunda a Domingo)
   const weekDays = getWeekDays(today);
 
-  // Tópicos da data selecionada
+  // Status do hábito de inglês para o dia selecionado
+  const currentHabit = englishHabits[selectedDate] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+
+  // Tópicos pendentes/ativos da data selecionada (exclui os que já foram concluídos hoje ou dominados)
   const activeDateScheduledTopics = topics.filter(t => {
     if (t.status === 'Dominado') return false;
+    if ((t.status === 'Teoria Concluída' || t.status === 'Em Exercícios') && t.dataEstudo === selectedDate) {
+      return false;
+    }
     if (selectedDate === today) {
       return t.agendadoPara === today || (t.agendadoPara && t.agendadoPara < today);
     }
     return t.agendadoPara === selectedDate;
   });
+
+  const activeTopicIds = activeDateScheduledTopics.map(t => t.id);
+
+  // Tópicos concluídos na data selecionada
+  const completedDateTopics = topics.filter(t => {
+    return (
+      t.dataEstudo === selectedDate &&
+      (t.status === 'Teoria Concluída' || t.status === 'Dominado' || t.status === 'Em Exercícios')
+    );
+  });
+
+  const totalCompletedCount = completedDateTopics.length + (currentHabit.done ? 1 : 0);
+
+  // Tempo total estudado no dia selecionado (Inglês + Tópicos do dia)
+  const totalSecondsToday =
+    (currentHabit.secondsStudied !== undefined ? currentHabit.secondsStudied : (currentHabit.minutesStudied || 0) * 60) +
+    topics
+      .filter(t => t.dataEstudo === selectedDate || t.agendadoPara === selectedDate)
+      .reduce((acc, t) => acc + (t.tempoEstudadoSegundos !== undefined ? t.tempoEstudadoSegundos : (t.tempoEstudadoMinutos || 0) * 60), 0);
 
   const pendingPortuguese = topics.filter(t => t.disciplina === 'Língua Portuguesa' && t.status === 'Pendente');
   const pendingMath = topics.filter(t => (t.disciplina.includes('Raciocínio Lógico') || t.disciplina.includes('Matemática')) && t.status === 'Pendente');
@@ -75,16 +107,17 @@ export const TodayFocus: React.FC = () => {
     schedulePedagogicalMission(minutesMap[sessionDuration]);
   };
 
-  // Status do hábito de inglês para o dia selecionado
-  const currentHabit = englishHabits[selectedDate] || { done: false, atEnd: false };
+  const isEnglishTimerActive = activeTimerTarget?.type === 'english' && activeTimerTarget?.dateStr === selectedDate;
+  const englishDurationLabel = formatStudyDuration(currentHabit.secondsStudied, currentHabit.minutesStudied);
+  const hasEnglishStudiedTime = (currentHabit.secondsStudied || 0) > 0 || (currentHabit.minutesStudied || 0) > 0;
 
-  // Componente do Card de Inglês
+  // Componente do Card de Inglês (Apenas na fila ativa quando NÃO concluído)
   const renderEnglishCard = () => (
     <article
       key="daily-english-habit"
       className={`border rounded-2xl p-4 sm:p-5 transition shadow-sm space-y-3 ${
-        currentHabit.done
-          ? 'bg-emerald-950/20 border-emerald-500/40 ring-1 ring-emerald-500/30'
+        isEnglishTimerActive
+          ? 'bg-slate-900 border-emerald-500 ring-1 ring-emerald-500/25'
           : 'bg-gradient-to-r from-indigo-950/40 to-slate-900 border-indigo-500/30 hover:border-indigo-500/50'
       }`}
     >
@@ -98,15 +131,23 @@ export const TodayFocus: React.FC = () => {
             </span>
 
             <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
-              15-20 min
+              Meta: 15 min
             </span>
 
-            {currentHabit.done ? (
-              <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 flex items-center gap-1">
-                <CheckCircle className="w-3 h-3 text-emerald-400" aria-hidden="true" />
-                <span>Concluído Hoje!</span>
+            {hasEnglishStudiedTime && (
+              <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <Clock className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                <span>Focado: {englishDurationLabel}</span>
               </span>
-            ) : currentHabit.atEnd ? (
+            )}
+
+            {isEnglishTimerActive && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500 text-slate-950 animate-pulse">
+                🎯 Em Foco no Timer
+              </span>
+            )}
+
+            {currentHabit.atEnd ? (
               <span className="text-[10px] px-2 py-0.5 rounded bg-amber-500/15 text-amber-300 border border-amber-500/30 flex items-center gap-1">
                 <ArrowDownToLine className="w-3 h-3" aria-hidden="true" />
                 <span>Adiado p/ o final do dia</span>
@@ -123,9 +164,7 @@ export const TodayFocus: React.FC = () => {
           </h3>
 
           <p className="text-xs text-slate-300 font-mono">
-            {currentHabit.done
-              ? '✅ Excelente consistência diária mantida! Hábito concluído.'
-              : '15 minutos de leitura de documentação técnica, podcast ou vocabulário para concurso e TI.'}
+            15 minutos de leitura de documentação técnica, podcast ou vocabulário para concurso e TI.
           </p>
         </div>
 
@@ -133,13 +172,25 @@ export const TodayFocus: React.FC = () => {
         <div className="grid grid-cols-3 gap-1.5 pt-2 sm:pt-0 sm:flex sm:items-center sm:gap-2 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
           {/* Focar Timer */}
           <button
-            onClick={() => setActiveTimerTopic('Hábito Diário: 15 min de Inglês')}
+            onClick={() =>
+              setActiveTimerTarget({
+                type: 'english',
+                id: `english-${selectedDate}`,
+                title: '🇬🇧 Hábito Diário: 15 min de Inglês',
+                dateStr: selectedDate,
+                estimatedMinutes: 15
+              })
+            }
             aria-label="Vincular hábito de inglês ao cronômetro"
-            className="text-xs px-2.5 py-2 sm:py-1.5 rounded-lg border font-medium bg-slate-800 text-slate-200 border-slate-700 hover:text-white transition flex items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
-            title="Cronometrar 15 min de foco"
+            className={`text-xs px-2.5 py-2 sm:py-1.5 rounded-lg border font-medium transition flex items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+              isEnglishTimerActive
+                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                : 'bg-slate-800 text-slate-200 border-slate-700 hover:text-white'
+            }`}
+            title="Cronometrar 15 min de foco e contabilizar neste hábito"
           >
             <Clock className="w-3.5 h-3.5 text-indigo-400" aria-hidden="true" />
-            <span className="text-[11px] sm:text-xs">Focar</span>
+            <span className="text-[11px] sm:text-xs">{isEnglishTimerActive ? 'Focando' : 'Focar'}</span>
           </button>
 
           {/* Adiar p/ Fim do Dia */}
@@ -154,21 +205,23 @@ export const TodayFocus: React.FC = () => {
             title={currentHabit.atEnd ? 'Retornar ao início' : 'Adiar para o fim do dia'}
           >
             <ArrowDownToLine className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
-            <span className="text-[11px] sm:text-xs">{currentHabit.atEnd ? 'No Fim' : 'P/ Fim'}</span>
+            <span className="text-[11px] sm:text-xs">{currentHabit.atEnd ? 'No Topo' : 'P/ Fim'}</span>
           </button>
 
-          {/* Marcar OK */}
+          {/* Marcar OK (Move para Concluídos de Hoje) */}
           <button
-            onClick={() => toggleEnglishDone(selectedDate)}
-            aria-label={currentHabit.done ? 'Desmarcar hábito de inglês' : 'Marcar hábito de inglês como concluído'}
-            className={`text-xs font-semibold px-3 py-2 sm:py-1.5 rounded-lg transition flex items-center justify-center gap-1 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
-              currentHabit.done
-                ? 'bg-emerald-600 hover:bg-emerald-500 text-white'
-                : 'bg-emerald-600/90 hover:bg-emerald-500 text-white'
-            }`}
+            onClick={() => {
+              toggleEnglishDone(selectedDate);
+              if (isEnglishTimerActive) {
+                setActiveTimerTarget(null);
+              }
+            }}
+            aria-label="Marcar hábito de inglês como concluído e mover para concluídos de hoje"
+            className="text-xs font-semibold px-3 py-2 sm:py-1.5 rounded-lg transition flex items-center justify-center gap-1 shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+            title="Concluir hábito e mover para a lista de Concluídos de Hoje"
           >
             <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
-            <span className="text-[11px] sm:text-xs">{currentHabit.done ? 'OK Feito' : 'Marcar OK'}</span>
+            <span className="text-[11px] sm:text-xs">Marcar OK</span>
           </button>
         </div>
       </div>
@@ -181,11 +234,16 @@ export const TodayFocus: React.FC = () => {
       {/* Header Bar */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-2 pb-1 border-b border-slate-800/60">
         <div>
-          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-            Foco de Hoje
+          <h2 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-2.5">
+            <span>Foco de Hoje</span>
+            {totalSecondsToday > 0 && (
+              <span className="text-xs font-mono font-semibold px-2.5 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                ⏱️ {formatStudyDuration(totalSecondsToday)} estudados no dia
+              </span>
+            )}
           </h2>
           <p className="text-xs text-slate-300">
-            Ordem orientada por pré-requisitos conceituais • Sem sobrecarga mental
+            Ordem orientada por pré-requisitos conceituais • Conclua itens para limpá-los da fila ativa
           </p>
         </div>
 
@@ -202,9 +260,9 @@ export const TodayFocus: React.FC = () => {
       </div>
 
       {/* Focus Timer Bar */}
-      <StudyTimer currentTopicTitle={activeTimerTopic} />
+      <StudyTimer />
 
-      {/* Navegador dos Dias da Semana Atual (Weekly Day Strip - Seta 2 da imagem) */}
+      {/* Navegador dos Dias da Semana Atual (Weekly Day Strip) */}
       <section aria-label="Navegador dos dias da semana atual" className="bg-slate-900/90 border border-slate-800/80 rounded-2xl p-3 sm:p-4 space-y-2.5 shadow-md">
         <div className="flex items-center justify-between text-xs text-slate-300">
           <div className="flex items-center gap-1.5 font-semibold text-slate-200">
@@ -226,7 +284,17 @@ export const TodayFocus: React.FC = () => {
         <div className="grid grid-cols-7 gap-1 sm:gap-2" role="group" aria-label="Seletor de dias da semana">
           {weekDays.map(day => {
             const isSelected = selectedDate === day.dateStr;
-            const countForDay = topics.filter(t => t.status !== 'Dominado' && (day.isToday ? (t.agendadoPara === day.dateStr || (t.agendadoPara && t.agendadoPara < day.dateStr)) : t.agendadoPara === day.dateStr)).length;
+            const pendingTopicsForDay = topics.filter(t => {
+              if (t.status === 'Dominado') return false;
+              if ((t.status === 'Teoria Concluída' || t.status === 'Em Exercícios') && t.dataEstudo === day.dateStr) return false;
+              return day.isToday
+                ? (t.agendadoPara === day.dateStr || (t.agendadoPara && t.agendadoPara < day.dateStr))
+                : t.agendadoPara === day.dateStr;
+            }).length;
+
+            const completedTopicsForDay = topics.filter(
+              t => t.dataEstudo === day.dateStr && (t.status === 'Teoria Concluída' || t.status === 'Dominado' || t.status === 'Em Exercícios')
+            ).length + (englishHabits[day.dateStr]?.done ? 1 : 0);
 
             return (
               <button
@@ -257,11 +325,16 @@ export const TodayFocus: React.FC = () => {
                       Hoje
                     </span>
                   )}
-                  {countForDay > 0 && (
+                  {pendingTopicsForDay > 0 && (
                     <span className={`text-[9px] px-1 py-0.2 rounded-full font-bold ${
                       isSelected ? 'bg-emerald-500 text-slate-950' : 'bg-slate-800 text-slate-300'
-                    }`}>
-                      {countForDay}
+                    }`} title={`${pendingTopicsForDay} pendente(s)`}>
+                      {pendingTopicsForDay}
+                    </span>
+                  )}
+                  {completedTopicsForDay > 0 && (
+                    <span className="text-[9px] px-1 py-0.2 rounded-full font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30" title={`${completedTopicsForDay} concluído(s)`}>
+                      ✓{completedTopicsForDay}
                     </span>
                   )}
                 </div>
@@ -271,24 +344,34 @@ export const TodayFocus: React.FC = () => {
         </div>
       </section>
 
-      {/* Missão e Tópicos do Dia */}
-      <section aria-label="Missão e Tópicos de Hoje" className="space-y-3">
+      {/* Fila Ativa: Missão e Tópicos Pendentes do Dia */}
+      <section aria-label="Fila Ativa de Estudos de Hoje" className="space-y-3">
+        <div className="flex items-center justify-between px-1">
+          <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-2">
+            <span>📋 Fila Ativa do Dia</span>
+            <span className="text-[11px] px-2 py-0.5 rounded-full bg-slate-800 text-slate-200 border border-slate-700">
+              {activeDateScheduledTopics.length + (!currentHabit.done ? 1 : 0)} pendente(s)
+            </span>
+          </h3>
+        </div>
         
-        {/* Item 1: Bloco Fixo de Inglês (Renderizado no início se não foi adiado) */}
-        {!currentHabit.atEnd && renderEnglishCard()}
+        {/* Item 1: Bloco Fixo de Inglês (Renderizado no início apenas se NÃO foi concluído e NÃO foi adiado p/ fim) */}
+        {!currentHabit.done && !currentHabit.atEnd && renderEnglishCard()}
 
-        {/* Tópicos Regulares Agendados */}
+        {/* Tópicos Regulares Agendados Pendentes */}
         {activeDateScheduledTopics.length === 0 ? (
-          /* Empty State */
+          /* Empty State for Regular Topics */
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 sm:p-8 text-center space-y-4">
             <div className="space-y-1">
               <h3 className="text-base font-semibold text-white">
-                {selectedDate === today
+                {completedDateTopics.length > 0
+                  ? `🎉 Excelente! Você já concluiu ${completedDateTopics.length} tópico(s) regular(es) hoje!`
+                  : selectedDate === today
                   ? 'Nenhum tópico regular na fila ativa de hoje'
-                  : `Nenhum tópico agendado para ${selectedDate}`}
+                  : `Nenhum tópico pendente para ${selectedDate}`}
               </h3>
               <p className="text-xs text-slate-300 max-w-sm mx-auto">
-                O motor pedagógico seleciona conteúdos disponíveis cujos pré-requisitos já foram dominados:
+                Deseja puxar novos conteúdos destravados pelo motor pedagógico para continuar estudando?
               </p>
             </div>
 
@@ -331,7 +414,7 @@ export const TodayFocus: React.FC = () => {
           /* Active Scheduled Topics List with Reordering Controls */
           activeDateScheduledTopics.map((topic, index) => {
             const isOverdue = topic.agendadoPara && topic.agendadoPara < today;
-            const isSelectedForTimer = activeTimerTopic === topic.microtopico;
+            const isSelectedForTimer = activeTimerTarget?.type === 'topic' && activeTimerTarget?.id === topic.id;
             const isSharedMBA = topic.origem && topic.origem.includes('MBA') && topic.origem.includes('Concurso');
             
             const pedStatus = getTopicPedagogicalStatus(topic);
@@ -340,6 +423,9 @@ export const TodayFocus: React.FC = () => {
 
             const isFirst = index === 0;
             const isLast = index === activeDateScheduledTopics.length - 1;
+
+            const hasStudiedTime = (topic.tempoEstudadoSegundos || 0) > 0 || (topic.tempoEstudadoMinutos || 0) > 0;
+            const studiedLabel = formatStudyDuration(topic.tempoEstudadoSegundos, topic.tempoEstudadoMinutos);
 
             return (
               <article
@@ -357,28 +443,28 @@ export const TodayFocus: React.FC = () => {
                   {/* Left: Reordering buttons & Topic Title */}
                   <div className="flex items-start gap-2.5 flex-1">
                     
-                    {/* Reordering Up/Down Controls */}
+                    {/* Reordering Up/Down Controls (Now swaps within visible day queue!) */}
                     <div className="flex flex-col items-center gap-0.5 pt-0.5">
                       <button
-                        onClick={() => moveTopicOrder(topic.id, 'up')}
+                        onClick={() => moveTopicOrder(topic.id, 'up', activeTopicIds)}
                         disabled={isFirst}
                         aria-label={`Mover ${topic.microtopico} para cima`}
                         className={`p-1 rounded hover:bg-slate-800 transition ${
                           isFirst ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white'
                         }`}
-                        title="Subir na ordem de estudo"
+                        title="Subir na ordem de estudo de hoje"
                       >
                         <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
 
                       <button
-                        onClick={() => moveTopicOrder(topic.id, 'down')}
+                        onClick={() => moveTopicOrder(topic.id, 'down', activeTopicIds)}
                         disabled={isLast}
                         aria-label={`Mover ${topic.microtopico} para baixo`}
                         className={`p-1 rounded hover:bg-slate-800 transition ${
                           isLast ? 'text-slate-600 cursor-not-allowed' : 'text-slate-400 hover:text-white'
                         }`}
-                        title="Descer na ordem de estudo"
+                        title="Descer na ordem de estudo de hoje"
                       >
                         <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
                       </button>
@@ -417,6 +503,26 @@ export const TodayFocus: React.FC = () => {
                         )}
 
                         <span className="text-[11px] text-slate-300 ml-1">{topic.disciplina}</span>
+
+                        {/* Estimated or Accumulated Time Badge */}
+                        {topic.tempoEstimadoMinutos && (
+                          <span className="text-[10px] px-2 py-0.5 rounded bg-slate-800 text-slate-300 border border-slate-700">
+                            Meta: {topic.tempoEstimadoMinutos}m
+                          </span>
+                        )}
+
+                        {hasStudiedTime && (
+                          <span className="text-[10px] font-mono font-semibold px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                            <Clock className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                            <span>Focado: {studiedLabel}</span>
+                          </span>
+                        )}
+
+                        {isSelectedForTimer && (
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500 text-slate-950 animate-pulse">
+                            🎯 Em Foco no Timer
+                          </span>
+                        )}
 
                         {/* Pedagogical Status Badge */}
                         {isBlocked ? (
@@ -465,29 +571,40 @@ export const TodayFocus: React.FC = () => {
                   </div>
 
                   {/* Right: Action Buttons (Responsive Grid on Mobile) */}
-                  <div className="grid grid-cols-4 gap-1.5 pt-2 sm:pt-0 sm:flex sm:items-center sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
+                  <div className="grid grid-cols-5 gap-1.5 pt-2 sm:pt-0 sm:flex sm:items-center sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
                     <button
-                      onClick={() => setActiveTimerTopic(topic.microtopico)}
+                      onClick={() =>
+                        setActiveTimerTarget({
+                          type: 'topic',
+                          id: topic.id,
+                          title: topic.microtopico,
+                          dateStr: selectedDate,
+                          estimatedMinutes: topic.tempoEstimadoMinutos || 25
+                        })
+                      }
                       aria-label={`Vincular tópico ${topic.microtopico} ao cronômetro de foco`}
                       className={`text-xs px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border font-medium transition flex flex-col sm:flex-row items-center justify-center gap-1 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
                         isSelectedForTimer
                           ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                           : 'bg-slate-800 text-slate-200 border-slate-700 hover:text-white'
                       }`}
-                      title="Vincular ao Cronômetro"
+                      title="Vincular ao Cronômetro e contabilizar tempo neste item"
                     >
                       <Clock className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span className="text-[11px] sm:text-xs">Focar</span>
+                      <span className="text-[10px] sm:text-xs">{isSelectedForTimer ? 'Focando' : 'Focar'}</span>
                     </button>
 
                     <button
-                      onClick={() => markAsMastered(topic.id)}
+                      onClick={() => {
+                        markAsMastered(topic.id, selectedDate);
+                        if (isSelectedForTimer) setActiveTimerTarget(null);
+                      }}
                       aria-label={`Marcar tópico ${topic.microtopico} como já dominado`}
                       className="text-xs bg-slate-800 hover:bg-amber-500/20 text-slate-200 hover:text-amber-300 border border-slate-700 hover:border-amber-500/40 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
                       title="Marcar como já dominado"
                     >
                       <Award className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span className="text-[11px] sm:text-xs">Dominado</span>
+                      <span className="text-[10px] sm:text-xs">Dominado</span>
                     </button>
 
                     <button
@@ -497,16 +614,30 @@ export const TodayFocus: React.FC = () => {
                       title="Adiar para amanhã sem culpa"
                     >
                       <FastForward className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
-                      <span className="text-[11px] sm:text-xs">Adiar</span>
+                      <span className="text-[10px] sm:text-xs">Adiar</span>
                     </button>
 
                     <button
                       onClick={() => setSelectedTopicForModal(topic)}
-                      aria-label={`Concluir tópico ${topic.microtopico} e editar registro`}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2.5 sm:px-3 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1 shadow-sm"
+                      aria-label={`Abrir detalhes e anotações de ${topic.microtopico}`}
+                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
+                      title="Registrar anotações, % de acertos e evidências"
+                    >
+                      <FileEdit className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                      <span className="text-[10px] sm:text-xs">Detalhes</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        quickCompleteTopic(topic.id, selectedDate);
+                        if (isSelectedForTimer) setActiveTimerTarget(null);
+                      }}
+                      aria-label={`Marcar tópico ${topic.microtopico} como concluído hoje`}
+                      className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1 shadow-sm"
+                      title="Concluir com 1 clique e mover para Concluídos de Hoje"
                     >
                       <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span className="text-[11px] sm:text-xs">Concluir</span>
+                      <span className="text-[10px] sm:text-xs">Marcar OK</span>
                     </button>
                   </div>
 
@@ -554,13 +685,161 @@ export const TodayFocus: React.FC = () => {
           })
         )}
 
-        {/* Item 1: Bloco Fixo de Inglês (Renderizado no fim se o usuário clicou em 'Adiar p/ fim') */}
-        {currentHabit.atEnd && renderEnglishCard()}
+        {/* Item 1: Bloco Fixo de Inglês (Renderizado no fim da fila ativa se adiado e ainda NÃO concluído) */}
+        {!currentHabit.done && currentHabit.atEnd && renderEnglishCard()}
 
       </section>
 
+      {/* Seção Dedicada: Concluídos de Hoje (Histórico diário e opção de Desfazer/Detalhar) */}
+      <section aria-label="Tarefas e Itens Concluídos de Hoje" className="pt-2">
+        <div className="bg-slate-900/70 border border-slate-800/90 rounded-2xl overflow-hidden shadow-md">
+          <button
+            onClick={() => setShowCompletedSection(!showCompletedSection)}
+            aria-expanded={showCompletedSection}
+            className="w-full px-4 sm:px-5 py-3.5 flex items-center justify-between text-left hover:bg-slate-800/40 transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+          >
+            <div className="flex items-center gap-2.5">
+              <div className={`p-1.5 rounded-lg ${totalCompletedCount > 0 ? 'bg-emerald-500/20 text-emerald-400' : 'bg-slate-800 text-slate-400'}`}>
+                <CheckCheck className="w-4 h-4" aria-hidden="true" />
+              </div>
+              <div>
+                <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
+                  <span>Concluídos {selectedDate === today ? 'de Hoje' : `em ${selectedDate}`}</span>
+                  <span className={`text-[11px] px-2 py-0.2 rounded-full font-bold ${
+                    totalCompletedCount > 0
+                      ? 'bg-emerald-500 text-slate-950'
+                      : 'bg-slate-800 text-slate-400'
+                  }`}>
+                    {totalCompletedCount}
+                  </span>
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  {totalCompletedCount === 0
+                    ? 'Os itens que você marcar como OK sairão da fila acima e aparecerão aqui.'
+                    : 'Itens finalizados hoje • Você pode editar anotações ou reabrir se necessário.'}
+                </p>
+              </div>
+            </div>
+            {showCompletedSection ? (
+              <ChevronUp className="w-4 h-4 text-slate-400" aria-hidden="true" />
+            ) : (
+              <ChevronDown className="w-4 h-4 text-slate-400" aria-hidden="true" />
+            )}
+          </button>
+
+          {showCompletedSection && (
+            <div className="p-4 sm:p-5 border-t border-slate-800/80 space-y-2.5 bg-slate-950/40">
+              {totalCompletedCount === 0 ? (
+                <div className="text-center py-4 text-xs text-slate-400">
+                  Nenhuma tarefa concluída ainda neste dia. Clique em <strong className="text-emerald-400">Marcar OK</strong> em uma tarefa acima ao terminar!
+                </div>
+              ) : (
+                <>
+                  {/* Hábito de Inglês Concluído */}
+                  {currentHabit.done && (
+                    <div className="bg-emerald-950/20 border border-emerald-500/30 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-1.5">
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                            <CheckCircle className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                            <span>Hábito Concluído {currentHabit.completedAt ? `às ${currentHabit.completedAt}` : ''}</span>
+                          </span>
+                          {hasEnglishStudiedTime && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-900 text-emerald-300 border border-slate-800">
+                              ⏱️ {englishDurationLabel}
+                            </span>
+                          )}
+                        </div>
+                        <h4 className="text-xs sm:text-sm font-bold text-slate-200 line-through decoration-emerald-500/60">
+                          🇬🇧 Prática de Inglês (Listening & Vocabulário Técnico)
+                        </h4>
+                      </div>
+
+                      <div className="flex items-center gap-2 self-end sm:self-center">
+                        <button
+                          onClick={() => toggleEnglishDone(selectedDate)}
+                          className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1"
+                          title="Desmarcar e devolver para a fila ativa de hoje"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                          <span>Reabrir</span>
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tópicos Regulares Concluídos no Dia */}
+                  {completedDateTopics.map(topic => {
+                    const hasTime = (topic.tempoEstudadoSegundos || 0) > 0 || (topic.tempoEstudadoMinutos || 0) > 0;
+                    const durationStr = formatStudyDuration(topic.tempoEstudadoSegundos, topic.tempoEstudadoMinutos);
+
+                    return (
+                      <div
+                        key={topic.id}
+                        className="bg-slate-900/90 border border-emerald-500/30 rounded-xl p-3.5 flex flex-col sm:flex-row sm:items-center justify-between gap-3"
+                      >
+                        <div className="space-y-1">
+                          <div className="flex flex-wrap items-center gap-1.5">
+                            <span className={`text-[10px] font-semibold px-2 py-0.5 rounded flex items-center gap-1 ${
+                              topic.status === 'Dominado'
+                                ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+                                : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            }`}>
+                              <CheckCircle className="w-3 h-3" aria-hidden="true" />
+                              <span>{topic.status === 'Dominado' ? '⭐ Dominado' : '✅ Concluído'}</span>
+                            </span>
+
+                            <span className="text-[11px] text-slate-400">{topic.disciplina}</span>
+
+                            {hasTime && (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-emerald-300 border border-slate-800">
+                                ⏱️ {durationStr}
+                              </span>
+                            )}
+
+                            {topic.acertosExercicios !== undefined && (
+                              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-sky-300 border border-slate-800">
+                                🎯 {topic.acertosExercicios}% acertos
+                              </span>
+                            )}
+                          </div>
+
+                          <h4 className="text-xs sm:text-sm font-bold text-slate-200 line-through decoration-emerald-500/60">
+                            {topic.microtopico}
+                          </h4>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-center">
+                          <button
+                            onClick={() => setSelectedTopicForModal(topic)}
+                            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1"
+                            title="Editar anotações, % de acertos ou evidências deste tópico"
+                          >
+                            <FileEdit className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                            <span>Anotações</span>
+                          </button>
+
+                          <button
+                            onClick={() => reopenTopicForDate(topic.id, selectedDate)}
+                            className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white px-2.5 py-1.5 rounded-lg border border-slate-700 transition flex items-center gap-1"
+                            title="Reabrir e devolver para a fila ativa de hoje"
+                          >
+                            <RotateCcw className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+                            <span>Reabrir</span>
+                          </button>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Minimal Collapsible Drawer to Browse Catalog */}
-      <div className="pt-2">
+      <div className="pt-1">
         <button
           onClick={() => setShowCatalogDrawer(!showCatalogDrawer)}
           aria-expanded={showCatalogDrawer}
