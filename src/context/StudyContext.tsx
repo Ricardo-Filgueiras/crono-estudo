@@ -185,7 +185,10 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
           ? initial.anotacoes
           : saved.anotacoes,
       faseRecomendada:
-        (isPortugueseTopic || saved.faseRecomendada === '⏳ Pendente - Aguardando estudo.') && initial.faseRecomendada
+        (isPortugueseTopic ||
+          saved.faseRecomendada === '⏳ Pendente - Aguardando estudo.' ||
+          saved.faseRecomendada === '⏳ Standby (Próximos módulos do MBA).') &&
+        initial.faseRecomendada
           ? initial.faseRecomendada
           : saved.faseRecomendada
     });
@@ -288,6 +291,99 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         setIsSyncing(true);
         setCloudSyncError(null);
+
+        // 1. Tentar carregar das tabelas relacionais normalizadas
+        const [topicsRes, prereqsRes, progressRes, errorsRes, habitsRes] = await Promise.all([
+          supabase.from('topics').select('*'),
+          supabase.from('topic_prerequisites').select('*'),
+          supabase.from('user_topic_progress').select('*').eq('user_id', user.id),
+          supabase.from('user_study_errors').select('*').eq('user_id', user.id),
+          supabase.from('user_english_habits').select('*').eq('user_id', user.id)
+        ]);
+
+        const hasRelationalData = 
+          topicsRes.data && topicsRes.data.length > 0 &&
+          progressRes.data && progressRes.data.length > 0;
+
+        if (hasRelationalData && isMounted) {
+          // Mapa de pré-requisitos direcionados
+          const prereqMap = new Map<string, string[]>();
+          for (const p of (prereqsRes.data || [])) {
+            if (!prereqMap.has(p.topic_id)) prereqMap.set(p.topic_id, []);
+            prereqMap.get(p.topic_id)!.push(p.prerequisite_id);
+          }
+
+          // Mapa de progresso do usuário
+          const progressMap = new Map<string, any>();
+          for (const prog of (progressRes.data || [])) {
+            progressMap.set(prog.topic_id, prog);
+          }
+
+          const combinedTopics: Topic[] = topicsRes.data.map((t: any) => {
+            const prog = progressMap.get(t.id);
+            return {
+              id: t.id,
+              disciplina: t.disciplina,
+              macrotema: t.macrotema,
+              microtopico: t.microtopico,
+              peso: t.peso,
+              origem: t.origem || [],
+              faseRecomendada: t.fase_recomendada,
+              linkMaterial: t.link_material,
+              tempoEstimadoMinutos: t.tempo_estimado_minutos,
+              prerequisitos: prereqMap.get(t.id) || [],
+              status: prog?.status || 'Pendente',
+              dataEstudo: prog?.data_estudo || undefined,
+              acertosExercicios: prog?.acertos_exercicios ?? undefined,
+              anotacoes: prog?.anotacoes || undefined,
+              proximaRevisao: prog?.proxima_revisao || undefined,
+              agendadoPara: prog?.agendado_para || undefined,
+              ordemFila: prog?.ordem_fila ?? undefined,
+              prioridade: prog?.prioridade || undefined,
+              tempoEstudadoMinutos: prog?.tempo_estudado_minutos || 0,
+              tempoEstudadoSegundos: prog?.tempo_estudado_segundos || 0,
+              evidencias: prog?.evidencias || {},
+              justificativaRecomendacao: prog?.justificativa_recomendacao || undefined
+            };
+          });
+
+          setTopics(mergeWithInitialTopics(combinedTopics));
+
+          if (errorsRes.data && errorsRes.data.length > 0) {
+            setErrors(errorsRes.data.map((e: any) => ({
+              id: e.id,
+              data: e.data,
+              disciplina: e.disciplina,
+              microtopico: e.microtopico,
+              idQuestao: e.id_questao || '',
+              enunciado: e.enunciado || '',
+              alternativaMarcada: e.alternativa_marcada || '',
+              gabaritoCorreto: e.gabarito_correto || '',
+              classificacaoErro: e.classificacao_erro || '',
+              licaoAprendida: e.licao_aprendida || '',
+              prerequisitoRelacionado: e.prerequisito_relacionado
+            })));
+          }
+
+          if (habitsRes.data && habitsRes.data.length > 0) {
+            const habitsObj: Record<string, EnglishHabitDay> = {};
+            for (const h of habitsRes.data) {
+              habitsObj[h.date_str] = {
+                done: h.done,
+                atEnd: h.at_end,
+                minutesStudied: h.minutes_studied || 0,
+                secondsStudied: h.seconds_studied || 0,
+                completedAt: h.completed_at
+              };
+            }
+            setEnglishHabits(habitsObj);
+          }
+
+          cloudLoadedForUser.current = user.id;
+          return;
+        }
+
+        // Fallback: caso não tenha dados relacionais ainda, consulta a tabela de backup user_study_data
         const { data, error } = await supabase
           .from('user_study_data')
           .select('topics, errors, updated_at')
@@ -309,19 +405,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             if (Array.isArray(data.errors)) {
               setErrors(data.errors);
             }
-          } else {
-            // Primeiro login ou estado local mais recente que a nuvem: salva os dados locais atuais no Supabase
-            const nowIso = new Date().toISOString();
-            await supabase.from('user_study_data').upsert(
-              {
-                user_id: user.id,
-                topics,
-                errors,
-                updated_at: nowIso
-              },
-              { onConflict: 'user_id' }
-            );
-            localStorage.setItem(STORAGE_KEY_UPDATED_AT, nowIso);
           }
           cloudLoadedForUser.current = user.id;
         }
@@ -340,7 +423,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [user]);
 
-  // Sincronizar alterações locais para o Supabase (Debounced rápido de 300ms)
+  // Sincronizar alterações para o Supabase (Relacional granular + Backup Snapshot)
   useEffect(() => {
     if (!user || cloudLoadedForUser.current !== user.id) return;
 
@@ -353,7 +436,51 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       try {
         setIsSyncing(true);
         setCloudSyncError(null);
-        const { error } = await supabase.from('user_study_data').upsert(
+
+        // 1. Upsert relacional em user_topic_progress
+        const progressRows = topics.map(t => ({
+          user_id: user.id,
+          topic_id: t.id,
+          status: t.status,
+          data_estudo: t.dataEstudo || null,
+          acertos_exercicios: t.acertosExercicios ?? null,
+          anotacoes: t.anotacoes || null,
+          proxima_revisao: t.proximaRevisao || null,
+          agendado_para: t.agendadoPara || null,
+          ordem_fila: t.ordemFila ?? null,
+          prioridade: t.prioridade || null,
+          tempo_estudado_minutos: t.tempoEstudadoMinutos || 0,
+          tempo_estudado_segundos: t.tempoEstudadoSegundos || 0,
+          evidencias: t.evidencias || {},
+          justificativa_recomendacao: t.justificativaRecomendacao || null,
+          updated_at: nowIso
+        }));
+
+        const { error: progError } = await supabase
+          .from('user_topic_progress')
+          .upsert(progressRows, { onConflict: 'user_id,topic_id' });
+        if (progError) console.error('Erro ao salvar progresso relacional:', progError);
+
+        // 2. Upsert relacional de hábitos de inglês
+        const habitEntries = Object.entries(englishHabits);
+        if (habitEntries.length > 0) {
+          const habitRows = habitEntries.map(([dateStr, h]) => ({
+            user_id: user.id,
+            date_str: dateStr,
+            done: h.done,
+            at_end: h.atEnd,
+            minutes_studied: h.minutesStudied || 0,
+            seconds_studied: h.secondsStudied || 0,
+            completed_at: h.completedAt || null
+          }));
+          const { error: habitError } = await supabase
+            .from('user_english_habits')
+            .upsert(habitRows, { onConflict: 'user_id,date_str' });
+          if (habitError) console.error('Erro ao salvar hábitos relacionais:', habitError);
+        }
+
+        // 3. Backup na tabela snapshot user_study_data (dupla segurança)
+        const { error: snapError } = await supabase.from('user_study_data').upsert(
           {
             user_id: user.id,
             topics,
@@ -362,17 +489,17 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           },
           { onConflict: 'user_id' }
         );
-        if (error) throw error;
+        if (snapError) console.error('Erro ao salvar snapshot de backup:', snapError);
       } catch (err: any) {
         console.error('Erro ao salvar no Supabase:', err);
         setCloudSyncError('Não foi possível salvar na nuvem');
       } finally {
         setIsSyncing(false);
       }
-    }, 300);
+    }, 400);
 
     return () => clearTimeout(timeout);
-  }, [topics, errors, user]);
+  }, [topics, errors, englishHabits, user]);
 
   // Mapa otimizado de tópicos para consulta de grafos
   const topicMap = useMemo(() => buildTopicMap(topics), [topics]);
@@ -604,16 +731,44 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  const addError = (item: Omit<ErrorItem, 'id'>) => {
+  const addError = async (item: Omit<ErrorItem, 'id'>) => {
     const newItem: ErrorItem = {
       ...item,
       id: `err-${Date.now()}`
     };
     setErrors(prev => [newItem, ...prev]);
+
+    if (user) {
+      try {
+        await supabase.from('user_study_errors').insert({
+          id: newItem.id,
+          user_id: user.id,
+          data: newItem.data,
+          disciplina: newItem.disciplina,
+          microtopico: newItem.microtopico,
+          id_questao: newItem.idQuestao,
+          enunciado: newItem.enunciado,
+          alternativa_marcada: newItem.alternativaMarcada,
+          gabarito_correto: newItem.gabaritoCorreto,
+          classificacao_erro: newItem.classificacaoErro,
+          licao_aprendida: newItem.licaoAprendida,
+          prerequisito_relacionado: newItem.prerequisitoRelacionado
+        });
+      } catch (e) {
+        console.error('Erro ao salvar erro no banco relacional:', e);
+      }
+    }
   };
 
-  const deleteError = (id: string) => {
+  const deleteError = async (id: string) => {
     setErrors(prev => prev.filter(e => e.id !== id));
+    if (user) {
+      try {
+        await supabase.from('user_study_errors').delete().eq('id', id).eq('user_id', user.id);
+      } catch (e) {
+        console.error('Erro ao excluir erro do banco relacional:', e);
+      }
+    }
   };
 
   const exportBackup = () => {
