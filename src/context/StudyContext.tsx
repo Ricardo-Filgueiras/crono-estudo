@@ -10,6 +10,7 @@ import {
 } from '../utils/conceptGraph';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
+import { RealtimeChannel } from '@supabase/supabase-js';
 import confetti from 'canvas-confetti';
 
 interface StudyContextType {
@@ -285,6 +286,19 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
   const cloudLoadedForUser = useRef<string | null>(null);
   const isApplyingCloudData = useRef(false);
+  const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+
+  const broadcastChange = (event: string, payload: any) => {
+    if (realtimeChannelRef.current) {
+      realtimeChannelRef.current.send({
+        type: 'broadcast',
+        event,
+        payload
+      }).catch(err => {
+        console.warn('[Realtime Broadcast] Aviso ao enviar:', err);
+      });
+    }
+  };
 
   // Sync to localStorage
   useEffect(() => {
@@ -448,20 +462,54 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     loadCloudData();
 
-    // 🔴 WEBSOCKET REALTIME: O que for alterado no mobile reflete instantaneamente no desktop
-    const channel = supabase
-      .channel(`crono_realtime_${user.id}`)
+    // 🔴 WEBSOCKET DUAL-LAYER: Broadcast direto instantâneo + Postgres Changes (com RLS)
+    const channel = supabase.channel(`crono_realtime_${user.id}`, {
+      config: {
+        broadcast: { ack: true }
+      }
+    });
+    realtimeChannelRef.current = channel;
+
+    channel
+      // 1. MENSAGERIA BROADCAST DIRETA (Sub-50ms entre abas/aparelhos ativos)
+      .on('broadcast', { event: 'HABIT_UPDATE' }, ({ payload }) => {
+        if (!payload || !payload.dateStr) return;
+        setEnglishHabits(prev => ({
+          ...prev,
+          [payload.dateStr]: {
+            ...(prev[payload.dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 }),
+            ...payload.habit
+          }
+        }));
+      })
+      .on('broadcast', { event: 'TOPIC_UPDATE' }, ({ payload }) => {
+        if (!payload || !payload.topicId) return;
+        setTopics(prev => prev.map(t => t.id === payload.topicId ? { ...t, ...payload.updates } : t));
+      })
+      .on('broadcast', { event: 'SESSION_UPDATE' }, ({ payload }) => {
+        if (!payload || !payload.log) return;
+        setSessionLogs(prev => {
+          const idx = prev.findIndex(item => item.id === payload.log.id);
+          if (idx !== -1) {
+            const next = [...prev];
+            next[idx] = payload.log;
+            return next;
+          }
+          return [payload.log, ...prev];
+        });
+      })
+      // 2. POSTGRES CHANGES (Camada de persistência relacional do Supabase)
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'user_english_habits',
-          filter: `user_id=eq.${user.id}`
+          table: 'user_english_habits'
         },
         (payload) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const h = payload.new as any;
+            if (h.user_id !== user.id) return;
             setEnglishHabits(prev => ({
               ...prev,
               [h.date_str]: {
@@ -480,12 +528,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         {
           event: '*',
           schema: 'public',
-          table: 'user_topic_progress',
-          filter: `user_id=eq.${user.id}`
+          table: 'user_topic_progress'
         },
         (payload) => {
           if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
             const prog = payload.new as any;
+            if (prog.user_id !== user.id) return;
             setTopics(prev => prev.map(t => {
               if (t.id === prog.topic_id) {
                 return {
@@ -509,40 +557,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           }
         }
       )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_study_sessions',
-          filter: `user_id=eq.${user.id}`
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const s = payload.new as any;
-            setSessionLogs(prev => {
-              const idx = prev.findIndex(item => item.id === s.id);
-              const mapped = {
-                id: s.id,
-                topicId: s.topic_id || undefined,
-                targetTitle: s.target_title,
-                origem: s.origem || [],
-                dateStr: s.date_str,
-                secondsStudied: s.seconds_studied || 0,
-                type: s.type || 'topic',
-                timestamp: s.timestamp || new Date().toISOString()
-              };
-              if (idx !== -1) {
-                const next = [...prev];
-                next[idx] = mapped;
-                return next;
-              }
-              return [mapped, ...prev];
-            });
-          }
+      .subscribe((status) => {
+        if (status === 'SUBSCRIBED') {
+          console.log('[Supabase Realtime] Canal conectado e pronto.');
         }
-      )
-      .subscribe();
+      });
 
     // Sincronização ao focar na janela / desbloquear tela
     const handleWindowFocusOrVisibility = () => {
@@ -555,13 +574,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     window.addEventListener('focus', handleWindowFocusOrVisibility);
 
     return () => {
+      realtimeChannelRef.current = null;
       supabase.removeChannel(channel);
       window.removeEventListener('visibilitychange', handleWindowFocusOrVisibility);
       window.removeEventListener('focus', handleWindowFocusOrVisibility);
     };
   }, [user]);
 
-  // Sincronizar alterações locais para o Supabase (Relacional granular + Backup Snapshot)
+  // Backup Snapshot para user_study_data (Apenas backup geral, NUNCA sobrescreve as tabelas relacionais)
   useEffect(() => {
     if (!user || cloudLoadedForUser.current !== user.id) return;
     if (isApplyingCloudData.current) return;
@@ -574,70 +594,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const timeout = setTimeout(async () => {
       try {
         setIsSyncing(true);
-        setCloudSyncError(null);
-
-        // 1. Upsert relacional em user_topic_progress
-        const progressRows = topics.map(t => ({
-          user_id: user.id,
-          topic_id: t.id,
-          status: t.status,
-          data_estudo: t.dataEstudo || null,
-          acertos_exercicios: t.acertosExercicios ?? null,
-          anotacoes: t.anotacoes || null,
-          proxima_revisao: t.proximaRevisao || null,
-          agendado_para: t.agendadoPara || null,
-          ordem_fila: t.ordemFila ?? null,
-          prioridade: t.prioridade || null,
-          tempo_estudado_minutos: t.tempoEstudadoMinutos || 0,
-          tempo_estudado_segundos: t.tempoEstudadoSegundos || 0,
-          evidencias: t.evidencias || {},
-          justificativa_recomendacao: t.justificativaRecomendacao || null,
-          updated_at: nowIso
-        }));
-
-        const { error: progError } = await supabase
-          .from('user_topic_progress')
-          .upsert(progressRows, { onConflict: 'user_id,topic_id' });
-        if (progError) console.error('Erro ao salvar progresso relacional:', progError);
-
-        // 2. Upsert relacional de hábitos de inglês
-        const habitEntries = Object.entries(englishHabits);
-        if (habitEntries.length > 0) {
-          const habitRows = habitEntries.map(([dateStr, h]) => ({
-            user_id: user.id,
-            date_str: dateStr,
-            done: h.done,
-            at_end: h.atEnd,
-            minutes_studied: h.minutesStudied || 0,
-            seconds_studied: h.secondsStudied || 0,
-            completed_at: h.completedAt || null
-          }));
-          const { error: habitError } = await supabase
-            .from('user_english_habits')
-            .upsert(habitRows, { onConflict: 'user_id,date_str' });
-          if (habitError) console.error('Erro ao salvar hábitos relacionais:', habitError);
-        }
-
-        // 3. Upsert relacional de sessões de estudo
-        if (sessionLogs.length > 0) {
-          const sessionRows = sessionLogs.map(s => ({
-            id: s.id,
-            user_id: user.id,
-            topic_id: s.topicId || null,
-            target_title: s.targetTitle,
-            origem: s.origem || [],
-            date_str: s.dateStr,
-            seconds_studied: s.secondsStudied || 0,
-            type: s.type,
-            timestamp: s.timestamp || nowIso
-          }));
-          const { error: sessError } = await supabase
-            .from('user_study_sessions')
-            .upsert(sessionRows, { onConflict: 'user_id,id' });
-          if (sessError) console.error('Erro ao salvar sessões relacionais:', sessError);
-        }
-
-        // 4. Backup na tabela snapshot user_study_data (dupla segurança)
+        // Backup de segurança na tabela snapshot user_study_data
         const { error: snapError } = await supabase.from('user_study_data').upsert(
           {
             user_id: user.id,
@@ -650,15 +607,14 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         );
         if (snapError) console.error('Erro ao salvar snapshot de backup:', snapError);
       } catch (err: any) {
-        console.error('Erro ao salvar no Supabase:', err);
-        setCloudSyncError('Não foi possível salvar na nuvem');
+        console.error('Erro no backup:', err);
       } finally {
         setIsSyncing(false);
       }
-    }, 400);
+    }, 3000);
 
     return () => clearTimeout(timeout);
-  }, [topics, errors, englishHabits, sessionLogs, user]);
+  }, [topics, errors, sessionLogs, user]);
 
   // Mapa otimizado de tópicos para consulta de grafos
   const topicMap = useMemo(() => buildTopicMap(topics), [topics]);
@@ -719,18 +675,25 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const markAsMastered = (id: string, completedDateStr?: string) => {
     const today = getTodayDateString();
     const effectiveDate = completedDateStr || today;
+    const topicUpdates: Partial<Topic> = {
+      status: 'Dominado',
+      dataEstudo: effectiveDate,
+      faseRecomendada: '⭐ Conteúdo dominado! Alicerce consolidado para conteúdos dependentes.',
+      agendadoPara: undefined // Remove da fila pendente
+    };
+
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          status: 'Dominado',
-          dataEstudo: effectiveDate,
-          faseRecomendada: '⭐ Conteúdo dominado! Alicerce consolidado para conteúdos dependentes.',
-          agendadoPara: undefined // Remove da fila pendente
+          ...topicUpdates
         };
       }
       return t;
     }));
+
+    // Broadcast instantâneo
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
       supabase.from('user_topic_progress').upsert({
@@ -762,19 +725,27 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     const effectiveDate = completedDateStr || today;
     const nextRevDate = addDaysToDate(effectiveDate, 7);
 
+    const topicUpdates: Partial<Topic> = {
+      status: 'Teoria Concluída',
+      dataEstudo: effectiveDate,
+      proximaRevisao: nextRevDate,
+      agendadoPara: undefined,
+      faseRecomendada: '✅ Concluído no Foco do Dia! Revisão agendada (D+7).'
+    };
+
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          status: t.status === 'Dominado' ? 'Dominado' : 'Teoria Concluída',
-          dataEstudo: effectiveDate,
-          proximaRevisao: t.proximaRevisao || nextRevDate,
-          agendadoPara: undefined,
-          faseRecomendada: '✅ Concluído no Foco do Dia! Revisão agendada (D+7).'
+          ...topicUpdates,
+          status: t.status === 'Dominado' ? 'Dominado' : 'Teoria Concluída'
         };
       }
       return t;
     }));
+
+    // Broadcast instantâneo
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
       supabase.from('user_topic_progress').upsert({
@@ -803,17 +774,24 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const reopenTopicForDate = (id: string, dateStr: string) => {
+    const topicUpdates: Partial<Topic> = {
+      status: 'Em Andamento',
+      agendadoPara: dateStr,
+      dataEstudo: undefined
+    };
+
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          status: 'Em Andamento',
-          agendadoPara: dateStr,
-          dataEstudo: undefined
+          ...topicUpdates
         };
       }
       return t;
     }));
+
+    // Broadcast instantâneo
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
       supabase.from('user_topic_progress').upsert({
@@ -942,46 +920,100 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       newDate = daysOffsetOrDate;
     }
 
+    const topicUpdates: Partial<Topic> = {
+      agendadoPara: newDate,
+      faseRecomendada: `⏩ Reagendado para ${newDate}`
+    };
+
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          agendadoPara: newDate,
-          faseRecomendada: `⏩ Reagendado para ${newDate}`
+          ...topicUpdates
         };
       }
       return t;
     }));
+
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
+
+    if (user) {
+      supabase.from('user_topic_progress').upsert({
+        user_id: user.id,
+        topic_id: id,
+        agendado_para: newDate,
+        fase_recomendada: `⏩ Reagendado para ${newDate}`,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+        if (error) console.error('Erro ao reagendar tópico:', error);
+      });
+    }
   };
 
   const scheduleForToday = (id: string) => {
     const today = getTodayDateString();
+    const topicUpdates: Partial<Topic> = {
+      agendadoPara: today
+    };
+
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          agendadoPara: today
+          ...topicUpdates
         };
       }
       return t;
     }));
+
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
+
+    if (user) {
+      supabase.from('user_topic_progress').upsert({
+        user_id: user.id,
+        topic_id: id,
+        agendado_para: today,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+        if (error) console.error('Erro ao agendar tópico para hoje:', error);
+      });
+    }
   };
 
   const completeRevision = (id: string, nextIntervalDays = 15) => {
     const today = getTodayDateString();
     const nextDate = addDaysToDate(today, nextIntervalDays);
+    const topicUpdates: Partial<Topic> = {
+      proximaRevisao: nextDate,
+      status: 'Teoria Concluída',
+      faseRecomendada: `✅ Revisão concluída! Próxima revisão em ${nextIntervalDays} dias.`
+    };
 
     setTopics(prev => prev.map(t => {
       if (t.id === id) {
         return {
           ...t,
-          proximaRevisao: nextDate,
-          status: t.status === 'Precisa Revisar' ? 'Teoria Concluída' : t.status,
-          faseRecomendada: `✅ Revisão concluída! Próxima revisão em ${nextIntervalDays} dias.`
+          ...topicUpdates,
+          status: t.status === 'Precisa Revisar' ? 'Teoria Concluída' : t.status
         };
       }
       return t;
     }));
+
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
+
+    if (user) {
+      supabase.from('user_topic_progress').upsert({
+        user_id: user.id,
+        topic_id: id,
+        proxima_revisao: nextDate,
+        status: 'Teoria Concluída',
+        fase_recomendada: `✅ Revisão concluída! Próxima revisão em ${nextIntervalDays} dias.`,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+        if (error) console.error('Erro ao salvar revisão:', error);
+      });
+    }
 
     try {
       confetti({
@@ -1081,6 +1113,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     let nextDone = false;
     let nextCompletedAt: string | undefined = undefined;
 
+    let habitToBroadcast: EnglishHabitDay | null = null;
     setEnglishHabits(prev => {
       const current = prev[dateStr] || { done: false, atEnd: false };
       nextDone = !current.done;
@@ -1090,15 +1123,21 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
         } catch {}
       }
+      habitToBroadcast = {
+        ...current,
+        done: nextDone,
+        completedAt: nextCompletedAt
+      };
       return {
         ...prev,
-        [dateStr]: {
-          ...current,
-          done: nextDone,
-          completedAt: nextCompletedAt
-        }
+        [dateStr]: habitToBroadcast
       };
     });
+
+    // 📡 Broadcast instantâneo para todos os navegadores/dispositivos conectados
+    if (habitToBroadcast) {
+      broadcastChange('HABIT_UPDATE', { dateStr, habit: habitToBroadcast });
+    }
 
     if (user) {
       const current = englishHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
@@ -1118,14 +1157,20 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const toggleEnglishAtEnd = (dateStr: string) => {
     let nextAtEnd = false;
+    let habitToBroadcast: EnglishHabitDay | null = null;
     setEnglishHabits(prev => {
       const current = prev[dateStr] || { done: false, atEnd: false };
       nextAtEnd = !current.atEnd;
+      habitToBroadcast = { ...current, atEnd: nextAtEnd };
       return {
         ...prev,
-        [dateStr]: { ...current, atEnd: nextAtEnd }
+        [dateStr]: habitToBroadcast
       };
     });
+
+    if (habitToBroadcast) {
+      broadcastChange('HABIT_UPDATE', { dateStr, habit: habitToBroadcast });
+    }
 
     if (user) {
       const current = englishHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
