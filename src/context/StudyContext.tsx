@@ -702,7 +702,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         status: 'Dominado',
         data_estudo: effectiveDate,
         agendado_para: null,
-        fase_recomendada: '⭐ Conteúdo dominado! Alicerce consolidado para conteúdos dependentes.',
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
         if (error) console.error('Erro ao sincronizar tópico dominado:', error);
@@ -755,7 +754,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         data_estudo: effectiveDate,
         proxima_revisao: nextRevDate,
         agendado_para: null,
-        fase_recomendada: '✅ Concluído no Foco do Dia! Revisão agendada (D+7).',
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
         if (error) console.error('Erro ao sincronizar conclusão de tópico:', error);
@@ -942,7 +940,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         user_id: user.id,
         topic_id: id,
         agendado_para: newDate,
-        fase_recomendada: `⏩ Reagendado para ${newDate}`,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
         if (error) console.error('Erro ao reagendar tópico:', error);
@@ -1008,7 +1005,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         topic_id: id,
         proxima_revisao: nextDate,
         status: 'Teoria Concluída',
-        fase_recomendada: `✅ Revisão concluída! Próxima revisão em ${nextIntervalDays} dias.`,
         updated_at: new Date().toISOString()
       }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
         if (error) console.error('Erro ao salvar revisão:', error);
@@ -1112,12 +1108,13 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const toggleEnglishDone = (dateStr: string) => {
     let nextDone = false;
     let nextCompletedAt: string | undefined = undefined;
+    const nowIso = new Date().toISOString();
 
     let habitToBroadcast: EnglishHabitDay | null = null;
     setEnglishHabits(prev => {
       const current = prev[dateStr] || { done: false, atEnd: false };
       nextDone = !current.done;
-      nextCompletedAt = nextDone ? new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : undefined;
+      nextCompletedAt = nextDone ? nowIso : undefined;
       if (nextDone) {
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
@@ -1181,7 +1178,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         at_end: nextAtEnd,
         minutes_studied: current.minutesStudied || 0,
         seconds_studied: current.secondsStudied || 0,
-        completed_at: current.completedAt || null
+        completed_at: current.completedAt ? new Date(current.completedAt).toISOString() : null
       }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
         if (error) console.error('Erro ao salvar posição de hábito de inglês:', error);
       });
