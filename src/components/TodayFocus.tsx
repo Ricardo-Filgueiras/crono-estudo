@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useStudy, getTodayDateString, getWeekDays } from '../context/StudyContext';
+import { useAuth } from '../context/AuthContext';
 import { StudyTimer, formatStudyDuration } from './StudyTimer';
 import { WeeklyPrintModal } from './WeeklyPrintModal';
 import { 
@@ -25,7 +26,8 @@ import {
   CheckCheck,
   MoreHorizontal,
   Play,
-  Eye
+  Eye,
+  LogIn
 } from 'lucide-react';
 
 export const TodayFocus: React.FC = () => {
@@ -47,6 +49,8 @@ export const TodayFocus: React.FC = () => {
     activeTimerTarget,
     setActiveTimerTarget
   } = useStudy();
+
+  const { user, openAuthModal } = useAuth();
 
   const [sessionDuration, setSessionDuration] = useState<'micro' | 'curta' | 'media' | 'longa' | 'livre'>('media');
   const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
@@ -259,7 +263,25 @@ export const TodayFocus: React.FC = () => {
 
   return (
     <div className="space-y-5 max-w-4xl mx-auto">
-      
+      {/* Banner de Aviso de Modo Convidado / Sincronização Desativada */}
+      {!user && !isImmersiveFocusActive && (
+        <div className="bg-amber-500/10 border border-amber-500/30 rounded-2xl p-3.5 sm:p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-amber-200 shadow-sm animate-in fade-in duration-300">
+          <div className="flex items-center gap-3">
+            <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />
+            <div className="text-xs">
+              <span className="font-semibold text-white">Modo Local (Não Sincronizado):</span> Suas tarefas e tempos estão salvos apenas neste navegador. Faça login para sincronizar em tempo real com o seu celular.
+            </div>
+          </div>
+          <button
+            onClick={openAuthModal}
+            className="shrink-0 text-xs px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold transition flex items-center gap-1.5 shadow-sm"
+          >
+            <LogIn className="w-3.5 h-3.5" />
+            <span>Fazer Login</span>
+          </button>
+        </div>
+      )}
+
       {/* Header Bar Minimalista */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1 pb-2 border-b border-slate-800/60">
         <div>

@@ -25,7 +25,8 @@ export const Header: React.FC = () => {
     exportBackup, 
     importBackup, 
     resetToInitial,
-    isSyncing
+    isSyncing,
+    refreshCloudData
   } = useStudy();
 
   const { user, openAuthModal, signOut } = useAuth();
@@ -165,13 +166,21 @@ export const Header: React.FC = () => {
               {user ? (
                 <div className="flex items-center gap-2">
                   <div
-                    title={isSyncing ? "Sincronizando com Supabase..." : "Nuvem Conectada e Sincronizada"}
+                    title={isSyncing ? "Sincronizando com Supabase..." : "Nuvem Conectada e Sincronizada em Tempo Real"}
                     className="flex items-center gap-1.5 bg-emerald-500/10 border border-emerald-500/20 text-emerald-300 px-2.5 py-1.5 rounded-lg text-xs"
                   >
                     <Cloud className={`w-3.5 h-3.5 ${isSyncing ? 'animate-pulse text-amber-400' : 'text-emerald-400'}`} />
                     <span className="hidden md:inline font-mono text-[11px] max-w-[120px] truncate text-slate-200">
                       {user.email}
                     </span>
+                    <button
+                      onClick={() => refreshCloudData()}
+                      title="Forçar sincronização com a nuvem agora"
+                      aria-label="Atualizar dados da nuvem"
+                      className="ml-1 p-0.5 text-emerald-400 hover:text-emerald-200 hover:bg-emerald-500/20 rounded transition focus:outline-none"
+                    >
+                      <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-amber-300' : ''}`} />
+                    </button>
                   </div>
                   <button
                     onClick={signOut}

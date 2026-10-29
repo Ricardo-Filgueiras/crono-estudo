@@ -37,6 +37,7 @@ interface StudyContextType {
   isSyncing: boolean;
   isCloudConnected: boolean;
   cloudSyncError: string | null;
+  refreshCloudData: () => Promise<void>;
 
   // === GRAFO CONCEITUAL & RECOMENDAÇÃO INTELIGENTE (FASE 1) ===
   getTopicPedagogicalStatus: (topic: Topic) => PedagogicalStatus;
@@ -283,6 +284,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [isSyncing, setIsSyncing] = useState(false);
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
   const cloudLoadedForUser = useRef<string | null>(null);
+  const isApplyingCloudData = useRef(false);
 
   // Sync to localStorage
   useEffect(() => {
@@ -317,172 +319,252 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   }, [sessionLogs]);
 
-  // Carregar dados do Supabase quando o usuário autenticar
+  // Função centralizada para carregar dados do Supabase
+  const loadCloudData = async (_isManualOrRefresh = false) => {
+    if (!user) return;
+    try {
+      setIsSyncing(true);
+      setCloudSyncError(null);
+
+      const [topicsRes, prereqsRes, progressRes, errorsRes, habitsRes, sessionsRes] = await Promise.all([
+        supabase.from('topics').select('*'),
+        supabase.from('topic_prerequisites').select('*'),
+        supabase.from('user_topic_progress').select('*').eq('user_id', user.id),
+        supabase.from('user_study_errors').select('*').eq('user_id', user.id),
+        supabase.from('user_english_habits').select('*').eq('user_id', user.id),
+        supabase.from('user_study_sessions').select('*').eq('user_id', user.id)
+      ]);
+
+      isApplyingCloudData.current = true;
+
+      // 1. Tópicos e Progresso
+      if (topicsRes.data && topicsRes.data.length > 0) {
+        const prereqMap = new Map<string, string[]>();
+        for (const p of (prereqsRes.data || [])) {
+          if (!prereqMap.has(p.topic_id)) prereqMap.set(p.topic_id, []);
+          prereqMap.get(p.topic_id)!.push(p.prerequisite_id);
+        }
+
+        const progressMap = new Map<string, any>();
+        for (const prog of (progressRes.data || [])) {
+          progressMap.set(prog.topic_id, prog);
+        }
+
+        const combinedTopics: Topic[] = topicsRes.data.map((t: any) => {
+          const prog = progressMap.get(t.id);
+          return {
+            id: t.id,
+            disciplina: t.disciplina,
+            macrotema: t.macrotema,
+            microtopico: t.microtopico,
+            peso: t.peso,
+            origem: t.origem || [],
+            faseRecomendada: t.fase_recomendada,
+            linkMaterial: t.link_material,
+            tempoEstimadoMinutos: t.tempo_estimado_minutos,
+            prerequisitos: prereqMap.get(t.id) || [],
+            status: prog?.status || 'Pendente',
+            dataEstudo: prog?.data_estudo || undefined,
+            acertosExercicios: prog?.acertos_exercicios ?? undefined,
+            anotacoes: prog?.anotacoes || undefined,
+            proximaRevisao: prog?.proxima_revisao || undefined,
+            agendadoPara: prog?.agendado_para || undefined,
+            ordemFila: prog?.ordem_fila ?? undefined,
+            prioridade: prog?.prioridade || undefined,
+            tempoEstudadoMinutos: prog?.tempo_estudado_minutos || 0,
+            tempoEstudadoSegundos: prog?.tempo_estudado_segundos || 0,
+            evidencias: prog?.evidencias || {},
+            justificativaRecomendacao: prog?.justificativa_recomendacao || undefined
+          };
+        });
+
+        setTopics(mergeWithInitialTopics(combinedTopics));
+      }
+
+      // 2. Erros FCC
+      if (errorsRes.data && errorsRes.data.length > 0) {
+        setErrors(errorsRes.data.map((e: any) => ({
+          id: e.id,
+          data: e.data,
+          disciplina: e.disciplina,
+          microtopico: e.microtopico,
+          idQuestao: e.id_questao || '',
+          enunciado: e.enunciado || '',
+          alternativaMarcada: e.alternativa_marcada || '',
+          gabaritoCorreto: e.gabarito_correto || '',
+          classificacaoErro: e.classificacao_erro || '',
+          licaoAprendida: e.licao_aprendida || '',
+          prerequisitoRelacionado: e.prerequisito_relacionado
+        })));
+      }
+
+      // 3. Hábitos de Inglês
+      if (habitsRes.data && habitsRes.data.length > 0) {
+        const habitsObj: Record<string, EnglishHabitDay> = {};
+        for (const h of habitsRes.data) {
+          habitsObj[h.date_str] = {
+            done: h.done,
+            atEnd: h.at_end,
+            minutesStudied: h.minutes_studied || 0,
+            secondsStudied: h.seconds_studied || 0,
+            completedAt: h.completed_at
+          };
+        }
+        setEnglishHabits(prev => ({ ...prev, ...habitsObj }));
+      }
+
+      // 4. Sessões de Estudo
+      if (sessionsRes.data && sessionsRes.data.length > 0) {
+        setSessionLogs(sessionsRes.data.map((s: any) => ({
+          id: s.id,
+          topicId: s.topic_id || undefined,
+          targetTitle: s.target_title,
+          origem: s.origem || [],
+          dateStr: s.date_str,
+          secondsStudied: s.seconds_studied || 0,
+          type: s.type || 'topic',
+          timestamp: s.timestamp || new Date().toISOString()
+        })));
+      }
+
+      cloudLoadedForUser.current = user.id;
+    } catch (err: any) {
+      console.error('Erro ao sincronizar com Supabase:', err);
+      setCloudSyncError(err.message || 'Falha ao sincronizar com a nuvem');
+    } finally {
+      setIsSyncing(false);
+      setTimeout(() => {
+        isApplyingCloudData.current = false;
+      }, 500);
+    }
+  };
+
+  // Carregar dados e manter escuta em tempo real (WebSockets) via Supabase Realtime
   useEffect(() => {
     if (!user) {
       cloudLoadedForUser.current = null;
       return;
     }
 
-    if (cloudLoadedForUser.current === user.id) return;
+    loadCloudData();
 
-    let isMounted = true;
-    const loadCloudData = async () => {
-      try {
-        setIsSyncing(true);
-        setCloudSyncError(null);
-
-        // 1. Tentar carregar das tabelas relacionais normalizadas
-        const [topicsRes, prereqsRes, progressRes, errorsRes, habitsRes, sessionsRes] = await Promise.all([
-          supabase.from('topics').select('*'),
-          supabase.from('topic_prerequisites').select('*'),
-          supabase.from('user_topic_progress').select('*').eq('user_id', user.id),
-          supabase.from('user_study_errors').select('*').eq('user_id', user.id),
-          supabase.from('user_english_habits').select('*').eq('user_id', user.id),
-          supabase.from('user_study_sessions').select('*').eq('user_id', user.id)
-        ]);
-
-        const hasRelationalData = 
-          topicsRes.data && topicsRes.data.length > 0 &&
-          progressRes.data && progressRes.data.length > 0;
-
-        if (hasRelationalData && isMounted) {
-          // Mapa de pré-requisitos direcionados
-          const prereqMap = new Map<string, string[]>();
-          for (const p of (prereqsRes.data || [])) {
-            if (!prereqMap.has(p.topic_id)) prereqMap.set(p.topic_id, []);
-            prereqMap.get(p.topic_id)!.push(p.prerequisite_id);
-          }
-
-          // Mapa de progresso do usuário
-          const progressMap = new Map<string, any>();
-          for (const prog of (progressRes.data || [])) {
-            progressMap.set(prog.topic_id, prog);
-          }
-
-          const combinedTopics: Topic[] = topicsRes.data.map((t: any) => {
-            const prog = progressMap.get(t.id);
-            return {
-              id: t.id,
-              disciplina: t.disciplina,
-              macrotema: t.macrotema,
-              microtopico: t.microtopico,
-              peso: t.peso,
-              origem: t.origem || [],
-              faseRecomendada: t.fase_recomendada,
-              linkMaterial: t.link_material,
-              tempoEstimadoMinutos: t.tempo_estimado_minutos,
-              prerequisitos: prereqMap.get(t.id) || [],
-              status: prog?.status || 'Pendente',
-              dataEstudo: prog?.data_estudo || undefined,
-              acertosExercicios: prog?.acertos_exercicios ?? undefined,
-              anotacoes: prog?.anotacoes || undefined,
-              proximaRevisao: prog?.proxima_revisao || undefined,
-              agendadoPara: prog?.agendado_para || undefined,
-              ordemFila: prog?.ordem_fila ?? undefined,
-              prioridade: prog?.prioridade || undefined,
-              tempoEstudadoMinutos: prog?.tempo_estudado_minutos || 0,
-              tempoEstudadoSegundos: prog?.tempo_estudado_segundos || 0,
-              evidencias: prog?.evidencias || {},
-              justificativaRecomendacao: prog?.justificativa_recomendacao || undefined
-            };
-          });
-
-          setTopics(mergeWithInitialTopics(combinedTopics));
-
-          if (errorsRes.data && errorsRes.data.length > 0) {
-            setErrors(errorsRes.data.map((e: any) => ({
-              id: e.id,
-              data: e.data,
-              disciplina: e.disciplina,
-              microtopico: e.microtopico,
-              idQuestao: e.id_questao || '',
-              enunciado: e.enunciado || '',
-              alternativaMarcada: e.alternativa_marcada || '',
-              gabaritoCorreto: e.gabarito_correto || '',
-              classificacaoErro: e.classificacao_erro || '',
-              licaoAprendida: e.licao_aprendida || '',
-              prerequisitoRelacionado: e.prerequisito_relacionado
-            })));
-          }
-
-          if (habitsRes.data && habitsRes.data.length > 0) {
-            const habitsObj: Record<string, EnglishHabitDay> = {};
-            for (const h of habitsRes.data) {
-              habitsObj[h.date_str] = {
+    // 🔴 WEBSOCKET REALTIME: O que for alterado no mobile reflete instantaneamente no desktop
+    const channel = supabase
+      .channel(`crono_realtime_${user.id}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_english_habits',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const h = payload.new as any;
+            setEnglishHabits(prev => ({
+              ...prev,
+              [h.date_str]: {
                 done: h.done,
                 atEnd: h.at_end,
                 minutesStudied: h.minutes_studied || 0,
                 secondsStudied: h.seconds_studied || 0,
                 completedAt: h.completed_at
+              }
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_topic_progress',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const prog = payload.new as any;
+            setTopics(prev => prev.map(t => {
+              if (t.id === prog.topic_id) {
+                return {
+                  ...t,
+                  status: prog.status,
+                  dataEstudo: prog.data_estudo || undefined,
+                  acertosExercicios: prog.acertos_exercicios ?? undefined,
+                  anotacoes: prog.anotacoes || undefined,
+                  proximaRevisao: prog.proxima_revisao || undefined,
+                  agendadoPara: prog.agendado_para || undefined,
+                  ordemFila: prog.ordem_fila ?? undefined,
+                  prioridade: prog.prioridade || undefined,
+                  tempoEstudadoMinutos: prog.tempo_estudado_minutos || 0,
+                  tempoEstudadoSegundos: prog.tempo_estudado_segundos || 0,
+                  evidencias: prog.evidencias || {},
+                  justificativaRecomendacao: prog.justificativa_recomendacao || undefined
+                };
+              }
+              return t;
+            }));
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'user_study_sessions',
+          filter: `user_id=eq.${user.id}`
+        },
+        (payload) => {
+          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
+            const s = payload.new as any;
+            setSessionLogs(prev => {
+              const idx = prev.findIndex(item => item.id === s.id);
+              const mapped = {
+                id: s.id,
+                topicId: s.topic_id || undefined,
+                targetTitle: s.target_title,
+                origem: s.origem || [],
+                dateStr: s.date_str,
+                secondsStudied: s.seconds_studied || 0,
+                type: s.type || 'topic',
+                timestamp: s.timestamp || new Date().toISOString()
               };
-            }
-            setEnglishHabits(habitsObj);
+              if (idx !== -1) {
+                const next = [...prev];
+                next[idx] = mapped;
+                return next;
+              }
+              return [mapped, ...prev];
+            });
           }
-
-          if (sessionsRes.data && sessionsRes.data.length > 0) {
-            setSessionLogs(sessionsRes.data.map((s: any) => ({
-              id: s.id,
-              topicId: s.topic_id || undefined,
-              targetTitle: s.target_title,
-              origem: s.origem || [],
-              dateStr: s.date_str,
-              secondsStudied: s.seconds_studied || 0,
-              type: s.type || 'topic',
-              timestamp: s.timestamp || new Date().toISOString()
-            })));
-          }
-
-          cloudLoadedForUser.current = user.id;
-          return;
         }
+      )
+      .subscribe();
 
-        // Fallback: caso não tenha dados relacionais ainda, consulta a tabela de backup user_study_data
-        const { data, error } = await supabase
-          .from('user_study_data')
-          .select('topics, errors, session_logs, updated_at')
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) throw error;
-
-        if (isMounted) {
-          const localUpdatedAt = localStorage.getItem(STORAGE_KEY_UPDATED_AT);
-          const cloudUpdatedAt = data?.updated_at;
-          const isLocalNewer =
-            localUpdatedAt &&
-            cloudUpdatedAt &&
-            new Date(localUpdatedAt).getTime() > new Date(cloudUpdatedAt).getTime();
-
-          if (data && Array.isArray(data.topics) && data.topics.length > 0 && !isLocalNewer) {
-            setTopics(mergeWithInitialTopics(data.topics));
-            if (Array.isArray(data.errors)) {
-              setErrors(data.errors);
-            }
-            if (Array.isArray(data.session_logs) && data.session_logs.length > 0) {
-              setSessionLogs(data.session_logs);
-            }
-          }
-          cloudLoadedForUser.current = user.id;
-        }
-      } catch (err: any) {
-        console.error('Erro ao sincronizar com Supabase:', err);
-        if (isMounted) setCloudSyncError(err.message || 'Falha ao sincronizar com a nuvem');
-      } finally {
-        if (isMounted) setIsSyncing(false);
+    // Sincronização ao focar na janela / desbloquear tela
+    const handleWindowFocusOrVisibility = () => {
+      if (document.visibilityState === 'visible') {
+        loadCloudData(true);
       }
     };
 
-    loadCloudData();
+    window.addEventListener('visibilitychange', handleWindowFocusOrVisibility);
+    window.addEventListener('focus', handleWindowFocusOrVisibility);
 
     return () => {
-      isMounted = false;
+      supabase.removeChannel(channel);
+      window.removeEventListener('visibilitychange', handleWindowFocusOrVisibility);
+      window.removeEventListener('focus', handleWindowFocusOrVisibility);
     };
   }, [user]);
 
-  // Sincronizar alterações para o Supabase (Relacional granular + Backup Snapshot)
+  // Sincronizar alterações locais para o Supabase (Relacional granular + Backup Snapshot)
   useEffect(() => {
     if (!user || cloudLoadedForUser.current !== user.id) return;
+    if (isApplyingCloudData.current) return;
 
     const nowIso = new Date().toISOString();
     try {
@@ -650,6 +732,20 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return t;
     }));
 
+    if (user) {
+      supabase.from('user_topic_progress').upsert({
+        user_id: user.id,
+        topic_id: id,
+        status: 'Dominado',
+        data_estudo: effectiveDate,
+        agendado_para: null,
+        fase_recomendada: '⭐ Conteúdo dominado! Alicerce consolidado para conteúdos dependentes.',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+        if (error) console.error('Erro ao sincronizar tópico dominado:', error);
+      });
+    }
+
     try {
       confetti({
         particleCount: 80,
@@ -680,6 +776,21 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return t;
     }));
 
+    if (user) {
+      supabase.from('user_topic_progress').upsert({
+        user_id: user.id,
+        topic_id: id,
+        status: 'Teoria Concluída',
+        data_estudo: effectiveDate,
+        proxima_revisao: nextRevDate,
+        agendado_para: null,
+        fase_recomendada: '✅ Concluído no Foco do Dia! Revisão agendada (D+7).',
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+        if (error) console.error('Erro ao sincronizar conclusão de tópico:', error);
+      });
+    }
+
     try {
       confetti({
         particleCount: 55,
@@ -703,6 +814,19 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       }
       return t;
     }));
+
+    if (user) {
+      supabase.from('user_topic_progress').upsert({
+        user_id: user.id,
+        topic_id: id,
+        status: 'Em Andamento',
+        agendado_para: dateStr,
+        data_estudo: null,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+        if (error) console.error('Erro ao reabrir tópico:', error);
+      });
+    }
   };
 
   const recordStudySeconds = (target: ActiveTimerTarget, secondsToAdd: number) => {
@@ -710,10 +834,10 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     const dateKey = target.dateStr || getTodayDateString();
     const nowIso = new Date().toISOString();
+    const logId = `${dateKey}_${target.type}_${target.id}`;
 
     // 1. Registra no histórico de sessões com granularidade por dia e alvo
     setSessionLogs(prev => {
-      const logId = `${dateKey}_${target.type}_${target.id}`;
       const existingIdx = prev.findIndex(l => l.id === logId);
       if (existingIdx !== -1) {
         const updated = [...prev];
@@ -741,40 +865,70 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     if (target.type === 'english') {
+      let finalSecs = 0;
       setEnglishHabits(prev => {
         const current = prev[dateKey] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
-        const totalSeconds = (current.secondsStudied || (current.minutesStudied || 0) * 60) + secondsToAdd;
-        const totalMinutes = Math.floor(totalSeconds / 60);
+        finalSecs = (current.secondsStudied || (current.minutesStudied || 0) * 60) + secondsToAdd;
+        const totalMinutes = Math.floor(finalSecs / 60);
         return {
           ...prev,
           [dateKey]: {
             ...current,
-            secondsStudied: totalSeconds,
+            secondsStudied: finalSecs,
             minutesStudied: totalMinutes
           }
         };
       });
+
+      if (user) {
+        const cur = englishHabits[dateKey] || { done: false, atEnd: false };
+        supabase.from('user_english_habits').upsert({
+          user_id: user.id,
+          date_str: dateKey,
+          done: cur.done,
+          at_end: cur.atEnd,
+          seconds_studied: finalSecs,
+          minutes_studied: Math.floor(finalSecs / 60)
+        }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
+          if (error) console.error('Erro ao sincronizar hábito com tempo:', error);
+        });
+      }
       return;
     }
 
     if (target.type === 'topic') {
+      let updatedSecs = 0;
+      let updatedMins = 0;
       setTopics(prev => prev.map(t => {
         if (t.id === target.id) {
           const prevSecs = t.tempoEstudadoSegundos !== undefined
             ? t.tempoEstudadoSegundos
             : (t.tempoEstudadoMinutos || 0) * 60;
-          const nextSecs = prevSecs + secondsToAdd;
-          const nextMins = Math.floor(nextSecs / 60);
+          updatedSecs = prevSecs + secondsToAdd;
+          updatedMins = Math.floor(updatedSecs / 60);
           return {
             ...t,
-            tempoEstudadoSegundos: nextSecs,
-            tempoEstudadoMinutos: nextMins,
+            tempoEstudadoSegundos: updatedSecs,
+            tempoEstudadoMinutos: updatedMins,
             dataEstudo: t.dataEstudo || dateKey,
             status: t.status === 'Pendente' ? 'Em Andamento' : t.status
           };
         }
         return t;
       }));
+
+      if (user) {
+        supabase.from('user_topic_progress').upsert({
+          user_id: user.id,
+          topic_id: target.id,
+          tempo_estudado_segundos: updatedSecs,
+          tempo_estudado_minutos: updatedMins,
+          data_estudo: dateKey,
+          updated_at: nowIso
+        }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
+          if (error) console.error('Erro ao sincronizar tempo do tópico:', error);
+        });
+      }
     }
   };
 
@@ -924,9 +1078,13 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const toggleEnglishDone = (dateStr: string) => {
+    let nextDone = false;
+    let nextCompletedAt: string | undefined = undefined;
+
     setEnglishHabits(prev => {
       const current = prev[dateStr] || { done: false, atEnd: false };
-      const nextDone = !current.done;
+      nextDone = !current.done;
+      nextCompletedAt = nextDone ? new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : undefined;
       if (nextDone) {
         try {
           confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
@@ -937,20 +1095,52 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         [dateStr]: {
           ...current,
           done: nextDone,
-          completedAt: nextDone ? new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' }) : undefined
+          completedAt: nextCompletedAt
         }
       };
     });
+
+    if (user) {
+      const current = englishHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+      supabase.from('user_english_habits').upsert({
+        user_id: user.id,
+        date_str: dateStr,
+        done: nextDone,
+        at_end: current.atEnd,
+        minutes_studied: current.minutesStudied || 0,
+        seconds_studied: current.secondsStudied || 0,
+        completed_at: nextCompletedAt || null
+      }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
+        if (error) console.error('Erro ao salvar hábito de inglês imediatamente no Supabase:', error);
+      });
+    }
   };
 
   const toggleEnglishAtEnd = (dateStr: string) => {
+    let nextAtEnd = false;
     setEnglishHabits(prev => {
       const current = prev[dateStr] || { done: false, atEnd: false };
+      nextAtEnd = !current.atEnd;
       return {
         ...prev,
-        [dateStr]: { ...current, atEnd: !current.atEnd }
+        [dateStr]: { ...current, atEnd: nextAtEnd }
       };
     });
+
+    if (user) {
+      const current = englishHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+      supabase.from('user_english_habits').upsert({
+        user_id: user.id,
+        date_str: dateStr,
+        done: current.done,
+        at_end: nextAtEnd,
+        minutes_studied: current.minutesStudied || 0,
+        seconds_studied: current.secondsStudied || 0,
+        completed_at: current.completedAt || null
+      }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
+        if (error) console.error('Erro ao salvar posição de hábito de inglês:', error);
+      });
+    }
   };
 
   const moveTopicOrder = (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => {
@@ -1039,6 +1229,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isSyncing,
         isCloudConnected: !!user,
         cloudSyncError,
+        refreshCloudData: () => loadCloudData(true),
         getTopicPedagogicalStatus,
         getTopicUnmetPrerequisites,
         getTopicUnlockCount,
