@@ -2868,6 +2868,139 @@
         "topic-114"
       ],
       "tempoEstimadoMinutos": 50
+    },
+    {
+      "id": "math-m03-u02",
+      "disciplina": "Matemática (Módulo 03)",
+      "macrotema": "Nível 1: Os Tijolos • Proporcionalidade e Regra de Três",
+      "microtopico": "Regra de Três: Entendendo Regra de Três, Porcentagem e Problemas",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-10-29",
+      "faseRecomendada": "🎯 Meta de Hoje (Khan Academy): Introdução à regra de três, cálculo percentual integrado e problemas aplicados.",
+      "anotacoes": "Khan Academy: Entendendo regra de três, regra de três e porcentagem, problemas contextualizados. Montagem das colunas e multiplicação cruzada.",
+      "prerequisitos": [
+        "math-m01-u01"
+      ],
+      "tempoEstimadoMinutos": 30
+    },
+    {
+      "id": "math-m03-u03",
+      "disciplina": "Matemática (Módulo 03)",
+      "macrotema": "Nível 1: Os Tijolos • Variação Direta e Inversa (EF08MA12)",
+      "microtopico": "Variação Direta e Inversa: Grandezas Proporcionais e Constante k",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-10-30",
+      "faseRecomendada": "🎯 Meta da Semana (BNCC EF08MA12): Identificação de grandezas diretas (y = kx) e inversas (y · x = k) em tabelas, gráficos e problemas.",
+      "anotacoes": "Khan Academy (BNCC EF08MA12): Variação proporcional direta e inversa, constante k, problemas de abastecimento de combustível e vibração de cordas.",
+      "prerequisitos": [
+        "math-m03-u02"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
+      "id": "math-m06-u06",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Nível 4: Espaço e Dedução • Quadriláteros e Polígonos (EF08MA14)",
+      "microtopico": "Provas e Ângulos de Quadriláteros e Polígonos Regulares",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-10-31",
+      "faseRecomendada": "🎯 Meta do Fim de Semana (EF08MA14): Demonstrações dedutivas de paralelogramos e soma dos ângulos internos de polígonos.",
+      "anotacoes": "Khan Academy (BNCC EF08MA14): Provas de lados e ângulos opostos de paralelogramo, diagonais de losangos, soma de ângulos internos de quadrilátero (360°) e polígonos regulares Sn=(n-2)*180°.",
+      "prerequisitos": [
+        "math-m06-u02"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
+      "id": "math-m06-u07",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Nível 4: Espaço e Dedução • Construções Geométricas (EF08MA15)",
+      "microtopico": "Construções Geométricas: Mediatrizes, Perpendiculares e Bissetrizes",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-11-01",
+      "faseRecomendada": "🎯 Meta do Fim de Semana (EF08MA15): Procedimentos de traçado com régua e compasso para mediatriz, reta perpendicular e bissetriz.",
+      "anotacoes": "Khan Academy (BNCC EF08MA15/17): Lugar geométrico da mediatriz (pontos equidistantes dos extremos), perpendicular passando por ponto e bissetriz de um ângulo.",
+      "prerequisitos": [
+        "math-m06-u01"
+      ],
+      "tempoEstimadoMinutos": 30
+    },
+    {
+      "id": "math-m06-u08",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Nível 4: Espaço e Dedução • Bissetrizes e Teorema Interno (EF08MA17)",
+      "microtopico": "Ângulo da Bissetriz, Ponto Notável Incentro e Teorema da Bissetriz Interna",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-11-02",
+      "faseRecomendada": "🎯 Meta da Próxima Semana (EF08MA17): Teorema da bissetriz interna e relação com o incentro (centro da circunferência inscrita).",
+      "anotacoes": "Khan Academy (BNCC EF08MA17): Distância entre ponto e reta, incentro como interseção das bissetrizes, circunferência inscrita (r = Área/semiperímetro) e Teorema da Bissetriz Interna.",
+      "prerequisitos": [
+        "math-m06-u07"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
+      "id": "math-m06-u09",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Nível 4: Espaço e Dedução • Mediatrizes e Circuncentro (EF08MA15/17)",
+      "microtopico": "Mediatrizes do Triângulo, Circuncentro e Circunraio",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-11-03",
+      "faseRecomendada": "🎯 Meta da Próxima Semana (EF08MA15/17): Ponto notável Circuncentro, raio da circunferência circunscrita e casos notáveis.",
+      "anotacoes": "Khan Academy (BNCC EF08MA15/17): Ponto de encontro das mediatrizes, circuncentro no ponto médio da hipotenusa no triângulo retângulo, 3 pontos não colineares determinando circunferência e fórmula do circunraio R = abc/(4A).",
+      "prerequisitos": [
+        "math-m06-u07"
+      ],
+      "tempoEstimadoMinutos": 35
+    },
+    {
+      "id": "math-m06-u10",
+      "disciplina": "Matemática (Módulo 06)",
+      "macrotema": "Nível 4: Espaço e Dedução • Círculo e Circunferência",
+      "microtopico": "Elementos Fundamentais do Círculo, Circunferência, Arcos e Cordas",
+      "peso": "Matemática Base • Sinergia com Concurso",
+      "origem": [
+        "Matemática Base",
+        "Concurso"
+      ],
+      "status": "Pendente",
+      "agendadoPara": "2026-11-04",
+      "faseRecomendada": "🎯 Meta da Próxima Semana: Domínio dos elementos anatômicos e propriedades de círculos e circunferências.",
+      "anotacoes": "Khan Academy: Identificação das partes da circunferência: raio, diâmetro, corda, arco, reta secante e tangente. Relação entre comprimento C = 2*pi*r e área A = pi*r^2.",
+      "prerequisitos": [
+        "math-m06-u03"
+      ],
+      "tempoEstimadoMinutos": 30
     }
   ],
   "errors": [
