@@ -1178,7 +1178,11 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         at_end: nextAtEnd,
         minutes_studied: current.minutesStudied || 0,
         seconds_studied: current.secondsStudied || 0,
-        completed_at: current.completedAt ? new Date(current.completedAt).toISOString() : null
+        completed_at: (() => {
+          if (!current.completedAt) return null;
+          const d = new Date(current.completedAt);
+          return isNaN(d.getTime()) ? null : d.toISOString();
+        })()
       }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
         if (error) console.error('Erro ao salvar posição de hábito de inglês:', error);
       });
