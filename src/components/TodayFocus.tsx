@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useStudy, getTodayDateString, getWeekDays } from '../context/StudyContext';
 import { useAuth } from '../context/AuthContext';
 import { StudyTimer, formatStudyDuration } from './StudyTimer';
 import { WeeklyPrintModal } from './WeeklyPrintModal';
+import { StudyContextTag } from '../types';
 import { 
   CheckCircle, 
   Clock, 
@@ -27,7 +28,8 @@ import {
   MoreHorizontal,
   Play,
   Eye,
-  LogIn
+  LogIn,
+  Search
 } from 'lucide-react';
 
 export const TodayFocus: React.FC = () => {
@@ -61,9 +63,31 @@ export const TodayFocus: React.FC = () => {
   const [isTimerRunning, setIsTimerRunning] = useState(false);
   const [autoStartTrigger, setAutoStartTrigger] = useState(0);
   const [peekListWhileRunning, setPeekListWhileRunning] = useState(false);
+  const [catalogSearch, setCatalogSearch] = useState('');
+  const [catalogTag, setCatalogTag] = useState<string>('TODAS');
   
   const today = getTodayDateString();
   const [selectedDate, setSelectedDate] = useState<string>(today);
+
+  // Fechar menu '...' ao pressionar Escape ou clicar fora
+  useEffect(() => {
+    if (!openMenuId) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpenMenuId(null);
+    };
+    const handleClickOutside = () => {
+      setOpenMenuId(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    const timer = setTimeout(() => {
+      window.addEventListener('click', handleClickOutside);
+    }, 0);
+    return () => {
+      clearTimeout(timer);
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('click', handleClickOutside);
+    };
+  }, [openMenuId]);
 
   // Dias da semana atual (Segunda a Domingo)
   const weekDays = getWeekDays(today);
@@ -112,8 +136,27 @@ export const TodayFocus: React.FC = () => {
   // Modo Imersão Anti-Distração: esconde o restante da lista enquanto o timer está rodando
   const isImmersiveFocusActive = isTimerRunning && !!activeTimerTarget && !peekListWhileRunning;
 
-  const pendingPortuguese = topics.filter(t => t.disciplina === 'Língua Portuguesa' && t.status === 'Pendente');
-  const pendingMath = topics.filter(t => (t.disciplina.includes('Raciocínio Lógico') || t.disciplina.includes('Matemática')) && t.status === 'Pendente');
+  // Catálogo dinâmico para a gaveta "+ Adicionar mais um item para hoje"
+  const catalogTopics = useMemo(() => {
+    return topics
+      .filter(t => {
+        if (t.status === 'Dominado') return false;
+        if (t.agendadoPara === selectedDate) return false;
+        if (catalogTag !== 'TODAS' && (!t.origem || !t.origem.includes(catalogTag as StudyContextTag))) {
+          return false;
+        }
+        if (catalogSearch.trim()) {
+          const q = catalogSearch.toLowerCase();
+          return (
+            t.microtopico.toLowerCase().includes(q) ||
+            t.disciplina.toLowerCase().includes(q) ||
+            t.macrotema.toLowerCase().includes(q)
+          );
+        }
+        return t.status === 'Pendente' || t.status === 'Em Andamento';
+      })
+      .slice(0, 8);
+  }, [topics, selectedDate, catalogTag, catalogSearch]);
 
   const handlePedagogicalPlan = () => {
     const minutesMap = {
@@ -855,24 +898,68 @@ export const TodayFocus: React.FC = () => {
           </button>
 
           {showCatalogDrawer && (
-            <section id="catalog-drawer-section" aria-label="Tópicos disponíveis para adicionar" className="mt-2 bg-slate-900/50 border border-slate-800 rounded-2xl p-4 space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                {pendingPortuguese.slice(0, 2).concat(pendingMath.slice(0, 2)).map(t => (
-                  <div key={t.id} className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs">
-                    <div className="line-clamp-1 pr-2">
-                      <span className="text-[10px] text-slate-500 block">{t.disciplina}</span>
-                      <span className="text-slate-200 font-medium">{t.microtopico}</span>
-                    </div>
+            <section id="catalog-drawer-section" aria-label="Tópicos disponíveis para adicionar" className="mt-2 bg-slate-900/60 border border-slate-800 rounded-2xl p-4 space-y-3">
+              <div className="flex flex-col sm:flex-row gap-2">
+                <div className="relative flex-1">
+                  <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" aria-hidden="true" />
+                  <input
+                    type="search"
+                    value={catalogSearch}
+                    onChange={e => setCatalogSearch(e.target.value)}
+                    placeholder="Buscar qualquer matéria ou assunto para estudar hoje..."
+                    aria-label="Buscar matéria ou assunto para adicionar hoje"
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+                <div className="flex items-center gap-1 overflow-x-auto no-scrollbar">
+                  {[
+                    { id: 'TODAS', label: 'Todas' },
+                    { id: 'Português Base', label: 'Português' },
+                    { id: 'Matemática Base', label: 'Matemática' },
+                    { id: 'Ciências da Natureza', label: 'Natureza' },
+                    { id: 'MBA', label: 'MBA' },
+                    { id: 'Concurso', label: 'Concurso' },
+                    { id: 'Leitura / Livro', label: 'Livros' },
+                  ].map(tag => (
                     <button
-                      onClick={() => scheduleForToday(t.id)}
-                      className="p-1.5 bg-slate-800 hover:bg-emerald-600 rounded-lg text-slate-200 hover:text-white transition"
-                      title="Adicionar à fila de hoje"
+                      key={tag.id}
+                      onClick={() => setCatalogTag(tag.id)}
+                      className={`px-2.5 py-1 rounded-lg text-[11px] font-medium border whitespace-nowrap transition ${
+                        catalogTag === tag.id
+                          ? 'bg-emerald-600 text-white border-emerald-500'
+                          : 'bg-slate-950 text-slate-400 border-slate-800 hover:text-white'
+                      }`}
                     >
-                      <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                      {tag.label}
                     </button>
-                  </div>
-                ))}
+                  ))}
+                </div>
               </div>
+
+              {catalogTopics.length === 0 ? (
+                <p className="text-center py-3 text-xs text-slate-500">
+                  Nenhum tópico pendente encontrado para essa busca.
+                </p>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {catalogTopics.map(t => (
+                    <div key={t.id} className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs hover:border-slate-700 transition">
+                      <div className="line-clamp-1 pr-2">
+                        <span className="text-[10px] text-slate-500 block">{t.disciplina}</span>
+                        <span className="text-slate-200 font-medium">{t.microtopico}</span>
+                      </div>
+                      <button
+                        onClick={() => rescheduleTopic(t.id, selectedDate)}
+                        className="p-1.5 bg-slate-800 hover:bg-emerald-600 rounded-lg text-slate-200 hover:text-white transition shrink-0 flex items-center gap-1 px-2.5"
+                        title="Adicionar à fila de hoje"
+                      >
+                        <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span className="text-[11px] font-semibold">Hoje</span>
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
             </section>
           )}
         </div>

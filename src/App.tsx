@@ -11,11 +11,12 @@ import { TopicModal } from './components/TopicModal';
 import { AuthModal } from './components/AuthModal';
 import { BottomNav } from './components/BottomNav';
 import { LandingPage } from './components/LandingPage';
+import { SyncToast } from './components/SyncToast';
 import { BookOpen } from 'lucide-react';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
-  const { activeTab } = useStudy();
+  const { activeTab, syncNotification, dismissSyncNotification } = useStudy();
   const [isGuestMode, setIsGuestMode] = useState(false);
 
   // Loading state while Supabase checks session
@@ -68,6 +69,12 @@ const AppContent: React.FC = () => {
 
       {/* Supabase Authentication Modal */}
       <AuthModal />
+
+      {/* Sincronização Notifier & Rollback Feedback */}
+      <SyncToast 
+        notification={syncNotification} 
+        onDismiss={dismissSyncNotification} 
+      />
     </div>
   );
 };

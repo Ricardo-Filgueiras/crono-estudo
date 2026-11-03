@@ -1,16 +1,32 @@
 import React from 'react';
-import { useStudy, getTodayDateString } from '../context/StudyContext';
-import { RotateCcw, CheckCircle, AlertTriangle, Calendar } from 'lucide-react';
+import { useStudy, getTodayDateString, formatDateBR } from '../context/StudyContext';
+import { RotateCcw, CheckCircle, AlertTriangle, Calendar, Play, FileEdit } from 'lucide-react';
 
 export const ReviewQueue: React.FC = () => {
-  const { topics, completeRevision } = useStudy();
+  const { topics, completeRevision, setSelectedTopicForModal, setActiveTimerTarget, setActiveTab } = useStudy();
   const today = getTodayDateString();
 
   // Topics with revision date
   const reviewTopics = topics.filter(t => t.proximaRevisao && t.status !== 'Dominado');
 
-  const overdueOrToday = reviewTopics.filter(t => t.proximaRevisao! <= today);
-  const upcoming = reviewTopics.filter(t => t.proximaRevisao! > today);
+  const overdueOrToday = reviewTopics
+    .filter(t => t.proximaRevisao! <= today)
+    .sort((a, b) => (a.proximaRevisao || '').localeCompare(b.proximaRevisao || ''));
+
+  const upcoming = reviewTopics
+    .filter(t => t.proximaRevisao! > today)
+    .sort((a, b) => (a.proximaRevisao || '').localeCompare(b.proximaRevisao || ''));
+
+  const handleFocusReview = (topicId: string, title: string) => {
+    setActiveTimerTarget({
+      type: 'topic',
+      id: topicId,
+      title: `Revisão 5m: ${title}`,
+      dateStr: today,
+      estimatedMinutes: 5
+    });
+    setActiveTab('hoje');
+  };
 
   return (
     <div className="space-y-6">
@@ -60,7 +76,7 @@ export const ReviewQueue: React.FC = () => {
                       {topic.disciplina}
                     </span>
                     <span className="bg-amber-500/10 text-amber-300 px-2 py-0.5 rounded border border-amber-500/20 font-mono text-[10px]">
-                      Venceu em: {topic.proximaRevisao}
+                      Venceu em: {formatDateBR(topic.proximaRevisao)}
                     </span>
                   </div>
 
@@ -76,7 +92,25 @@ export const ReviewQueue: React.FC = () => {
                   )}
                 </div>
 
-                <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <div className="flex flex-wrap items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                  <button
+                    onClick={() => setSelectedTopicForModal(topic)}
+                    aria-label={`Abrir notas do tópico ${topic.microtopico}`}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 font-medium px-3 py-1.5 rounded-xl border border-slate-700 transition flex items-center gap-1.5"
+                  >
+                    <FileEdit className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                    <span>Notas</span>
+                  </button>
+
+                  <button
+                    onClick={() => handleFocusReview(topic.id, topic.microtopico)}
+                    aria-label={`Focar 5 minutos na revisão de ${topic.microtopico}`}
+                    className="text-xs bg-slate-800 hover:bg-slate-700 text-emerald-300 font-semibold px-3 py-1.5 rounded-xl border border-emerald-500/30 transition flex items-center gap-1.5"
+                  >
+                    <Play className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                    <span>Focar 5m</span>
+                  </button>
+
                   <button
                     onClick={() => completeRevision(topic.id, 15)}
                     aria-label={`Concluir revisão do tópico ${topic.microtopico} e agendar próxima em 15 dias`}
@@ -109,7 +143,7 @@ export const ReviewQueue: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between text-[11px] text-slate-300 mb-1">
                     <span>{topic.disciplina}</span>
-                    <span className="font-mono text-emerald-400">{topic.proximaRevisao}</span>
+                    <span className="font-mono text-emerald-400">{formatDateBR(topic.proximaRevisao)}</span>
                   </div>
                   <p className="text-xs font-semibold text-slate-100 line-clamp-2">
                     {topic.microtopico}

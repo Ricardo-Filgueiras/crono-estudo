@@ -10,6 +10,8 @@ import {
 } from '../utils/conceptGraph';
 import { useAuth } from './AuthContext';
 import { supabase } from '../lib/supabase';
+import { SyncService } from '../services/syncService';
+import { SyncNotification } from '../components/SyncToast';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import confetti from 'canvas-confetti';
 
@@ -19,28 +21,31 @@ interface StudyContextType {
   sessionLogs: StudySessionLog[];
   activeTab: ActiveTab;
   setActiveTab: (tab: ActiveTab) => void;
-  updateTopic: (id: string, updates: Partial<Topic>) => void;
-  markAsMastered: (id: string, completedDateStr?: string) => void;
-  quickCompleteTopic: (id: string, completedDateStr?: string) => void;
-  reopenTopicForDate: (id: string, dateStr: string) => void;
-  rescheduleTopic: (id: string, daysOffsetOrDate: number | string) => void;
-  scheduleForToday: (id: string) => void;
-  completeRevision: (id: string, nextIntervalDays?: number) => void;
-  addError: (item: Omit<ErrorItem, 'id'>) => void;
-  deleteError: (id: string) => void;
+  updateTopic: (id: string, updates: Partial<Topic>) => Promise<void>;
+  markAsMastered: (id: string, completedDateStr?: string) => Promise<void>;
+  quickCompleteTopic: (id: string, completedDateStr?: string) => Promise<void>;
+  reopenTopicForDate: (id: string, dateStr: string) => Promise<void>;
+  rescheduleTopic: (id: string, daysOffsetOrDate: number | string) => Promise<void>;
+  scheduleForToday: (id: string) => Promise<void>;
+  completeRevision: (id: string, nextIntervalDays?: number) => Promise<void>;
+  addError: (item: Omit<ErrorItem, 'id'>) => Promise<void>;
+  updateError: (id: string, updates: Partial<ErrorItem>) => Promise<void>;
+  deleteError: (id: string) => Promise<void>;
   exportBackup: () => void;
   importBackup: (file: File) => Promise<boolean>;
   resetToInitial: () => void;
   selectedTopicForModal: Topic | null;
   setSelectedTopicForModal: (topic: Topic | null) => void;
 
-  // Sincronização Nuvem / Supabase
+  // Sincronização Nuvem Soberana / Supabase
   isSyncing: boolean;
   isCloudConnected: boolean;
   cloudSyncError: string | null;
   refreshCloudData: () => Promise<void>;
+  syncNotification: SyncNotification | null;
+  dismissSyncNotification: () => void;
 
-  // === GRAFO CONCEITUAL & RECOMENDAÇÃO INTELIGENTE (FASE 1) ===
+  // === GRAFO CONCEITUAL & RECOMENDAÇÃO INTELIGENTE ===
   getTopicPedagogicalStatus: (topic: Topic) => PedagogicalStatus;
   getTopicUnmetPrerequisites: (topic: Topic) => Topic[];
   getTopicUnlockCount: (topicId: string) => number;
@@ -49,9 +54,9 @@ interface StudyContextType {
 
   // === HÁBITO DIÁRIO DE INGLÊS, CRONÔMETRO VINCULADO & REORDENAÇÃO ===
   englishHabits: Record<string, EnglishHabitDay>;
-  toggleEnglishDone: (dateStr: string) => void;
-  toggleEnglishAtEnd: (dateStr: string) => void;
-  moveTopicOrder: (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => void;
+  toggleEnglishDone: (dateStr: string) => Promise<void>;
+  toggleEnglishAtEnd: (dateStr: string) => Promise<void>;
+  moveTopicOrder: (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => Promise<void>;
   activeTimerTarget: ActiveTimerTarget | null;
   setActiveTimerTarget: (target: ActiveTimerTarget | null) => void;
   recordStudySeconds: (target: ActiveTimerTarget, secondsToAdd: number) => void;
@@ -63,7 +68,15 @@ const STORAGE_KEY_TOPICS = 'crono_estudo_topics_v7';
 const STORAGE_KEY_ERRORS = 'crono_estudo_errors_v1';
 const STORAGE_KEY_HABITS = 'crono_estudo_english_habits_v1';
 const STORAGE_KEY_SESSION_LOGS = 'crono_estudo_session_logs_v1';
-const STORAGE_KEY_UPDATED_AT = 'crono_estudo_updated_at_v1';
+
+export const formatDateBR = (dateStr?: string): string => {
+  if (!dateStr) return '';
+  const parts = dateStr.split('-');
+  if (parts.length === 3) {
+    return `${parts[2]}/${parts[1]}/${parts[0]}`;
+  }
+  return dateStr;
+};
 
 export interface WeekDayInfo {
   dateStr: string;
@@ -128,7 +141,6 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
     savedTopic1?.status === 'Em Andamento' &&
     (!savedTopic7 || savedTopic7.status === 'Pendente');
 
-  // 1. Preserve the exact order of savedTopics (so user manual reordering is never lost on refresh!)
   const merged: Topic[] = [];
   const processedIds = new Set<string>();
 
@@ -198,7 +210,6 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
     });
   }
 
-  // 2. Append any newly added topics from INITIAL_TOPICS that were not in savedTopics yet
   for (const initial of INITIAL_TOPICS) {
     if (!processedIds.has(initial.id)) {
       merged.push(initial);
@@ -209,6 +220,9 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
 };
 
 export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const { user } = useAuth();
+
+  // 1. Estado local (Cache de inicialização rápida)
   const [topics, setTopics] = useState<Topic[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_TOPICS);
@@ -228,9 +242,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [errors, setErrors] = useState<ErrorItem[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_ERRORS);
-      if (saved) {
-        return JSON.parse(saved);
-      }
+      if (saved) return JSON.parse(saved);
     } catch (e) {
       console.error('Erro ao ler erros do localStorage', e);
     }
@@ -261,7 +273,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     } catch (e) {
       console.error('Erro ao ler logs de sessão do localStorage', e);
     }
-    // Sintetizar histórico base inicial a partir dos tópicos com dataEstudo registrada
     const initialLogs: StudySessionLog[] = [];
     for (const t of INITIAL_TOPICS) {
       const secs = t.tempoEstudadoSegundos || (t.tempoEstudadoMinutos ? t.tempoEstudadoMinutos * 60 : 0);
@@ -281,12 +292,34 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return initialLogs;
   });
 
-  const { user } = useAuth();
   const [isSyncing, setIsSyncing] = useState(false);
   const [cloudSyncError, setCloudSyncError] = useState<string | null>(null);
+  const [syncNotification, setSyncNotification] = useState<SyncNotification | null>(null);
+
   const cloudLoadedForUser = useRef<string | null>(null);
   const isApplyingCloudData = useRef(false);
   const realtimeChannelRef = useRef<RealtimeChannel | null>(null);
+  const studySyncTimeoutRef = useRef<Record<string, ReturnType<typeof setTimeout>>>({});
+
+  const notifySync = (notification: Omit<SyncNotification, 'id' | 'timestamp'>) => {
+    const fullNotice: SyncNotification = {
+      ...notification,
+      id: `notice-${Date.now()}`,
+      timestamp: Date.now()
+    };
+    setSyncNotification(fullNotice);
+
+    // Auto-dismiss após 5 segundos para mensagens normais
+    if (notification.type !== 'error') {
+      setTimeout(() => {
+        setSyncNotification(prev => prev?.id === fullNotice.id ? null : prev);
+      }, 5000);
+    }
+  };
+
+  const dismissSyncNotification = () => {
+    setSyncNotification(null);
+  };
 
   const broadcastChange = (event: string, payload: any) => {
     if (realtimeChannelRef.current) {
@@ -300,104 +333,102 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Sync to localStorage
+  // Cache efêmero de localStorage (mantido sempre espelhado com a autoridade)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify(topics));
-    } catch (e) {
-      console.error('Falha ao salvar tópicos no storage', e);
-    }
+    } catch {}
   }, [topics]);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_ERRORS, JSON.stringify(errors));
-    } catch (e) {
-      console.error('Falha ao salvar erros no storage', e);
-    }
+    } catch {}
   }, [errors]);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_HABITS, JSON.stringify(englishHabits));
-    } catch (e) {
-      console.error('Falha ao salvar hábitos no storage', e);
-    }
+    } catch {}
   }, [englishHabits]);
 
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY_SESSION_LOGS, JSON.stringify(sessionLogs));
-    } catch (e) {
-      console.error('Falha ao salvar logs de sessão no storage', e);
-    }
+    } catch {}
   }, [sessionLogs]);
 
-  // Função centralizada para carregar dados do Supabase
+  /**
+   * PILAR 1 & 4: Hidratação Soberana da Nuvem (Single Source of Truth)
+   * Executa o Bootstrap consolidado em chamada única atômica.
+   */
   const loadCloudData = async (_isManualOrRefresh = false) => {
     if (!user) return;
     try {
       setIsSyncing(true);
       setCloudSyncError(null);
 
-      const [topicsRes, prereqsRes, progressRes, errorsRes, habitsRes, sessionsRes] = await Promise.all([
-        supabase.from('topics').select('*'),
-        supabase.from('topic_prerequisites').select('*'),
-        supabase.from('user_topic_progress').select('*').eq('user_id', user.id),
-        supabase.from('user_study_errors').select('*').eq('user_id', user.id),
-        supabase.from('user_english_habits').select('*').eq('user_id', user.id),
-        supabase.from('user_study_sessions').select('*').eq('user_id', user.id)
-      ]);
+      const bootstrapData = await SyncService.bootstrap();
+      if (!bootstrapData) return;
 
       isApplyingCloudData.current = true;
 
-      // 1. Tópicos e Progresso
-      if (topicsRes.data && topicsRes.data.length > 0) {
+      // 1. Tópicos & Progresso Relacional
+      if (bootstrapData.topics && bootstrapData.topics.length > 0) {
         const prereqMap = new Map<string, string[]>();
-        for (const p of (prereqsRes.data || [])) {
+        for (const p of (bootstrapData.prerequisites || [])) {
           if (!prereqMap.has(p.topic_id)) prereqMap.set(p.topic_id, []);
           prereqMap.get(p.topic_id)!.push(p.prerequisite_id);
         }
 
         const progressMap = new Map<string, any>();
-        for (const prog of (progressRes.data || [])) {
+        for (const prog of (bootstrapData.progress || [])) {
           progressMap.set(prog.topic_id, prog);
         }
 
-        const combinedTopics: Topic[] = topicsRes.data.map((t: any) => {
-          const prog = progressMap.get(t.id);
-          return {
-            id: t.id,
-            disciplina: t.disciplina,
-            macrotema: t.macrotema,
-            microtopico: t.microtopico,
-            peso: t.peso,
-            origem: t.origem || [],
-            faseRecomendada: t.fase_recomendada,
-            linkMaterial: t.link_material,
-            tempoEstimadoMinutos: t.tempo_estimado_minutos,
-            prerequisitos: prereqMap.get(t.id) || [],
-            status: prog?.status || 'Pendente',
-            dataEstudo: prog?.data_estudo || undefined,
-            acertosExercicios: prog?.acertos_exercicios ?? undefined,
-            anotacoes: prog?.anotacoes || undefined,
-            proximaRevisao: prog?.proxima_revisao || undefined,
-            agendadoPara: prog?.agendado_para || undefined,
-            ordemFila: prog?.ordem_fila ?? undefined,
-            prioridade: prog?.prioridade || undefined,
-            tempoEstudadoMinutos: prog?.tempo_estudado_minutos || 0,
-            tempoEstudadoSegundos: prog?.tempo_estudado_segundos || 0,
-            evidencias: prog?.evidencias || {},
-            justificativaRecomendacao: prog?.justificativa_recomendacao || undefined
-          };
-        });
+        setTopics(prevLocal => {
+          const localMap = new Map(prevLocal.map(item => [item.id, item]));
+          const combinedTopics: Topic[] = bootstrapData.topics.map((t: any) => {
+            const prog = progressMap.get(t.id);
+            const localTopic = localMap.get(t.id);
+            const cloudSecs = prog?.tempo_estudado_segundos || (prog?.tempo_estudado_minutos ? prog.tempo_estudado_minutos * 60 : 0);
+            const localSecs = localTopic?.tempoEstudadoSegundos || (localTopic?.tempoEstudadoMinutos ? localTopic.tempoEstudadoMinutos * 60 : 0);
+            const bestSecs = Math.max(cloudSecs, localSecs);
+            const bestMins = Math.floor(bestSecs / 60);
 
-        setTopics(mergeWithInitialTopics(combinedTopics));
+            return {
+              id: t.id,
+              disciplina: t.disciplina,
+              macrotema: t.macrotema,
+              microtopico: t.microtopico,
+              peso: t.peso,
+              origem: t.origem || [],
+              faseRecomendada: t.fase_recomendada,
+              linkMaterial: t.link_material,
+              tempoEstimadoMinutos: t.tempo_estimado_minutos,
+              prerequisitos: prereqMap.get(t.id) || [],
+              status: prog?.status || localTopic?.status || 'Pendente',
+              dataEstudo: prog?.data_estudo || localTopic?.dataEstudo || undefined,
+              acertosExercicios: prog?.acertos_exercicios ?? localTopic?.acertosExercicios ?? undefined,
+              anotacoes: prog?.anotacoes || localTopic?.anotacoes || undefined,
+              proximaRevisao: prog?.proxima_revisao || localTopic?.proximaRevisao || undefined,
+              agendadoPara: prog?.agendado_para !== undefined ? (prog.agendado_para || undefined) : localTopic?.agendadoPara,
+              ordemFila: prog?.ordem_fila ?? localTopic?.ordemFila ?? undefined,
+              prioridade: prog?.prioridade || localTopic?.prioridade || undefined,
+              tempoEstudadoMinutos: bestMins,
+              tempoEstudadoSegundos: bestSecs,
+              evidencias: prog?.evidencias || localTopic?.evidencias || {},
+              justificativaRecomendacao: prog?.justificativa_recomendacao || localTopic?.justificativaRecomendacao || undefined
+            };
+          });
+
+          return mergeWithInitialTopics(combinedTopics);
+        });
       }
 
-      // 2. Erros FCC
-      if (errorsRes.data && errorsRes.data.length > 0) {
-        setErrors(errorsRes.data.map((e: any) => ({
+      // 2. Caderno de Erros FCC
+      if (bootstrapData.errors && bootstrapData.errors.length > 0) {
+        setErrors(bootstrapData.errors.map((e: any) => ({
           id: e.id,
           data: e.data,
           disciplina: e.disciplina,
@@ -412,24 +443,30 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         })));
       }
 
-      // 3. Hábitos de Inglês
-      if (habitsRes.data && habitsRes.data.length > 0) {
-        const habitsObj: Record<string, EnglishHabitDay> = {};
-        for (const h of habitsRes.data) {
-          habitsObj[h.date_str] = {
-            done: h.done,
-            atEnd: h.at_end,
-            minutesStudied: h.minutes_studied || 0,
-            secondsStudied: h.seconds_studied || 0,
-            completedAt: h.completed_at
-          };
-        }
-        setEnglishHabits(prev => ({ ...prev, ...habitsObj }));
+      // 3. Hábitos de Inglês (Preserva o maior tempo estudado para não zerar o cronômetro ativo)
+      if (bootstrapData.habits && bootstrapData.habits.length > 0) {
+        setEnglishHabits(prev => {
+          const next = { ...prev };
+          for (const h of bootstrapData.habits) {
+            const localHabit = prev[h.date_str];
+            const cloudSecs = h.seconds_studied || (h.minutes_studied ? h.minutes_studied * 60 : 0);
+            const localSecs = localHabit?.secondsStudied || (localHabit?.minutesStudied ? localHabit.minutesStudied * 60 : 0);
+            const bestSecs = Math.max(cloudSecs, localSecs);
+            next[h.date_str] = {
+              done: h.done ?? localHabit?.done ?? false,
+              atEnd: h.at_end ?? localHabit?.atEnd ?? false,
+              minutesStudied: Math.floor(bestSecs / 60),
+              secondsStudied: bestSecs,
+              completedAt: h.completed_at || localHabit?.completedAt
+            };
+          }
+          return next;
+        });
       }
 
       // 4. Sessões de Estudo
-      if (sessionsRes.data && sessionsRes.data.length > 0) {
-        setSessionLogs(sessionsRes.data.map((s: any) => ({
+      if (bootstrapData.sessions && bootstrapData.sessions.length > 0) {
+        setSessionLogs(bootstrapData.sessions.map((s: any) => ({
           id: s.id,
           topicId: s.topic_id || undefined,
           targetTitle: s.target_title,
@@ -443,7 +480,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
       cloudLoadedForUser.current = user.id;
     } catch (err: any) {
-      console.error('Erro ao sincronizar com Supabase:', err);
+      console.error('[StudyContext] Erro ao carregar dados da nuvem:', err);
       setCloudSyncError(err.message || 'Falha ao sincronizar com a nuvem');
     } finally {
       setIsSyncing(false);
@@ -453,7 +490,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
-  // Carregar dados e manter escuta em tempo real (WebSockets) via Supabase Realtime
+  // Subscrição em Tempo Real (Broadcast + Postgres Changes) e Re-hidratação ao Alternar Janela
   useEffect(() => {
     if (!user) {
       cloudLoadedForUser.current = null;
@@ -462,7 +499,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     loadCloudData();
 
-    // 🔴 WEBSOCKET DUAL-LAYER: Broadcast direto instantâneo + Postgres Changes (com RLS)
     const channel = supabase.channel(`crono_realtime_${user.id}`, {
       config: {
         broadcast: { ack: true }
@@ -471,7 +507,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     realtimeChannelRef.current = channel;
 
     channel
-      // 1. MENSAGERIA BROADCAST DIRETA (Sub-50ms entre abas/aparelhos ativos)
       .on('broadcast', { event: 'HABIT_UPDATE' }, ({ payload }) => {
         if (!payload || !payload.dateStr) return;
         setEnglishHabits(prev => ({
@@ -498,72 +533,13 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           return [payload.log, ...prev];
         });
       })
-      // 2. POSTGRES CHANGES (Camada de persistência relacional do Supabase)
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_english_habits'
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const h = payload.new as any;
-            if (h.user_id !== user.id) return;
-            setEnglishHabits(prev => ({
-              ...prev,
-              [h.date_str]: {
-                done: h.done,
-                atEnd: h.at_end,
-                minutesStudied: h.minutes_studied || 0,
-                secondsStudied: h.seconds_studied || 0,
-                completedAt: h.completed_at
-              }
-            }));
-          }
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'user_topic_progress'
-        },
-        (payload) => {
-          if (payload.eventType === 'INSERT' || payload.eventType === 'UPDATE') {
-            const prog = payload.new as any;
-            if (prog.user_id !== user.id) return;
-            setTopics(prev => prev.map(t => {
-              if (t.id === prog.topic_id) {
-                return {
-                  ...t,
-                  status: prog.status,
-                  dataEstudo: prog.data_estudo || undefined,
-                  acertosExercicios: prog.acertos_exercicios ?? undefined,
-                  anotacoes: prog.anotacoes || undefined,
-                  proximaRevisao: prog.proxima_revisao || undefined,
-                  agendadoPara: prog.agendado_para || undefined,
-                  ordemFila: prog.ordem_fila ?? undefined,
-                  prioridade: prog.prioridade || undefined,
-                  tempoEstudadoMinutos: prog.tempo_estudado_minutos || 0,
-                  tempoEstudadoSegundos: prog.tempo_estudado_segundos || 0,
-                  evidencias: prog.evidencias || {},
-                  justificativaRecomendacao: prog.justificativa_recomendacao || undefined
-                };
-              }
-              return t;
-            }));
-          }
-        }
-      )
       .subscribe((status) => {
         if (status === 'SUBSCRIBED') {
           console.log('[Supabase Realtime] Canal conectado e pronto.');
         }
       });
 
-    // Sincronização ao focar na janela / desbloquear tela
+    // Reconciliação Soberana ao focar janela ou desbloquear tela do celular
     const handleWindowFocusOrVisibility = () => {
       if (document.visibilityState === 'visible') {
         loadCloudData(true);
@@ -581,42 +557,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   }, [user]);
 
-  // Backup Snapshot para user_study_data (Apenas backup geral, NUNCA sobrescreve as tabelas relacionais)
-  useEffect(() => {
-    if (!user || cloudLoadedForUser.current !== user.id) return;
-    if (isApplyingCloudData.current) return;
-
-    const nowIso = new Date().toISOString();
-    try {
-      localStorage.setItem(STORAGE_KEY_UPDATED_AT, nowIso);
-    } catch {}
-
-    const timeout = setTimeout(async () => {
-      try {
-        setIsSyncing(true);
-        // Backup de segurança na tabela snapshot user_study_data
-        const { error: snapError } = await supabase.from('user_study_data').upsert(
-          {
-            user_id: user.id,
-            topics,
-            errors,
-            session_logs: sessionLogs,
-            updated_at: nowIso
-          },
-          { onConflict: 'user_id' }
-        );
-        if (snapError) console.error('Erro ao salvar snapshot de backup:', snapError);
-      } catch (err: any) {
-        console.error('Erro no backup:', err);
-      } finally {
-        setIsSyncing(false);
-      }
-    }, 3000);
-
-    return () => clearTimeout(timeout);
-  }, [topics, errors, sessionLogs, user]);
-
-  // Mapa otimizado de tópicos para consulta de grafos
+  // Mapa de tópicos para o Grafo Conceitual
   const topicMap = useMemo(() => buildTopicMap(topics), [topics]);
 
   const getTopicPedagogicalStatus = (topic: Topic): PedagogicalStatus => {
@@ -638,7 +579,6 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const schedulePedagogicalMission = (availableMinutes?: number) => {
     const today = getTodayDateString();
     const recommendations = recommendNextSteps(topics, { maxItems: 2, availableMinutes });
-
     if (recommendations.length === 0) return;
 
     setTopics(prev => {
@@ -658,71 +598,99 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     });
 
     try {
-      confetti({
-        particleCount: 40,
-        spread: 60,
-        origin: { y: 0.7 }
-      });
-    } catch {
-      // noop
+      confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
+    } catch {}
+  };
+
+  // =========================================================================
+  // PILAR 2 & 3: MUTAÇÕES OTIMISTAS COM ROLLBACK AUTOMÁTICO & BLINDAGEM DE SYNC
+  // =========================================================================
+
+  const updateTopic = async (id: string, updates: Partial<Topic>) => {
+    const previousTopics = [...topics];
+
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates });
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            status: updates.status,
+            data_estudo: updates.dataEstudo,
+            agendado_para: updates.agendadoPara,
+            proxima_revisao: updates.proximaRevisao,
+            ordem_fila: updates.ordemFila,
+            tempo_estudado_segundos: updates.tempoEstudadoSegundos,
+            tempo_estudado_minutos: updates.tempoEstudadoMinutos,
+            anotacoes: updates.anotacoes,
+            justificativa_recomendacao: updates.justificativaRecomendacao
+          }
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Falha ao salvar tópico na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
     }
   };
 
-  const updateTopic = (id: string, updates: Partial<Topic>) => {
-    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...updates } : t));
-  };
-
-  const markAsMastered = (id: string, completedDateStr?: string) => {
+  const markAsMastered = async (id: string, completedDateStr?: string) => {
     const today = getTodayDateString();
     const effectiveDate = completedDateStr || today;
+    const previousTopics = [...topics];
+
     const topicUpdates: Partial<Topic> = {
       status: 'Dominado',
       dataEstudo: effectiveDate,
       faseRecomendada: '⭐ Conteúdo dominado! Alicerce consolidado para conteúdos dependentes.',
-      agendadoPara: undefined // Remove da fila pendente
+      agendadoPara: undefined
     };
 
-    setTopics(prev => prev.map(t => {
-      if (t.id === id) {
-        return {
-          ...t,
-          ...topicUpdates
-        };
-      }
-      return t;
-    }));
-
-    // Broadcast instantâneo
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
-    if (user) {
-      supabase.from('user_topic_progress').upsert({
-        user_id: user.id,
-        topic_id: id,
-        status: 'Dominado',
-        data_estudo: effectiveDate,
-        agendado_para: null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-        if (error) console.error('Erro ao sincronizar tópico dominado:', error);
-      });
-    }
-
     try {
-      confetti({
-        particleCount: 80,
-        spread: 70,
-        origin: { y: 0.6 }
+      confetti({ particleCount: 80, spread: 70, origin: { y: 0.6 } });
+    } catch {}
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            status: 'Dominado',
+            data_estudo: effectiveDate,
+            agendado_para: null
+          }
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao sincronizar tópico dominado: ${err.message}. Alteração revertida.`
+        });
+      }
+    } else {
+      notifySync({
+        type: 'info',
+        message: 'Modo Convidado: alteração salva no aparelho. Conecte-se para sincronizar com seu celular.'
       });
-    } catch {
-      // Ignora se confetti falhar
     }
   };
 
-  const quickCompleteTopic = (id: string, completedDateStr?: string) => {
+  const quickCompleteTopic = async (id: string, completedDateStr?: string) => {
     const today = getTodayDateString();
     const effectiveDate = completedDateStr || today;
     const nextRevDate = addDaysToDate(effectiveDate, 7);
+    const previousTopics = [...topics];
 
     const topicUpdates: Partial<Topic> = {
       status: 'Teoria Concluída',
@@ -743,173 +711,76 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return t;
     }));
 
-    // Broadcast instantâneo
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
-    if (user) {
-      supabase.from('user_topic_progress').upsert({
-        user_id: user.id,
-        topic_id: id,
-        status: 'Teoria Concluída',
-        data_estudo: effectiveDate,
-        proxima_revisao: nextRevDate,
-        agendado_para: null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-        if (error) console.error('Erro ao sincronizar conclusão de tópico:', error);
-      });
-    }
-
     try {
-      confetti({
-        particleCount: 55,
-        spread: 60,
-        origin: { y: 0.65 }
+      confetti({ particleCount: 55, spread: 60, origin: { y: 0.65 } });
+    } catch {}
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            status: 'Teoria Concluída',
+            data_estudo: effectiveDate,
+            proxima_revisao: nextRevDate,
+            agendado_para: null
+          }
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao concluir tópico na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
+    } else {
+      notifySync({
+        type: 'info',
+        message: 'Modo Convidado: alteração salva no aparelho. Conecte-se para sincronizar com seu celular.'
       });
-    } catch {
-      // noop
     }
   };
 
-  const reopenTopicForDate = (id: string, dateStr: string) => {
+  const reopenTopicForDate = async (id: string, dateStr: string) => {
+    const previousTopics = [...topics];
     const topicUpdates: Partial<Topic> = {
       status: 'Em Andamento',
       agendadoPara: dateStr,
       dataEstudo: undefined
     };
 
-    setTopics(prev => prev.map(t => {
-      if (t.id === id) {
-        return {
-          ...t,
-          ...topicUpdates
-        };
-      }
-      return t;
-    }));
-
-    // Broadcast instantâneo
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
-      supabase.from('user_topic_progress').upsert({
-        user_id: user.id,
-        topic_id: id,
-        status: 'Em Andamento',
-        agendado_para: dateStr,
-        data_estudo: null,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-        if (error) console.error('Erro ao reabrir tópico:', error);
-      });
-    }
-  };
-
-  const recordStudySeconds = (target: ActiveTimerTarget, secondsToAdd: number) => {
-    if (secondsToAdd <= 0) return;
-
-    const dateKey = target.dateStr || getTodayDateString();
-    const nowIso = new Date().toISOString();
-    const logId = `${dateKey}_${target.type}_${target.id}`;
-
-    // 1. Registra no histórico de sessões com granularidade por dia e alvo
-    setSessionLogs(prev => {
-      const existingIdx = prev.findIndex(l => l.id === logId);
-      if (existingIdx !== -1) {
-        const updated = [...prev];
-        const item = updated[existingIdx];
-        updated[existingIdx] = {
-          ...item,
-          secondsStudied: (item.secondsStudied || 0) + secondsToAdd,
-          timestamp: nowIso
-        };
-        return updated;
-      } else {
-        const matchingTopic = target.type === 'topic' ? topics.find(t => t.id === target.id) : null;
-        const newLog: StudySessionLog = {
-          id: logId,
-          topicId: target.type === 'topic' ? target.id : undefined,
-          targetTitle: target.title || matchingTopic?.microtopico || (target.type === 'english' ? 'Hábito Diário de Inglês' : 'Sessão de Estudo'),
-          origem: matchingTopic?.origem || (target.type === 'english' ? ['Concurso'] : []),
-          dateStr: dateKey,
-          secondsStudied: secondsToAdd,
-          type: target.type,
-          timestamp: nowIso
-        };
-        return [newLog, ...prev];
-      }
-    });
-
-    if (target.type === 'english') {
-      let finalSecs = 0;
-      setEnglishHabits(prev => {
-        const current = prev[dateKey] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
-        finalSecs = (current.secondsStudied || (current.minutesStudied || 0) * 60) + secondsToAdd;
-        const totalMinutes = Math.floor(finalSecs / 60);
-        return {
-          ...prev,
-          [dateKey]: {
-            ...current,
-            secondsStudied: finalSecs,
-            minutesStudied: totalMinutes
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            status: 'Em Andamento',
+            agendado_para: dateStr,
+            data_estudo: null
           }
-        };
-      });
-
-      if (user) {
-        const cur = englishHabits[dateKey] || { done: false, atEnd: false };
-        supabase.from('user_english_habits').upsert({
-          user_id: user.id,
-          date_str: dateKey,
-          done: cur.done,
-          at_end: cur.atEnd,
-          seconds_studied: finalSecs,
-          minutes_studied: Math.floor(finalSecs / 60)
-        }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
-          if (error) console.error('Erro ao sincronizar hábito com tempo:', error);
         });
-      }
-      return;
-    }
-
-    if (target.type === 'topic') {
-      let updatedSecs = 0;
-      let updatedMins = 0;
-      setTopics(prev => prev.map(t => {
-        if (t.id === target.id) {
-          const prevSecs = t.tempoEstudadoSegundos !== undefined
-            ? t.tempoEstudadoSegundos
-            : (t.tempoEstudadoMinutos || 0) * 60;
-          updatedSecs = prevSecs + secondsToAdd;
-          updatedMins = Math.floor(updatedSecs / 60);
-          return {
-            ...t,
-            tempoEstudadoSegundos: updatedSecs,
-            tempoEstudadoMinutos: updatedMins,
-            dataEstudo: t.dataEstudo || dateKey,
-            status: t.status === 'Pendente' ? 'Em Andamento' : t.status
-          };
-        }
-        return t;
-      }));
-
-      if (user) {
-        supabase.from('user_topic_progress').upsert({
-          user_id: user.id,
-          topic_id: target.id,
-          tempo_estudado_segundos: updatedSecs,
-          tempo_estudado_minutos: updatedMins,
-          data_estudo: dateKey,
-          updated_at: nowIso
-        }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-          if (error) console.error('Erro ao sincronizar tempo do tópico:', error);
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao reabrir tópico na nuvem: ${err.message}. Alteração revertida.`
         });
       }
     }
   };
 
-  const rescheduleTopic = (id: string, daysOffsetOrDate: number | string) => {
+  const rescheduleTopic = async (id: string, daysOffsetOrDate: number | string) => {
     const today = getTodayDateString();
+    const previousTopics = [...topics];
     let newDate: string;
 
     if (typeof daysOffsetOrDate === 'number') {
@@ -923,63 +794,64 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       faseRecomendada: `⏩ Reagendado para ${newDate}`
     };
 
-    setTopics(prev => prev.map(t => {
-      if (t.id === id) {
-        return {
-          ...t,
-          ...topicUpdates
-        };
-      }
-      return t;
-    }));
-
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
-      supabase.from('user_topic_progress').upsert({
-        user_id: user.id,
-        topic_id: id,
-        agendado_para: newDate,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-        if (error) console.error('Erro ao reagendar tópico:', error);
-      });
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            agendado_para: newDate
+          }
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao reagendar tópico na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
     }
   };
 
-  const scheduleForToday = (id: string) => {
+  const scheduleForToday = async (id: string) => {
     const today = getTodayDateString();
+    const previousTopics = [...topics];
     const topicUpdates: Partial<Topic> = {
       agendadoPara: today
     };
 
-    setTopics(prev => prev.map(t => {
-      if (t.id === id) {
-        return {
-          ...t,
-          ...topicUpdates
-        };
-      }
-      return t;
-    }));
-
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
-      supabase.from('user_topic_progress').upsert({
-        user_id: user.id,
-        topic_id: id,
-        agendado_para: today,
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-        if (error) console.error('Erro ao agendar tópico para hoje:', error);
-      });
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            agendado_para: today
+          }
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao agendar tópico para hoje na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
     }
   };
 
-  const completeRevision = (id: string, nextIntervalDays = 15) => {
+  const completeRevision = async (id: string, nextIntervalDays = 15) => {
     const today = getTodayDateString();
     const nextDate = addDaysToDate(today, nextIntervalDays);
+    const previousTopics = [...topics];
+
     const topicUpdates: Partial<Topic> = {
       proximaRevisao: nextDate,
       status: 'Teoria Concluída',
@@ -999,197 +871,281 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
-    if (user) {
-      supabase.from('user_topic_progress').upsert({
-        user_id: user.id,
-        topic_id: id,
-        proxima_revisao: nextDate,
-        status: 'Teoria Concluída',
-        updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' }).then(({ error }) => {
-        if (error) console.error('Erro ao salvar revisão:', error);
-      });
-    }
-
     try {
-      confetti({
-        particleCount: 50,
-        spread: 60,
-        origin: { y: 0.7 }
-      });
-    } catch {
-      // noop
-    }
-  };
-
-  const addError = async (item: Omit<ErrorItem, 'id'>) => {
-    const newItem: ErrorItem = {
-      ...item,
-      id: `err-${Date.now()}`
-    };
-    setErrors(prev => [newItem, ...prev]);
+      confetti({ particleCount: 50, spread: 60, origin: { y: 0.7 } });
+    } catch {}
 
     if (user) {
       try {
-        await supabase.from('user_study_errors').insert({
-          id: newItem.id,
-          user_id: user.id,
-          data: newItem.data,
-          disciplina: newItem.disciplina,
-          microtopico: newItem.microtopico,
-          id_questao: newItem.idQuestao,
-          enunciado: newItem.enunciado,
-          alternativa_marcada: newItem.alternativaMarcada,
-          gabarito_correto: newItem.gabaritoCorreto,
-          classificacao_erro: newItem.classificacaoErro,
-          licao_aprendida: newItem.licaoAprendida,
-          prerequisito_relacionado: newItem.prerequisitoRelacionado
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            proxima_revisao: nextDate,
+            status: 'Teoria Concluída'
+          }
         });
-      } catch (e) {
-        console.error('Erro ao salvar erro no banco relacional:', e);
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao salvar revisão na nuvem: ${err.message}. Alteração revertida.`
+        });
       }
     }
   };
 
-  const deleteError = async (id: string) => {
-    setErrors(prev => prev.filter(e => e.id !== id));
+  const toggleEnglishDone = async (dateStr: string) => {
+    const previousHabits = { ...englishHabits };
+    const current = previousHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+    const nextDone = !current.done;
+    const nowIso = new Date().toISOString();
+    const nextCompletedAt = nextDone ? nowIso : undefined;
+
+    const updatedHabit: EnglishHabitDay = {
+      ...current,
+      done: nextDone,
+      completedAt: nextCompletedAt
+    };
+
+    // 1. Atualização Otimista Imediata
+    setEnglishHabits(prev => ({
+      ...prev,
+      [dateStr]: updatedHabit
+    }));
+
+    if (nextDone) {
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      } catch {}
+    }
+
+    // 2. Broadcast em tempo real para outras abas
+    broadcastChange('HABIT_UPDATE', { dateStr, habit: updatedHabit });
+
+    // 3. Persistência Resiliente na Nuvem
     if (user) {
       try {
-        await supabase.from('user_study_errors').delete().eq('id', id).eq('user_id', user.id);
-      } catch (e) {
-        console.error('Erro ao excluir erro do banco relacional:', e);
+        await SyncService.push({
+          type: 'HABIT_UPDATE',
+          data: {
+            date_str: dateStr,
+            done: nextDone,
+            at_end: current.atEnd,
+            minutes_studied: current.minutesStudied || 0,
+            seconds_studied: current.secondsStudied || 0,
+            completed_at: nextCompletedAt || null
+          }
+        });
+      } catch (err: any) {
+        // 4. Rollback Automático Seguro
+        setEnglishHabits(previousHabits);
+        broadcastChange('HABIT_UPDATE', { dateStr, habit: current });
+        notifySync({
+          type: 'error',
+          message: `Falha ao salvar Hábito de Inglês na nuvem: ${err.message || 'Erro de conexão'}. Alteração desfeita para evitar divergência.`
+        });
       }
+    } else {
+      notifySync({
+        type: 'info',
+        message: 'Modo Convidado: Prática de Inglês concluída neste navegador. Faça login para sincronizar com seu celular.'
+      });
     }
   };
 
-  const exportBackup = () => {
-    const data = {
-      exportedAt: new Date().toISOString(),
-      version: '4.1-session-logs',
-      topics,
-      errors,
-      englishHabits,
-      sessionLogs
+  const toggleEnglishAtEnd = async (dateStr: string) => {
+    const previousHabits = { ...englishHabits };
+    const current = previousHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+    const nextAtEnd = !current.atEnd;
+
+    const updatedHabit: EnglishHabitDay = {
+      ...current,
+      atEnd: nextAtEnd
     };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `crono-estudo-backup-${getTodayDateString()}.json`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    URL.revokeObjectURL(url);
-  };
 
-  const importBackup = async (file: File): Promise<boolean> => {
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      if (Array.isArray(data.topics)) {
-        setTopics(data.topics);
-        if (Array.isArray(data.errors)) {
-          setErrors(data.errors);
-        }
-        if (data.englishHabits && typeof data.englishHabits === 'object') {
-          setEnglishHabits(data.englishHabits);
-        }
-        if (Array.isArray(data.sessionLogs)) {
-          setSessionLogs(data.sessionLogs);
-        }
-        return true;
+    setEnglishHabits(prev => ({
+      ...prev,
+      [dateStr]: updatedHabit
+    }));
+
+    broadcastChange('HABIT_UPDATE', { dateStr, habit: updatedHabit });
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'HABIT_UPDATE',
+          data: {
+            date_str: dateStr,
+            done: current.done,
+            at_end: nextAtEnd,
+            minutes_studied: current.minutesStudied || 0,
+            seconds_studied: current.secondsStudied || 0,
+            completed_at: current.completedAt || null
+          }
+        });
+      } catch (err: any) {
+        setEnglishHabits(previousHabits);
+        broadcastChange('HABIT_UPDATE', { dateStr, habit: current });
+        notifySync({
+          type: 'error',
+          message: `Erro ao atualizar posição do Hábito de Inglês: ${err.message}. Alteração revertida.`
+        });
       }
-    } catch (e) {
-      console.error('Falha ao importar backup', e);
     }
-    return false;
   };
 
-  const toggleEnglishDone = (dateStr: string) => {
-    let nextDone = false;
-    let nextCompletedAt: string | undefined = undefined;
+  const recordStudySeconds = (target: ActiveTimerTarget, secondsToAdd: number) => {
+    if (secondsToAdd <= 0) return;
+
+    const dateKey = target.dateStr || getTodayDateString();
     const nowIso = new Date().toISOString();
+    const logId = `${dateKey}_${target.type}_${target.id}`;
 
-    let habitToBroadcast: EnglishHabitDay | null = null;
-    setEnglishHabits(prev => {
-      const current = prev[dateStr] || { done: false, atEnd: false };
-      nextDone = !current.done;
-      nextCompletedAt = nextDone ? nowIso : undefined;
-      if (nextDone) {
-        try {
-          confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
-        } catch {}
+    // 1. Atualização otimista do log de sessão (calculado de forma pura dentro do updater)
+    setSessionLogs(prev => {
+      const existingIdx = prev.findIndex(l => l.id === logId);
+      let updatedLog: StudySessionLog;
+      let nextLogs: StudySessionLog[];
+
+      if (existingIdx !== -1) {
+        nextLogs = [...prev];
+        const item = nextLogs[existingIdx];
+        updatedLog = {
+          ...item,
+          secondsStudied: (item.secondsStudied || 0) + secondsToAdd,
+          timestamp: nowIso
+        };
+        nextLogs[existingIdx] = updatedLog;
+      } else {
+        const matchingTopic = target.type === 'topic' ? topics.find(t => t.id === target.id) : null;
+        updatedLog = {
+          id: logId,
+          topicId: target.type === 'topic' ? target.id : undefined,
+          targetTitle: target.title || matchingTopic?.microtopico || (target.type === 'english' ? 'Hábito Diário de Inglês' : 'Sessão de Estudo'),
+          origem: matchingTopic?.origem || (target.type === 'english' ? ['Concurso'] : []),
+          dateStr: dateKey,
+          secondsStudied: secondsToAdd,
+          type: target.type,
+          timestamp: nowIso
+        };
+        nextLogs = [updatedLog, ...prev];
       }
-      habitToBroadcast = {
-        ...current,
-        done: nextDone,
-        completedAt: nextCompletedAt
-      };
-      return {
-        ...prev,
-        [dateStr]: habitToBroadcast
-      };
+
+      if (user) {
+        const logSyncKey = `log_${logId}`;
+        if (studySyncTimeoutRef.current[logSyncKey]) {
+          clearTimeout(studySyncTimeoutRef.current[logSyncKey]);
+        }
+        const logSnapshot = updatedLog;
+        studySyncTimeoutRef.current[logSyncKey] = setTimeout(() => {
+          SyncService.push({
+            type: 'SESSION_LOG',
+            data: {
+              id: logSnapshot.id,
+              topic_id: logSnapshot.topicId || null,
+              target_title: logSnapshot.targetTitle,
+              origem: logSnapshot.origem || [],
+              date_str: logSnapshot.dateStr,
+              seconds_studied: logSnapshot.secondsStudied,
+              type: logSnapshot.type,
+              timestamp: logSnapshot.timestamp
+            }
+          }).catch(err => console.warn('[Sync] Aviso ao sincronizar sessão:', err));
+        }, 5000);
+      }
+
+      return nextLogs;
     });
 
-    // 📡 Broadcast instantâneo para todos os navegadores/dispositivos conectados
-    if (habitToBroadcast) {
-      broadcastChange('HABIT_UPDATE', { dateStr, habit: habitToBroadcast });
+    if (target.type === 'english') {
+      setEnglishHabits(prev => {
+        const current = prev[dateKey] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+        const baseSecs = current.secondsStudied !== undefined ? current.secondsStudied : (current.minutesStudied || 0) * 60;
+        const finalSecs = baseSecs + secondsToAdd;
+        const finalMins = Math.floor(finalSecs / 60);
+        const updatedHabit: EnglishHabitDay = {
+          ...current,
+          secondsStudied: finalSecs,
+          minutesStudied: finalMins
+        };
+
+        if (user) {
+          const habitSyncKey = `hab_${dateKey}`;
+          if (studySyncTimeoutRef.current[habitSyncKey]) {
+            clearTimeout(studySyncTimeoutRef.current[habitSyncKey]);
+          }
+          studySyncTimeoutRef.current[habitSyncKey] = setTimeout(() => {
+            SyncService.push({
+              type: 'HABIT_UPDATE',
+              data: {
+                date_str: dateKey,
+                done: updatedHabit.done,
+                at_end: updatedHabit.atEnd,
+                seconds_studied: updatedHabit.secondsStudied,
+                minutes_studied: updatedHabit.minutesStudied,
+                completed_at: updatedHabit.completedAt || null
+              }
+            }).catch(err => console.warn('[Sync] Aviso ao sincronizar tempo de inglês:', err));
+          }, 5000);
+        }
+
+        return {
+          ...prev,
+          [dateKey]: updatedHabit
+        };
+      });
+      return;
     }
 
-    if (user) {
-      const current = englishHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
-      supabase.from('user_english_habits').upsert({
-        user_id: user.id,
-        date_str: dateStr,
-        done: nextDone,
-        at_end: current.atEnd,
-        minutes_studied: current.minutesStudied || 0,
-        seconds_studied: current.secondsStudied || 0,
-        completed_at: nextCompletedAt || null
-      }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
-        if (error) console.error('Erro ao salvar hábito de inglês imediatamente no Supabase:', error);
-      });
+    if (target.type === 'topic') {
+      setTopics(prev => prev.map(t => {
+        if (t.id === target.id) {
+          const prevSecs = t.tempoEstudadoSegundos !== undefined
+            ? t.tempoEstudadoSegundos
+            : (t.tempoEstudadoMinutos || 0) * 60;
+          const updatedSecs = prevSecs + secondsToAdd;
+          const updatedMins = Math.floor(updatedSecs / 60);
+          const nextStatus = t.status === 'Pendente' ? 'Em Andamento' : t.status;
+          const nextDataEstudo = t.dataEstudo || dateKey;
+
+          if (user) {
+            const topicSyncKey = `top_${target.id}`;
+            if (studySyncTimeoutRef.current[topicSyncKey]) {
+              clearTimeout(studySyncTimeoutRef.current[topicSyncKey]);
+            }
+            studySyncTimeoutRef.current[topicSyncKey] = setTimeout(() => {
+              SyncService.push({
+                type: 'TOPIC_PROGRESS',
+                data: {
+                  topic_id: target.id,
+                  tempo_estudado_segundos: updatedSecs,
+                  tempo_estudado_minutos: updatedMins,
+                  data_estudo: nextDataEstudo,
+                  status: nextStatus
+                }
+              }).catch(err => console.warn('[Sync] Aviso ao sincronizar tempo do tópico:', err));
+            }, 5000);
+          }
+
+          return {
+            ...t,
+            tempoEstudadoSegundos: updatedSecs,
+            tempoEstudadoMinutos: updatedMins,
+            dataEstudo: nextDataEstudo,
+            status: nextStatus
+          };
+        }
+        return t;
+      }));
     }
   };
 
-  const toggleEnglishAtEnd = (dateStr: string) => {
-    let nextAtEnd = false;
-    let habitToBroadcast: EnglishHabitDay | null = null;
-    setEnglishHabits(prev => {
-      const current = prev[dateStr] || { done: false, atEnd: false };
-      nextAtEnd = !current.atEnd;
-      habitToBroadcast = { ...current, atEnd: nextAtEnd };
-      return {
-        ...prev,
-        [dateStr]: habitToBroadcast
-      };
-    });
+  const moveTopicOrder = async (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => {
+    const previousTopics = [...topics];
+    const reorderedUpdates: Array<{ id: string; ordem_fila: number; status: Topic['status'] }> = [];
 
-    if (habitToBroadcast) {
-      broadcastChange('HABIT_UPDATE', { dateStr, habit: habitToBroadcast });
-    }
-
-    if (user) {
-      const current = englishHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
-      supabase.from('user_english_habits').upsert({
-        user_id: user.id,
-        date_str: dateStr,
-        done: current.done,
-        at_end: nextAtEnd,
-        minutes_studied: current.minutesStudied || 0,
-        seconds_studied: current.secondsStudied || 0,
-        completed_at: (() => {
-          if (!current.completedAt) return null;
-          const d = new Date(current.completedAt);
-          return isNaN(d.getTime()) ? null : d.toISOString();
-        })()
-      }, { onConflict: 'user_id,date_str' }).then(({ error }) => {
-        if (error) console.error('Erro ao salvar posição de hábito de inglês:', error);
-      });
-    }
-  };
-
-  const moveTopicOrder = (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => {
     setTopics(prev => {
       const idx = prev.findIndex(t => t.id === topicId);
       if (idx === -1) return prev;
@@ -1225,16 +1181,173 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       newTopics[targetIdx] = temp;
 
       const finalTopics = orderMap
-        ? newTopics.map(t => (orderMap.has(t.id) ? { ...t, ordemFila: orderMap.get(t.id) } : t))
+        ? newTopics.map(t => {
+            if (orderMap.has(t.id)) {
+              const newOrder = orderMap.get(t.id)!;
+              reorderedUpdates.push({ id: t.id, ordem_fila: newOrder, status: t.status });
+              return { ...t, ordemFila: newOrder };
+            }
+            return t;
+          })
         : newTopics;
-
-      try {
-        localStorage.setItem(STORAGE_KEY_TOPICS, JSON.stringify(finalTopics));
-        localStorage.setItem(STORAGE_KEY_UPDATED_AT, new Date().toISOString());
-      } catch {}
 
       return finalTopics;
     });
+
+    if (reorderedUpdates.length > 0) {
+      for (const item of reorderedUpdates) {
+        broadcastChange('TOPIC_UPDATE', { topicId: item.id, updates: { ordemFila: item.ordem_fila } });
+      }
+
+      if (user) {
+        try {
+          await SyncService.push({
+            type: 'BATCH_TOPIC_ORDER',
+            data: reorderedUpdates
+          });
+        } catch (err: any) {
+          setTopics(previousTopics);
+          notifySync({
+            type: 'error',
+            message: `Erro ao salvar ordenação da fila na nuvem: ${err.message}. Alteração revertida.`
+          });
+        }
+      }
+    }
+  };
+
+  const addError = async (item: Omit<ErrorItem, 'id'>) => {
+    const newItem: ErrorItem = {
+      ...item,
+      id: `err-${Date.now()}`
+    };
+    const previousErrors = [...errors];
+    setErrors(prev => [newItem, ...prev]);
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'ERROR_UPSERT',
+          data: {
+            id: newItem.id,
+            data: newItem.data,
+            disciplina: newItem.disciplina,
+            microtopico: newItem.microtopico,
+            id_questao: newItem.idQuestao,
+            enunciado: newItem.enunciado,
+            alternativa_marcada: newItem.alternativaMarcada,
+            gabarito_correto: newItem.gabaritoCorreto,
+            classificacao_erro: newItem.classificacaoErro,
+            licao_aprendida: newItem.licaoAprendida,
+            prerequisito_relacionado: newItem.prerequisitoRelacionado
+          }
+        });
+      } catch (e: any) {
+        setErrors(previousErrors);
+        notifySync({
+          type: 'error',
+          message: `Erro ao salvar item no Caderno de Erros: ${e.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
+  const updateError = async (id: string, updates: Partial<ErrorItem>) => {
+    const previousErrors = [...errors];
+    let updatedItem: ErrorItem | null = null;
+
+    setErrors(prev => prev.map(e => {
+      if (e.id === id) {
+        updatedItem = { ...e, ...updates };
+        return updatedItem;
+      }
+      return e;
+    }));
+
+    if (user && updatedItem) {
+      const itemToSave = updatedItem as ErrorItem;
+      try {
+        await SyncService.push({
+          type: 'ERROR_UPSERT',
+          data: {
+            id: itemToSave.id,
+            data: itemToSave.data,
+            disciplina: itemToSave.disciplina,
+            microtopico: itemToSave.microtopico,
+            id_questao: itemToSave.idQuestao,
+            enunciado: itemToSave.enunciado,
+            alternativa_marcada: itemToSave.alternativaMarcada,
+            gabarito_correto: itemToSave.gabaritoCorreto,
+            classificacao_erro: itemToSave.classificacaoErro,
+            licao_aprendida: itemToSave.licaoAprendida,
+            prerequisito_relacionado: itemToSave.prerequisitoRelacionado
+          }
+        });
+      } catch (e: any) {
+        setErrors(previousErrors);
+        notifySync({
+          type: 'error',
+          message: `Erro ao atualizar item do Caderno de Erros: ${e.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
+  const deleteError = async (id: string) => {
+    const previousErrors = [...errors];
+    setErrors(prev => prev.filter(e => e.id !== id));
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'ERROR_DELETE',
+          data: { id }
+        });
+      } catch (e: any) {
+        setErrors(previousErrors);
+        notifySync({
+          type: 'error',
+          message: `Erro ao remover item do Caderno de Erros: ${e.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
+  const exportBackup = () => {
+    const data = {
+      exportedAt: new Date().toISOString(),
+      version: '5.0-cloud-authoritative',
+      topics,
+      errors,
+      englishHabits,
+      sessionLogs
+    };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `crono-estudo-backup-${getTodayDateString()}.json`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const importBackup = async (file: File): Promise<boolean> => {
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      if (Array.isArray(data.topics)) {
+        setTopics(data.topics);
+        if (Array.isArray(data.errors)) setErrors(data.errors);
+        if (data.englishHabits && typeof data.englishHabits === 'object') setEnglishHabits(data.englishHabits);
+        if (Array.isArray(data.sessionLogs)) setSessionLogs(data.sessionLogs);
+        return true;
+      }
+    } catch (e) {
+      console.error('Falha ao importar backup', e);
+    }
+    return false;
   };
 
   const resetToInitial = () => {
@@ -1266,6 +1379,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         scheduleForToday,
         completeRevision,
         addError,
+        updateError,
         deleteError,
         exportBackup,
         importBackup,
@@ -1276,6 +1390,8 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         isCloudConnected: !!user,
         cloudSyncError,
         refreshCloudData: () => loadCloudData(true),
+        syncNotification,
+        dismissSyncNotification,
         getTopicPedagogicalStatus,
         getTopicUnmetPrerequisites,
         getTopicUnlockCount,

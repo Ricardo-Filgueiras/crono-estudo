@@ -3,7 +3,6 @@ import {
   Play, 
   Pause, 
   RotateCcw, 
-  Timer as TimerIcon, 
   Maximize2, 
   Minimize2, 
   ArrowUp, 
@@ -13,7 +12,9 @@ import {
   X,
   Target,
   Coffee,
-  FastForward
+  FastForward,
+  Volume2,
+  VolumeX
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useStudy, getTodayDateString } from '../context/StudyContext';
@@ -40,6 +41,30 @@ export const formatStudyDuration = (totalSeconds?: number, fallbackMinutes?: num
 
 type TimerPhase = 'study' | 'block_done' | 'break' | 'break_done';
 
+const playGentleChime = () => {
+  try {
+    const AudioCtx = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    if (!AudioCtx) return;
+    const ctx = new AudioCtx();
+    const notes = [523.25, 659.25, 783.99]; // C5, E5, G5 major chord arpeggio
+    notes.forEach((freq, i) => {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(freq, ctx.currentTime + i * 0.14);
+      gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.14);
+      gain.gain.exponentialRampToValueAtTime(0.16, ctx.currentTime + i * 0.14 + 0.04);
+      gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.14 + 0.65);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime + i * 0.14);
+      osc.stop(ctx.currentTime + i * 0.14 + 0.7);
+    });
+  } catch {
+    // Ignorar se o navegador bloquear áudio automático
+  }
+};
+
 export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoStartTrigger }) => {
   const { 
     activeTimerTarget, 
@@ -61,8 +86,50 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
   const [countDirection, setCountDirection] = useState<'down' | 'up'>('down');
   const [phase, setPhase] = useState<TimerPhase>('study');
   const [breakMinutes, setBreakMinutes] = useState(5);
+  const [isSoundEnabled, setIsSoundEnabled] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('crono_timer_sound') !== 'off';
+    } catch {
+      return true;
+    }
+  });
+
+  const toggleSound = () => {
+    setIsSoundEnabled(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('crono_timer_sound', next ? 'on' : 'off');
+      } catch {}
+      return next;
+    });
+  };
 
   const lastTargetIdRef = useRef<string | null>(null);
+  const recordStudySecondsRef = useRef(recordStudySeconds);
+  const activeTimerTargetRef = useRef(activeTimerTarget);
+  const lastTickTimestampRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    recordStudySecondsRef.current = recordStudySeconds;
+  }, [recordStudySeconds]);
+
+  useEffect(() => {
+    activeTimerTargetRef.current = activeTimerTarget;
+  }, [activeTimerTarget]);
+
+  const toggleCountDirection = () => {
+    if (countDirection === 'down') {
+      // Ao mudar de Regressivo para Progressivo, preserva exatamente os segundos já decorridos no bloco atual
+      const elapsedInBlock = Math.max(0, studyDurationMinutes * 60 - timeLeft);
+      setStopwatchSeconds(elapsedInBlock);
+      setCountDirection('up');
+    } else {
+      // Ao mudar de Progressivo para Regressivo, preserva o tempo restante do bloco atual
+      const remainingInBlock = Math.max(0, studyDurationMinutes * 60 - stopwatchSeconds);
+      setTimeLeft(remainingInBlock > 0 ? remainingInBlock : studyDurationMinutes * 60);
+      setCountDirection('down');
+    }
+  };
 
   // Notify parent when running state changes (for anti-distraction mode)
   useEffect(() => {
@@ -82,6 +149,7 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
       setPhase('study');
 
       const est = activeTimerTarget.estimatedMinutes || 25;
+      setStopwatchSeconds(0);
       if (est === 20) {
         setMode('20m');
         setStudyDurationMinutes(20);
@@ -112,33 +180,57 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
     }
   }, [activeTimerTarget, autoStartTrigger]);
 
-  // ESC key to exit Zen mode
+  // Keyboard shortcuts in Zen Mode (Escape to exit, Space to Play/Pause, R to Reset)
   useEffect(() => {
+    if (!isZenMode) return;
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isZenMode) {
+      if (e.key === 'Escape') {
         setIsZenMode(false);
+      } else if (e.code === 'Space') {
+        e.preventDefault();
+        setIsRunning(prev => !prev);
+      } else if (e.key === 'r' || e.key === 'R') {
+        e.preventDefault();
+        setIsRunning(false);
+        setTimeLeft(studyDurationMinutes * 60);
+        setStopwatchSeconds(0);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isZenMode]);
+  }, [isZenMode, studyDurationMinutes]);
 
-  // Unified 1-second tick for study & break phases
+  // Unified wall-clock accurate 1-second tick for study & break phases
   useEffect(() => {
-    if (!isRunning) return;
+    if (!isRunning) {
+      lastTickTimestampRef.current = null;
+      return;
+    }
+
+    lastTickTimestampRef.current = Date.now();
 
     const timer = setInterval(() => {
-      // Only account study time during the 'study' phase
-      if (phase === 'study' && activeTimerTarget) {
-        recordStudySeconds(activeTimerTarget, 1);
+      const now = Date.now();
+      const prevTick = lastTickTimestampRef.current || now - 1000;
+      const deltaSecs = Math.max(1, Math.round((now - prevTick) / 1000));
+      lastTickTimestampRef.current = now;
+
+      // Contabiliza os segundos reais estudados na tarefa vinculada sem reiniciar o intervalo
+      if (phase === 'study' && activeTimerTargetRef.current) {
+        recordStudySecondsRef.current(activeTimerTargetRef.current, deltaSecs);
       }
 
-      if (phase === 'study' && (mode === 'stopwatch' || countDirection === 'up')) {
-        setStopwatchSeconds(prev => prev + 1);
-      } else {
+      if (phase === 'study') {
+        setStopwatchSeconds(prev => prev + deltaSecs);
+      }
+
+      if (phase === 'break' || (phase === 'study' && mode !== 'stopwatch' && countDirection === 'down')) {
         setTimeLeft(prev => {
-          if (prev <= 1) {
+          if (prev <= deltaSecs) {
             setIsRunning(false);
+            if (isSoundEnabled) {
+              playGentleChime();
+            }
             if (phase === 'study') {
               setPhase('block_done');
               try {
@@ -151,39 +243,41 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
             }
             return 0;
           }
-          return prev - 1;
+          return prev - deltaSecs;
         });
       }
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isRunning, mode, countDirection, phase, activeTimerTarget, recordStudySeconds]);
+  }, [isRunning, mode, countDirection, phase, isSoundEnabled]);
 
   const selectPresetMinutes = (mins: 20 | 25 | 30) => {
     setPhase('study');
-    setIsRunning(false);
     setMode(`${mins}m` as '20m' | '25m' | '30m');
     setStudyDurationMinutes(mins);
     setTimeLeft(mins * 60);
+    setStopwatchSeconds(0);
     setCountDirection('down');
   };
 
   const selectStopwatchMode = () => {
     setPhase('study');
-    setIsRunning(false);
+    const elapsedInBlock = countDirection === 'down'
+      ? Math.max(0, studyDurationMinutes * 60 - timeLeft)
+      : stopwatchSeconds;
     setMode('stopwatch');
-    setStopwatchSeconds(0);
+    setStopwatchSeconds(elapsedInBlock);
     setCountDirection('up');
   };
 
   const selectCustomMode = (mins?: number) => {
     const val = mins ?? customMinutes;
     setPhase('study');
-    setIsRunning(false);
     setMode('custom');
     setCustomMinutes(val);
     setStudyDurationMinutes(val);
     setTimeLeft(val * 60);
+    setStopwatchSeconds(0);
     setCountDirection('down');
   };
 
@@ -420,6 +514,18 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
 
             {/* Quick Block Duration Selector & Direction inside Fullscreen */}
             <div className="flex flex-wrap items-center justify-center gap-2">
+              {studyDurationMinutes !== 20 && studyDurationMinutes !== 25 && studyDurationMinutes !== 30 && (
+                <button
+                  onClick={() => selectCustomMode(studyDurationMinutes)}
+                  className={`px-3 py-1 rounded-full text-xs font-medium border transition ${
+                    phase === 'study' && mode === 'custom'
+                      ? 'bg-emerald-600 text-white border-emerald-500'
+                      : 'bg-slate-900 text-slate-400 border-slate-800 hover:text-white'
+                  }`}
+                >
+                  {studyDurationMinutes}m
+                </button>
+              )}
               {([20, 25, 30] as const).map(mins => (
                 <button
                   key={mins}
@@ -434,18 +540,19 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
                 </button>
               ))}
               <button
-                onClick={() => setCountDirection(countDirection === 'down' ? 'up' : 'down')}
+                onClick={toggleCountDirection}
                 className="inline-flex items-center gap-1 bg-slate-900/80 px-3 py-1 rounded-full border border-slate-800 text-xs text-slate-300 hover:text-white transition"
+                title="Alternar entre contagem regressiva e progressiva sem pausar"
               >
                 {countDirection === 'down' ? (
                   <>
                     <ArrowDown className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-                    <span>Regressivo</span>
+                    <span>Regressivo (clique p/ Progressivo)</span>
                   </>
                 ) : (
                   <>
                     <ArrowUp className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
-                    <span>Progressivo</span>
+                    <span>Progressivo (clique p/ Regressivo)</span>
                   </>
                 )}
               </button>
@@ -525,16 +632,25 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
 
             <div className="flex-1 min-w-0">
               <div className="text-[11px] font-semibold uppercase tracking-wider text-emerald-400 flex flex-wrap items-center gap-2">
-                <span className="flex items-center gap-1">
-                  <TimerIcon className="w-3.5 h-3.5" aria-hidden="true" />
+                <button
+                  type="button"
+                  onClick={toggleCountDirection}
+                  className="inline-flex items-center gap-1 hover:text-emerald-300 transition underline decoration-emerald-500/40 underline-offset-2"
+                  title="Clique para alternar entre Pomodoro Regressivo (↓) e Cronômetro Progressivo (↑) sem pausar"
+                >
+                  {countDirection === 'up' ? (
+                    <ArrowUp className="w-3.5 h-3.5" aria-hidden="true" />
+                  ) : (
+                    <ArrowDown className="w-3.5 h-3.5" aria-hidden="true" />
+                  )}
                   <span>
                     {isBreakPhase
                       ? `Intervalo (${breakMinutes}m)`
                       : countDirection === 'up'
-                      ? 'Cronômetro Progressivo'
-                      : 'Pomodoro Regressivo'}
+                      ? 'Cronômetro Progressivo (↑)'
+                      : 'Pomodoro Regressivo (↓)'}
                   </span>
-                </span>
+                </button>
                 {activeTimerTarget && accumulatedLabel && (
                   <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
                     ⏱️ Total investido: {accumulatedLabel}
@@ -542,8 +658,8 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
                 )}
               </div>
 
-              <div className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2 mt-0.5">
-                <span className="truncate">
+              <div className="text-xs sm:text-sm font-semibold text-white flex items-center gap-2 mt-1">
+                <span className="line-clamp-2 leading-snug" title={activeTimerTarget?.title}>
                   {activeTimerTarget 
                     ? activeTimerTarget.title 
                     : 'Clique em "Focar" em uma tarefa abaixo para iniciar seu bloco'}
@@ -664,6 +780,21 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
                   title="Reiniciar Cronômetro"
                 >
                   <RotateCcw className="w-4 h-4" aria-hidden="true" />
+                </button>
+
+                {/* Mute / Unmute Sound Feedback */}
+                <button
+                  onClick={toggleSound}
+                  aria-label={isSoundEnabled ? 'Desativar som ao fim do bloco' : 'Ativar som ao fim do bloco'}
+                  aria-pressed={isSoundEnabled}
+                  className={`p-2 rounded-xl border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                    isSoundEnabled
+                      ? 'bg-slate-800 hover:bg-slate-700 text-emerald-400 border-slate-700'
+                      : 'bg-slate-900 hover:bg-slate-800 text-slate-500 border-slate-800'
+                  }`}
+                  title={isSoundEnabled ? 'Som de conclusão ativado (clique para silenciar)' : 'Som silenciado (clique para ativar)'}
+                >
+                  {isSoundEnabled ? <Volume2 className="w-4 h-4" aria-hidden="true" /> : <VolumeX className="w-4 h-4" aria-hidden="true" />}
                 </button>
 
                 {/* Expand to Fullscreen Zen Mode */}

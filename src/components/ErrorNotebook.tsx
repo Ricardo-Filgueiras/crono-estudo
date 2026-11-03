@@ -1,10 +1,14 @@
-import React, { useState, useEffect } from 'react';
-import { useStudy, getTodayDateString } from '../context/StudyContext';
-import { Plus, Trash2, ShieldAlert, Sparkles, X } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { useStudy, getTodayDateString, formatDateBR } from '../context/StudyContext';
+import { ErrorItem } from '../types';
+import { Plus, Trash2, ShieldAlert, Sparkles, X, Edit3, Search } from 'lucide-react';
 
 export const ErrorNotebook: React.FC = () => {
-  const { errors, addError, deleteError } = useStudy();
+  const { errors, topics, addError, updateError, deleteError } = useStudy();
   const [showAddModal, setShowAddModal] = useState(false);
+  const [editingErrorId, setEditingErrorId] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filterDisciplina, setFilterDisciplina] = useState('TODAS');
 
   // Form state
   const [disciplina, setDisciplina] = useState('Língua Portuguesa');
@@ -16,16 +20,66 @@ export const ErrorNotebook: React.FC = () => {
   const [classificacaoErro, setClassificacaoErro] = useState('Pegadinha de Enunciado');
   const [licaoAprendida, setLicaoAprendida] = useState('');
 
+  const availableDisciplinas = useMemo(() => {
+    const fromTopics = topics.map(t => t.disciplina);
+    const fromErrors = errors.map(e => e.disciplina);
+    return Array.from(new Set([...fromTopics, ...fromErrors]));
+  }, [topics, errors]);
+
+  const filteredErrors = useMemo(() => {
+    return errors.filter(err => {
+      if (filterDisciplina !== 'TODAS' && err.disciplina !== filterDisciplina) return false;
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        return (
+          err.microtopico.toLowerCase().includes(q) ||
+          err.disciplina.toLowerCase().includes(q) ||
+          err.licaoAprendida.toLowerCase().includes(q) ||
+          err.enunciado.toLowerCase().includes(q) ||
+          err.idQuestao.toLowerCase().includes(q)
+        );
+      }
+      return true;
+    });
+  }, [errors, filterDisciplina, searchQuery]);
+
   // Close on Escape
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && showAddModal) {
         setShowAddModal(false);
+        setEditingErrorId(null);
       }
     };
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [showAddModal]);
+
+  const openNewErrorModal = () => {
+    setEditingErrorId(null);
+    setDisciplina('Língua Portuguesa');
+    setMicrotopico('');
+    setIdQuestao('');
+    setEnunciado('');
+    setAlternativaMarcada('');
+    setGabaritoCorreto('');
+    setClassificacaoErro('Pegadinha de Enunciado');
+    setLicaoAprendida('');
+    setShowAddModal(true);
+  };
+
+  const openEditErrorModal = (item: ErrorItem) => {
+    setEditingErrorId(item.id);
+    setDisciplina(item.disciplina);
+    setMicrotopico(item.microtopico);
+    setIdQuestao(item.idQuestao);
+    setEnunciado(item.enunciado);
+    setAlternativaMarcada(item.alternativaMarcada);
+    setGabaritoCorreto(item.gabaritoCorreto);
+    setClassificacaoErro(item.classificacaoErro);
+    setLicaoAprendida(item.licaoAprendida);
+    setShowAddModal(true);
+  };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,19 +88,33 @@ export const ErrorNotebook: React.FC = () => {
       return;
     }
 
-    addError({
-      data: getTodayDateString(),
-      disciplina,
-      microtopico,
-      idQuestao: idQuestao || 'FCC-QUESTÃO',
-      enunciado: enunciado || microtopico,
-      alternativaMarcada: alternativaMarcada || 'B',
-      gabaritoCorreto: gabaritoCorreto || 'A',
-      classificacaoErro,
-      licaoAprendida
-    });
+    if (editingErrorId) {
+      updateError(editingErrorId, {
+        disciplina,
+        microtopico,
+        idQuestao: idQuestao || 'FCC-QUESTÃO',
+        enunciado: enunciado || microtopico,
+        alternativaMarcada: alternativaMarcada || 'B',
+        gabaritoCorreto: gabaritoCorreto || 'A',
+        classificacaoErro,
+        licaoAprendida
+      });
+    } else {
+      addError({
+        data: getTodayDateString(),
+        disciplina,
+        microtopico,
+        idQuestao: idQuestao || 'FCC-QUESTÃO',
+        enunciado: enunciado || microtopico,
+        alternativaMarcada: alternativaMarcada || 'B',
+        gabaritoCorreto: gabaritoCorreto || 'A',
+        classificacaoErro,
+        licaoAprendida
+      });
+    }
 
     setShowAddModal(false);
+    setEditingErrorId(null);
     setMicrotopico('');
     setIdQuestao('');
     setEnunciado('');
@@ -73,13 +141,39 @@ export const ErrorNotebook: React.FC = () => {
         </div>
 
         <button
-          onClick={() => setShowAddModal(true)}
+          onClick={openNewErrorModal}
           aria-label="Registrar nova questão com erro no caderno"
           className="bg-rose-600 hover:bg-rose-500 text-white font-medium text-xs py-2.5 px-4 rounded-xl shadow-lg shadow-rose-700/20 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 transition flex items-center gap-2 whitespace-nowrap self-start sm:self-auto"
         >
           <Plus className="w-4 h-4" aria-hidden="true" />
           <span>Registrar Questão / Erro</span>
         </button>
+      </section>
+
+      {/* Barra de Busca e Filtro por Disciplina */}
+      <section aria-label="Busca e filtro do caderno de erros" className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row gap-3">
+        <div className="relative flex-1">
+          <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" aria-hidden="true" />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Buscar erro por assunto, código da questão ou lição aprendida..."
+            aria-label="Buscar erro no caderno"
+            className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-rose-500"
+          />
+        </div>
+        <select
+          value={filterDisciplina}
+          onChange={e => setFilterDisciplina(e.target.value)}
+          aria-label="Filtrar erros por disciplina"
+          className="bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-rose-500"
+        >
+          <option value="TODAS">Todas as Disciplinas ({errors.length})</option>
+          {Array.from(new Set(errors.map(e => e.disciplina))).map(d => (
+            <option key={d} value={d}>{d}</option>
+          ))}
+        </select>
       </section>
 
       {/* Protocolo de Auditoria Cirúrgica de Erros (Caminho Inverso) */}
@@ -112,12 +206,12 @@ export const ErrorNotebook: React.FC = () => {
 
       {/* List of mapped errors */}
       <section aria-label="Erros mapeados da FCC" className="space-y-4">
-        {errors.length === 0 ? (
+        {filteredErrors.length === 0 ? (
           <div className="p-8 text-center bg-slate-900/40 rounded-2xl border border-slate-800">
-            <p className="text-sm text-slate-300">Nenhum erro registrado ainda no caderno.</p>
+            <p className="text-sm text-slate-300">Nenhum erro encontrado para esse filtro.</p>
           </div>
         ) : (
-          errors.map(item => (
+          filteredErrors.map(item => (
             <article
               key={item.id}
               className="bg-slate-900 border border-slate-800 rounded-2xl p-5 shadow-sm space-y-3 relative overflow-hidden"
@@ -131,14 +225,22 @@ export const ErrorNotebook: React.FC = () => {
                     {item.idQuestao}
                   </span>
                   <span className="text-[11px] text-slate-400">
-                    {item.data}
+                    {formatDateBR(item.data)}
                   </span>
                 </div>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-slate-800 text-amber-300 border border-slate-700 font-medium">
                     {item.classificacaoErro}
                   </span>
+                  <button
+                    onClick={() => openEditErrorModal(item)}
+                    aria-label={`Editar erro de ${item.microtopico} (${item.idQuestao})`}
+                    className="text-slate-400 hover:text-emerald-400 p-1.5 rounded-lg hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition"
+                    title="Editar erro"
+                  >
+                    <Edit3 className="w-4 h-4" aria-hidden="true" />
+                  </button>
                   <button
                     onClick={() => deleteError(item.id)}
                     aria-label={`Excluir erro de ${item.microtopico} (${item.idQuestao})`}
@@ -194,9 +296,14 @@ export const ErrorNotebook: React.FC = () => {
         >
           <div className="bg-slate-900 border-t sm:border border-slate-700 rounded-t-3xl sm:rounded-3xl w-full max-w-lg max-h-[90vh] sm:max-h-[92vh] flex flex-col overflow-hidden shadow-2xl pb-safe">
             <div className="px-6 py-4 border-b border-slate-800 flex items-center justify-between bg-slate-950/50">
-              <h3 id="modal-error-title" className="text-base font-bold text-white">Registrar Erro no Caderno FCC</h3>
+              <h3 id="modal-error-title" className="text-base font-bold text-white">
+                {editingErrorId ? 'Editar Registro de Erro' : 'Registrar Erro no Caderno FCC'}
+              </h3>
               <button 
-                onClick={() => setShowAddModal(false)}
+                onClick={() => {
+                  setShowAddModal(false);
+                  setEditingErrorId(null);
+                }}
                 aria-label="Fechar janela de registro de erro"
                 className="text-slate-400 hover:text-white p-1 rounded-lg hover:bg-slate-800 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 transition"
               >
@@ -204,17 +311,23 @@ export const ErrorNotebook: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSubmit} className="p-6 space-y-3.5 text-xs">
+            <form onSubmit={handleSubmit} className="p-6 space-y-3.5 text-xs overflow-y-auto">
               <div>
                 <label htmlFor="err-disciplina" className="block text-slate-200 font-semibold mb-1">Disciplina</label>
                 <input
                   id="err-disciplina"
+                  list="disciplinas-suggestions"
                   type="text"
                   value={disciplina}
                   onChange={e => setDisciplina(e.target.value)}
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
-                  placeholder="Ex: Banco de Dados ou Português"
+                  placeholder="Ex: Banco de Dados ou Língua Portuguesa"
                 />
+                <datalist id="disciplinas-suggestions">
+                  {availableDisciplinas.map(d => (
+                    <option key={d} value={d} />
+                  ))}
+                </datalist>
               </div>
 
               <div>
@@ -227,6 +340,18 @@ export const ErrorNotebook: React.FC = () => {
                   className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
                   placeholder="Ex: Normalização 2FN vs 3FN"
                   required
+                />
+              </div>
+
+              <div>
+                <label htmlFor="err-enunciado" className="block text-slate-200 font-semibold mb-1">Resumo do Enunciado / Contexto (Opcional)</label>
+                <input
+                  id="err-enunciado"
+                  type="text"
+                  value={enunciado}
+                  onChange={e => setEnunciado(e.target.value)}
+                  className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
+                  placeholder="O que a questão pedia..."
                 />
               </div>
 
@@ -244,25 +369,29 @@ export const ErrorNotebook: React.FC = () => {
                 </div>
                 <div>
                   <label htmlFor="err-resposta-marcada" className="block text-slate-200 font-semibold mb-1">Sua Resposta</label>
-                  <input
+                  <select
                     id="err-resposta-marcada"
-                    type="text"
-                    value={alternativaMarcada}
+                    value={alternativaMarcada || 'B'}
                     onChange={e => setAlternativaMarcada(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white uppercase text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
-                    placeholder="B"
-                  />
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2 py-2 text-rose-300 font-bold text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
+                  >
+                    {['A', 'B', 'C', 'D', 'E', 'Certo', 'Errado'].map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
                   <label htmlFor="err-gabarito" className="block text-slate-200 font-semibold mb-1">Gabarito FCC</label>
-                  <input
+                  <select
                     id="err-gabarito"
-                    type="text"
-                    value={gabaritoCorreto}
+                    value={gabaritoCorreto || 'A'}
                     onChange={e => setGabaritoCorreto(e.target.value)}
-                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-white uppercase text-center font-bold text-emerald-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
-                    placeholder="D"
-                  />
+                    className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2 py-2 text-emerald-400 font-bold text-center focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 focus:border-rose-500"
+                  >
+                    {['A', 'B', 'C', 'D', 'E', 'Certo', 'Errado'].map(opt => (
+                      <option key={opt} value={opt}>{opt}</option>
+                    ))}
+                  </select>
                 </div>
               </div>
 

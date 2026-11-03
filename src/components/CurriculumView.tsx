@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useStudy } from '../context/StudyContext';
+import { useStudy, getTodayDateString } from '../context/StudyContext';
 import { StudyContextTag } from '../types';
 import { 
   Search, 
@@ -74,6 +74,7 @@ export const CurriculumView: React.FC = () => {
 
   const completedFiltered = filteredTopics.filter(t => t.status === 'Teoria Concluída' || t.status === 'Dominado' || t.status === 'Em Exercícios').length;
   const percentFiltered = filteredTopics.length > 0 ? Math.round((completedFiltered / filteredTopics.length) * 100) : 0;
+  const today = getTodayDateString();
 
   return (
     <div className="space-y-6">
@@ -408,6 +409,12 @@ export const CurriculumView: React.FC = () => {
                         {isMastered ? '⭐ Dominado' : topic.status}
                       </span>
 
+                      {topic.agendadoPara === today && !isMastered && (
+                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/40">
+                          📌 Na fila de hoje
+                        </span>
+                      )}
+
                       {/* Unlock Potential Pill */}
                       {unlockPower > 0 && !isMastered && (
                         <span className="text-[10px] font-medium px-2 py-0.5 rounded bg-indigo-500/15 text-indigo-300 border border-indigo-500/30 flex items-center gap-1" title={`Este conceito é pré-requisito para outros ${unlockPower} conteúdos`}>
@@ -448,35 +455,44 @@ export const CurriculumView: React.FC = () => {
                   </div>
 
                   {/* Actions (Responsive Grid on Mobile) */}
-                  <div className="grid grid-cols-4 gap-1.5 pt-2.5 sm:pt-0 sm:flex sm:items-center sm:gap-1.5 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80">
+                  <div className="flex flex-wrap items-center gap-1.5 pt-2.5 sm:pt-0 w-full sm:w-auto border-t sm:border-t-0 border-slate-800/80 justify-end">
                     
-                    {/* Schedule for Today */}
-                    <button
-                      onClick={() => scheduleForToday(topic.id)}
-                      className="text-xs bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
-                      title="Agendar para a fila de estudo de hoje"
-                      aria-label={`Agendar ${topic.microtopico} para hoje`}
-                    >
-                      <span className="text-emerald-400 font-bold">+</span>
-                      <span className="text-[11px] sm:text-xs">Hoje</span>
-                    </button>
+                    {/* Schedule for Today (Hidden if already Mastered) */}
+                    {!isMastered && (
+                      <button
+                        onClick={() => scheduleForToday(topic.id)}
+                        disabled={topic.agendadoPara === today}
+                        className={`text-xs px-2.5 py-1.5 rounded-lg border focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center justify-center gap-1 ${
+                          topic.agendadoPara === today
+                            ? 'bg-emerald-500/15 text-emerald-300 border-emerald-500/30 cursor-default'
+                            : 'bg-slate-800 hover:bg-emerald-600 text-slate-200 hover:text-white border-slate-700'
+                        }`}
+                        title={topic.agendadoPara === today ? 'Já está na fila de hoje' : 'Agendar para a fila de estudo de hoje'}
+                        aria-label={`Agendar ${topic.microtopico} para hoje`}
+                      >
+                        <span className="text-emerald-400 font-bold">{topic.agendadoPara === today ? '✓' : '+'}</span>
+                        <span className="text-[11px] sm:text-xs">{topic.agendadoPara === today ? 'Na Fila' : 'Hoje'}</span>
+                      </button>
+                    )}
 
-                    {/* Reschedule */}
-                    <button
-                      onClick={() => rescheduleTopic(topic.id, 2)}
-                      className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
-                      title="Reagendar para daqui a 2 dias"
-                      aria-label={`Reagendar ${topic.microtopico} para daqui a 2 dias`}
-                    >
-                      <FastForward className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
-                      <span className="text-[11px] sm:text-xs">+2 dias</span>
-                    </button>
+                    {/* Reschedule (Hidden if already Mastered) */}
+                    {!isMastered && (
+                      <button
+                        onClick={() => rescheduleTopic(topic.id, 2)}
+                        className="text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 px-2.5 py-1.5 rounded-lg border border-slate-700 focus:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 transition flex items-center justify-center gap-1"
+                        title="Reagendar para daqui a 2 dias"
+                        aria-label={`Reagendar ${topic.microtopico} para daqui a 2 dias`}
+                      >
+                        <FastForward className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
+                        <span className="text-[11px] sm:text-xs">+2 dias</span>
+                      </button>
+                    )}
 
                     {/* Mark as Mastered */}
                     {!isMastered ? (
                       <button
                         onClick={() => markAsMastered(topic.id)}
-                        className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2 sm:px-2.5 py-2 sm:py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
+                        className="text-xs bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 px-2.5 py-1.5 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 transition flex items-center justify-center gap-1"
                         title="Marcar como Dominado"
                         aria-label={`Marcar ${topic.microtopico} como dominado`}
                       >
@@ -484,15 +500,15 @@ export const CurriculumView: React.FC = () => {
                         <span className="text-[11px] sm:text-xs">Dominar</span>
                       </button>
                     ) : (
-                      <div className="text-[11px] text-amber-400 flex items-center justify-center font-medium bg-amber-500/10 rounded-lg border border-amber-500/20 py-2 sm:py-1.5">
-                        ⭐ Feito
+                      <div className="text-[11px] text-amber-400 flex items-center justify-center font-medium bg-amber-500/10 rounded-lg border border-amber-500/20 px-2.5 py-1.5">
+                        ⭐ Dominado
                       </div>
                     )}
 
                     {/* Edit Modal */}
                     <button
                       onClick={() => setSelectedTopicForModal(topic)}
-                      className="text-xs bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-2 sm:px-3 py-2 sm:py-1.5 rounded-lg border border-emerald-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex flex-col sm:flex-row items-center justify-center gap-1"
+                      className="text-xs bg-emerald-600/20 hover:bg-emerald-600 text-emerald-300 hover:text-white px-3 py-1.5 rounded-lg border border-emerald-500/30 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center justify-center gap-1"
                       aria-label={`Editar anotações e status de ${topic.microtopico}`}
                     >
                       <Edit3 className="w-3.5 h-3.5" aria-hidden="true" />

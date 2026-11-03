@@ -1,5 +1,5 @@
 import React, { useState, useMemo } from 'react';
-import { useStudy, getTodayDateString, addDaysToDate, getWeekDays } from '../context/StudyContext';
+import { useStudy, getTodayDateString, addDaysToDate, getWeekDays, formatDateBR } from '../context/StudyContext';
 import { formatStudyDuration } from './StudyTimer';
 import { 
   BarChart3, 
@@ -160,6 +160,7 @@ export const StatsDashboard: React.FC = () => {
       'Matemática Base': 0,
       'Português Base': 0,
       'Ciências da Natureza': 0,
+      'Leitura / Livro': 0,
       'Concurso': 0,
       'Inglês': 0
     };
@@ -351,7 +352,13 @@ export const StatsDashboard: React.FC = () => {
   const mathStats = getTagStats('Matemática Base');
   const portStats = getTagStats('Português Base');
   const natureStats = getTagStats('Ciências da Natureza');
+  const booksStats = getTagStats('Leitura / Livro');
   const concursoStats = getTagStats('Concurso');
+
+  const topicsWithAccuracy = topics.filter(t => typeof t.acertosExercicios === 'number' && t.acertosExercicios > 0);
+  const avgAccuracy = topicsWithAccuracy.length > 0
+    ? Math.round(topicsWithAccuracy.reduce((acc, t) => acc + (t.acertosExercicios || 0), 0) / topicsWithAccuracy.length)
+    : null;
 
   return (
     <div className="space-y-6">
@@ -679,7 +686,7 @@ export const StatsDashboard: React.FC = () => {
               <div>
                 {hoveredHeatmapDay ? (
                   <span className="text-white font-medium">
-                    📅 <span className="text-emerald-400 font-bold">{hoveredHeatmapDay.dateStr}</span>: {formatStudyDuration(hoveredHeatmapDay.seconds)} estudados
+                    📅 <span className="text-emerald-400 font-bold">{formatDateBR(hoveredHeatmapDay.dateStr)}</span>: {formatStudyDuration(hoveredHeatmapDay.seconds)} estudados
                     {hoveredHeatmapDay.topicsCount > 0 ? ` (${hoveredHeatmapDay.topicsCount} tópicos)` : ''}
                     {hoveredHeatmapDay.hasEnglish ? ' • Inglês ✓' : ''}
                   </span>
@@ -732,6 +739,7 @@ export const StatsDashboard: React.FC = () => {
               { name: 'Matemática Base', key: 'Matemática Base', color: 'bg-amber-500', text: 'text-amber-300' },
               { name: 'Português Base', key: 'Português Base', color: 'bg-blue-500', text: 'text-blue-300' },
               { name: 'Ciências da Natureza', key: 'Ciências da Natureza', color: 'bg-teal-500', text: 'text-teal-300' },
+              { name: 'Leitura / Livros Técnicos', key: 'Leitura / Livro', color: 'bg-rose-500', text: 'text-rose-300' },
               { name: 'Concurso Público (TI)', key: 'Concurso', color: 'bg-emerald-500', text: 'text-emerald-300' },
               { name: 'Hábito Diário de Inglês', key: 'Inglês', color: 'bg-indigo-500', text: 'text-indigo-300' },
             ].map(item => {
@@ -809,7 +817,7 @@ export const StatsDashboard: React.FC = () => {
                       {log.targetTitle}
                     </div>
                     <div className="flex items-center gap-2 text-[10px] text-slate-400">
-                      <span className="font-mono text-emerald-400">{log.dateStr}</span>
+                      <span className="font-mono text-emerald-400">{formatDateBR(log.dateStr)}</span>
                       <span>•</span>
                       <span className="truncate">
                         {log.type === 'english' ? 'Inglês' : (log.origem?.[0] || 'Tópico')}
@@ -841,7 +849,12 @@ export const StatsDashboard: React.FC = () => {
               Progresso total do plano de estudos consolidado desde o início
             </p>
           </div>
-          <div className="flex items-center gap-2 text-xs font-mono">
+          <div className="flex flex-wrap items-center gap-2 text-xs font-mono">
+            {avgAccuracy !== null && (
+              <span className="px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-sky-400 font-bold" title="Média de acertos nas questões registradas">
+                🎯 {avgAccuracy}% acertos
+              </span>
+            )}
             <span className="px-2.5 py-1 rounded-xl bg-slate-950 border border-slate-800 text-slate-300">
               <strong className="text-amber-400 font-bold">{mastered}</strong> dominados
             </span>
@@ -945,6 +958,25 @@ export const StatsDashboard: React.FC = () => {
               aria-valuemax={100}
             >
               <div className="bg-emerald-500 h-full rounded-full transition-all duration-500" style={{ width: `${concursoStats.percent}%` }} />
+            </div>
+          </div>
+
+          {/* Leitura / Livros Técnicos */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-rose-300">
+                📖 Leitura / Livros Técnicos (Clássicos de Arquitetura & Dados)
+              </span>
+              <span className="font-mono text-rose-400">{booksStats.completed}/{booksStats.total} ({booksStats.percent}%)</span>
+            </div>
+            <div 
+              className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800"
+              role="progressbar"
+              aria-valuenow={booksStats.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div className="bg-rose-500 h-full rounded-full transition-all duration-500" style={{ width: `${booksStats.percent}%` }} />
             </div>
           </div>
 
