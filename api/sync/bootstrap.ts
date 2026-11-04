@@ -19,7 +19,12 @@ export default async function handler(req: any, res: any) {
 
   const token = authHeader.replace('Bearer ', '');
   const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false }
+    auth: { persistSession: false },
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
   });
 
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);

@@ -798,11 +798,13 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
+      const currentTopic = previousTopics.find(t => t.id === id);
       try {
         await SyncService.push({
           type: 'TOPIC_PROGRESS',
           data: {
             topic_id: id,
+            status: currentTopic?.status || 'Pendente',
             agendado_para: newDate
           }
         });
@@ -828,11 +830,13 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
 
     if (user) {
+      const currentTopic = previousTopics.find(t => t.id === id);
       try {
         await SyncService.push({
           type: 'TOPIC_PROGRESS',
           data: {
             topic_id: id,
+            status: currentTopic?.status || 'Pendente',
             agendado_para: today
           }
         });

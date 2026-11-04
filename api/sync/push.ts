@@ -23,7 +23,12 @@ export default async function handler(req: any, res: any) {
 
   const token = authHeader.replace('Bearer ', '');
   const supabase = createClient(supabaseUrl, supabaseKey, {
-    auth: { persistSession: false }
+    auth: { persistSession: false },
+    global: {
+      headers: {
+        Authorization: `Bearer ${token}`
+      }
+    }
   });
 
   const { data: { user }, error: authError } = await supabase.auth.getUser(token);
@@ -55,20 +60,26 @@ export default async function handler(req: any, res: any) {
     }
 
     if (type === 'TOPIC_PROGRESS') {
-      const { error } = await supabase.from('user_topic_progress').upsert({
+      const topicUpdateData: any = {
         user_id: user.id,
         topic_id: data.topic_id,
-        status: data.status,
-        data_estudo: data.data_estudo ?? null,
-        agendado_para: data.agendado_para ?? null,
-        proxima_revisao: data.proxima_revisao ?? null,
-        ordem_fila: data.ordem_fila ?? null,
-        tempo_estudado_segundos: data.tempo_estudado_segundos || 0,
-        tempo_estudado_minutos: data.tempo_estudado_minutos || 0,
-        anotacoes: data.anotacoes ?? null,
-        justificativa_recomendacao: data.justificativa_recomendacao ?? null,
         updated_at: new Date().toISOString()
-      }, { onConflict: 'user_id,topic_id' });
+      };
+      if (data.status !== undefined) topicUpdateData.status = data.status;
+      if (data.data_estudo !== undefined) topicUpdateData.data_estudo = data.data_estudo;
+      if (data.agendado_para !== undefined) topicUpdateData.agendado_para = data.agendado_para;
+      if (data.proxima_revisao !== undefined) topicUpdateData.proxima_revisao = data.proxima_revisao;
+      if (data.ordem_fila !== undefined) topicUpdateData.ordem_fila = data.ordem_fila;
+      if (data.tempo_estudado_segundos !== undefined) topicUpdateData.tempo_estudado_segundos = data.tempo_estudado_segundos;
+      if (data.tempo_estudado_minutos !== undefined) topicUpdateData.tempo_estudado_minutos = data.tempo_estudado_minutos;
+      if (data.anotacoes !== undefined) topicUpdateData.anotacoes = data.anotacoes;
+      if (data.justificativa_recomendacao !== undefined) topicUpdateData.justificativa_recomendacao = data.justificativa_recomendacao;
+
+      if (!topicUpdateData.status) {
+        topicUpdateData.status = 'Pendente';
+      }
+
+      const { error } = await supabase.from('user_topic_progress').upsert(topicUpdateData, { onConflict: 'user_id,topic_id' });
 
       if (error) throw error;
       return res.status(200).json({ success: true, type, topic_id: data.topic_id });
