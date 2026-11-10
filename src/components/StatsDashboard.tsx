@@ -157,6 +157,7 @@ export const StatsDashboard: React.FC = () => {
     const logsInPeriod = sessionLogs.filter(s => s.dateStr >= startDate && s.dateStr <= endDate);
     const tagSecondsMap: Record<string, number> = {
       'MBA': 0,
+      'Claude Code': 0,
       'Matemática Base': 0,
       'Português Base': 0,
       'Ciências da Natureza': 0,
@@ -349,6 +350,7 @@ export const StatsDashboard: React.FC = () => {
   };
 
   const mbaStats = getTagStats('MBA');
+  const claudeStats = getTagStats('Claude Code');
   const mathStats = getTagStats('Matemática Base');
   const portStats = getTagStats('Português Base');
   const natureStats = getTagStats('Ciências da Natureza');
@@ -736,6 +738,7 @@ export const StatsDashboard: React.FC = () => {
           <div className="space-y-3.5 pt-2">
             {[
               { name: 'MBA Ciência de Dados', key: 'MBA', color: 'bg-purple-500', text: 'text-purple-300' },
+              { name: 'Claude Code 101 (AI Agents)', key: 'Claude Code', color: 'bg-indigo-500', text: 'text-indigo-300' },
               { name: 'Matemática Base', key: 'Matemática Base', color: 'bg-amber-500', text: 'text-amber-300' },
               { name: 'Português Base', key: 'Português Base', color: 'bg-blue-500', text: 'text-blue-300' },
               { name: 'Ciências da Natureza', key: 'Ciências da Natureza', color: 'bg-teal-500', text: 'text-teal-300' },
@@ -939,6 +942,25 @@ export const StatsDashboard: React.FC = () => {
               aria-valuemax={100}
             >
               <div className="bg-purple-500 h-full rounded-full transition-all duration-500" style={{ width: `${mbaStats.percent}%` }} />
+            </div>
+          </div>
+
+          {/* Claude Code 101 */}
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-semibold text-indigo-300">
+                🤖 Claude Code 101 (AI Coding Agents & Automação)
+              </span>
+              <span className="font-mono text-indigo-400">{claudeStats.completed}/{claudeStats.total} ({claudeStats.percent}%)</span>
+            </div>
+            <div 
+              className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-800"
+              role="progressbar"
+              aria-valuenow={claudeStats.percent}
+              aria-valuemin={0}
+              aria-valuemax={100}
+            >
+              <div className="bg-indigo-500 h-full rounded-full transition-all duration-500" style={{ width: `${claudeStats.percent}%` }} />
             </div>
           </div>
 

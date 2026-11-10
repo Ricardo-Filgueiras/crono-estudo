@@ -24,9 +24,12 @@ interface StudyContextType {
   updateTopic: (id: string, updates: Partial<Topic>) => Promise<void>;
   markAsMastered: (id: string, completedDateStr?: string) => Promise<void>;
   quickCompleteTopic: (id: string, completedDateStr?: string) => Promise<void>;
+  completeBookSession: (id: string, completedDateStr?: string) => Promise<void>;
   reopenTopicForDate: (id: string, dateStr: string) => Promise<void>;
   rescheduleTopic: (id: string, daysOffsetOrDate: number | string) => Promise<void>;
   scheduleForToday: (id: string) => Promise<void>;
+  scheduleTopicForDate: (id: string, dateStr: string) => Promise<void>;
+  diluteAccumulatedTopics: (baseDateStr?: string, maxItemsPerDay?: number) => Promise<{ movedCount: number; daysCount: number }>;
   completeRevision: (id: string, nextIntervalDays?: number) => Promise<void>;
   addError: (item: Omit<ErrorItem, 'id'>) => Promise<void>;
   updateError: (id: string, updates: Partial<ErrorItem>) => Promise<void>;
@@ -128,6 +131,23 @@ export const addDaysToDate = (dateStr: string, days: number): string => {
   const month = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${year}-${month}-${day}`;
+};
+
+export const getDisciplineGroup = (disciplina: string): string => {
+  const d = (disciplina || '').toLowerCase();
+  if (d.includes('português') || d.includes('portugues')) return 'Português';
+  if (d.includes('matemática') || d.includes('matematica') || d.includes('álgebra') || d.includes('geometria')) return 'Matemática';
+  if (d.includes('sql') || d.includes('spark') || d.includes('estatística') || d.includes('estatistica') || d.includes('dados') || d.includes('mba')) return 'MBA/Dados';
+  if (d.includes('claude') || d.includes('agente') || d.includes('coding agent')) return 'Claude Code';
+  if (d.includes('livro') || d.includes('leitura') || d.includes('bibliogr')) return 'Leitura/Livro';
+  if (d.includes('física') || d.includes('química') || d.includes('biologia') || d.includes('natureza')) return 'Natureza';
+  return disciplina;
+};
+
+export const isRestDay = (dateStr: string): boolean => {
+  const d = new Date(dateStr + 'T12:00:00');
+  // Domingo (dia 0) é o Dia do Descanso Semanal
+  return d.getDay() === 0;
 };
 
 export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
@@ -781,39 +801,138 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const rescheduleTopic = async (id: string, daysOffsetOrDate: number | string) => {
     const today = getTodayDateString();
     const previousTopics = [...topics];
-    let newDate: string;
+    let targetDate: string;
 
     if (typeof daysOffsetOrDate === 'number') {
-      newDate = addDaysToDate(today, daysOffsetOrDate);
+      targetDate = addDaysToDate(today, daysOffsetOrDate);
     } else {
-      newDate = daysOffsetOrDate;
+      targetDate = daysOffsetOrDate;
     }
 
-    const topicUpdates: Partial<Topic> = {
-      agendadoPara: newDate,
-      faseRecomendada: `⏩ Reagendado para ${newDate}`
-    };
+    // Se a data de destino for Domingo (Dia de Descanso), pula para Segunda!
+    while (isRestDay(targetDate)) {
+      targetDate = addDaysToDate(targetDate, 1);
+    }
 
-    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
-    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
+    const topicToMove = previousTopics.find(t => t.id === id);
+    if (!topicToMove) return;
+
+    const group = getDisciplineGroup(topicToMove.disciplina);
+    const updatesMap = new Map<string, string>();
+    updatesMap.set(id, targetDate);
+
+    // Mapeamento atual de tópicos agendados (excluindo os dominados e o tópico que está sendo movido)
+    const activeScheduled = previousTopics.filter(t => t.id !== id && t.agendadoPara && t.status !== 'Dominado');
+    const dayMap = new Map<string, Topic[]>();
+    for (const t of activeScheduled) {
+      const d = t.agendadoPara!;
+      if (!dayMap.has(d)) dayMap.set(d, []);
+      dayMap.get(d)!.push(t);
+    }
+
+    // Fila em cascata para restaurar o equilíbrio de concorrência de disciplina
+    const cascadeQueue: { topic: Topic; fromDate: string }[] = [];
+
+    // Se o dia de destino já possui um concorrente do mesmo grupo disciplinar (exceto leitura de apoio)
+    const existingInTarget = dayMap.get(targetDate) || [];
+    const concurrentIndex = existingInTarget.findIndex(item => {
+      if (item.id === id) return false;
+      const gItem = getDisciplineGroup(item.disciplina);
+      const isBothBook = item.origem?.includes('Leitura / Livro') && topicToMove.origem?.includes('Leitura / Livro');
+      return gItem === group && !isBothBook;
+    });
+
+    if (concurrentIndex !== -1) {
+      const pushedTopic = existingInTarget.splice(concurrentIndex, 1)[0];
+      cascadeQueue.push({ topic: pushedTopic, fromDate: targetDate });
+    }
+
+    // Efeito dominó sucessivo (empurra o concorrente para o dia útil seguinte)
+    while (cascadeQueue.length > 0) {
+      const { topic: curr, fromDate } = cascadeQueue.shift()!;
+      let nextDate = addDaysToDate(fromDate, 1);
+      while (isRestDay(nextDate)) {
+        nextDate = addDaysToDate(nextDate, 1);
+      }
+
+      updatesMap.set(curr.id, nextDate);
+
+      const targetList = dayMap.get(nextDate) || [];
+      const currGroup = getDisciplineGroup(curr.disciplina);
+      const nextConcurrentIndex = targetList.findIndex(item => {
+        if (updatesMap.has(item.id)) return false;
+        const gItem = getDisciplineGroup(item.disciplina);
+        const isBothBook = item.origem?.includes('Leitura / Livro') && curr.origem?.includes('Leitura / Livro');
+        return gItem === currGroup && !isBothBook;
+      });
+
+      if (nextConcurrentIndex !== -1) {
+        const nextPushed = targetList.splice(nextConcurrentIndex, 1)[0];
+        cascadeQueue.push({ topic: nextPushed, fromDate: nextDate });
+      }
+
+      targetList.push(curr);
+      dayMap.set(nextDate, targetList);
+    }
+
+    // Hierarquia e pré-requisitos: garantir que tópicos dependentes de id fiquem após targetDate
+    for (const t of previousTopics) {
+      if (t.prerequisitos?.includes(id)) {
+        const tDate = updatesMap.get(t.id) || t.agendadoPara;
+        if (tDate && tDate <= targetDate) {
+          let pushPrereqDate = addDaysToDate(targetDate, 1);
+          while (isRestDay(pushPrereqDate)) {
+            pushPrereqDate = addDaysToDate(pushPrereqDate, 1);
+          }
+          updatesMap.set(t.id, pushPrereqDate);
+        }
+      }
+    }
+
+    // Atualização otimista
+    setTopics(prev => prev.map(t => {
+      const newD = updatesMap.get(t.id);
+      if (newD) {
+        return {
+          ...t,
+          agendadoPara: newD,
+          faseRecomendada: t.id === id 
+            ? `⏩ Reagendado para ${formatDateBR(newD)}` 
+            : `⚡ Avançado em cascata para ${formatDateBR(newD)} (ordem hierárquica mantida)`
+        };
+      }
+      return t;
+    }));
+
+    for (const [topicId, newD] of updatesMap.entries()) {
+      broadcastChange('TOPIC_UPDATE', { topicId, updates: { agendadoPara: newD } });
+    }
 
     if (user) {
-      const currentTopic = previousTopics.find(t => t.id === id);
       try {
-        await SyncService.push({
-          type: 'TOPIC_PROGRESS',
-          data: {
-            topic_id: id,
-            status: currentTopic?.status || 'Pendente',
-            agendado_para: newDate
-          }
+        const promises = Array.from(updatesMap.entries()).map(([topicId, newD]) => {
+          const orig = previousTopics.find(p => p.id === topicId);
+          return SyncService.push({
+            type: 'TOPIC_PROGRESS',
+            data: {
+              topic_id: topicId,
+              status: orig?.status || 'Pendente',
+              agendado_para: newD
+            }
+          });
         });
+        await Promise.all(promises);
+        if (updatesMap.size > 1) {
+          notifySync({
+            type: 'success',
+            message: `⏩ Adiado com efeito cascata! ${updatesMap.size - 1} conteúdo(s) concorrente(s) foram avançados preservando a hierarquia.`
+          });
+        }
       } catch (err: any) {
         setTopics(previousTopics);
-        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
         notifySync({
           type: 'error',
-          message: `Erro ao reagendar tópico na nuvem: ${err.message}. Alteração revertida.`
+          message: `Erro ao reagendar em cascata: ${err.message}. Alteração revertida.`
         });
       }
     }
@@ -849,6 +968,259 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }
     }
+  };
+
+  const completeBookSession = async (id: string, completedDateStr?: string) => {
+    const today = getTodayDateString();
+    const effectiveDate = completedDateStr || today;
+    const nextDate = addDaysToDate(effectiveDate, 1);
+    const previousTopics = [...topics];
+
+    const topicUpdates: Partial<Topic> = {
+      status: 'Em Andamento',
+      agendadoPara: nextDate,
+      faseRecomendada: `📖 Leitura concluída em ${formatDateBR(effectiveDate)}! Próxima sessão agendada para ${formatDateBR(nextDate)}.`
+    };
+
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
+
+    try {
+      confetti({ particleCount: 45, spread: 60, origin: { y: 0.7 } });
+    } catch {}
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            status: 'Em Andamento',
+            agendado_para: nextDate
+          }
+        });
+        notifySync({
+          type: 'success',
+          message: 'Sessão de leitura registrada! O livro continuará na rotina para os próximos dias.'
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao salvar sessão de leitura: ${err.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
+  const scheduleTopicForDate = async (id: string, dateStr: string) => {
+    const previousTopics = [...topics];
+    const currentTopic = previousTopics.find(t => t.id === id);
+    const isCompleted = currentTopic?.status === 'Teoria Concluída' || currentTopic?.status === 'Dominado';
+
+    const topicUpdates: Partial<Topic> = {
+      agendadoPara: dateStr,
+      status: isCompleted ? 'Em Andamento' : (currentTopic?.status || 'Pendente'),
+      ...(isCompleted ? { dataEstudo: undefined } : {})
+    };
+
+    setTopics(prev => prev.map(t => t.id === id ? { ...t, ...topicUpdates } : t));
+    broadcastChange('TOPIC_UPDATE', { topicId: id, updates: topicUpdates });
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'TOPIC_PROGRESS',
+          data: {
+            topic_id: id,
+            status: topicUpdates.status,
+            agendado_para: dateStr,
+            ...(isCompleted ? { data_estudo: null } : {})
+          }
+        });
+        notifySync({
+          type: 'success',
+          message: `Tópico agendado para ${formatDateBR(dateStr)} com sucesso!`
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        broadcastChange('TOPIC_UPDATE', { topicId: id, updates: previousTopics.find(t => t.id === id) || {} });
+        notifySync({
+          type: 'error',
+          message: `Erro ao agendar tópico: ${err.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
+  const diluteAccumulatedTopics = async (baseDateStr?: string, maxItemsPerDay = 3): Promise<{ movedCount: number; daysCount: number }> => {
+    const today = getTodayDateString();
+    const effectiveBase = baseDateStr || today;
+    const previousTopics = [...topics];
+
+    // 1. Identificar tópicos acumulados (agendados para <= effectiveBase e não dominados/concluídos hoje)
+    const overdueTopics = topics.filter(t => {
+      if (t.status === 'Dominado') return false;
+      if ((t.status === 'Teoria Concluída' || t.status === 'Em Exercícios') && t.dataEstudo === effectiveBase) {
+        return false;
+      }
+      return t.agendadoPara === effectiveBase || (t.agendadoPara && t.agendadoPara < effectiveBase);
+    });
+
+    if (overdueTopics.length <= maxItemsPerDay) {
+      notifySync({
+        type: 'info',
+        message: 'A fila deste dia já está equilibrada. Não há necessidade de diluir.'
+      });
+      return { movedCount: 0, daysCount: 0 };
+    }
+
+    // 2. Ordenação de prioridade inicial: quem já tem tempo estudado ou livro
+    const sorted = [...overdueTopics].sort((a, b) => {
+      const aSecs = (a.tempoEstudadoSegundos || 0) + (a.tempoEstudadoMinutos || 0) * 60;
+      const bSecs = (b.tempoEstudadoSegundos || 0) + (b.tempoEstudadoMinutos || 0) * 60;
+      if (bSecs !== aSecs) return bSecs - aSecs;
+
+      const aIsBook = a.origem?.includes('Leitura / Livro') ? 1 : 0;
+      const bIsBook = b.origem?.includes('Leitura / Livro') ? 1 : 0;
+      if (bIsBook !== aIsBook) return bIsBook - aIsBook;
+
+      const aOrder = a.ordemFila ?? 999;
+      const bOrder = b.ordemFila ?? 999;
+      return aOrder - bOrder;
+    });
+
+    // Manter no dia base no máximo 1 tópico por disciplina (respeitando regra pedagógica de não-concorrência)
+    const keepToday: Topic[] = [];
+    const toDistribute: Topic[] = [];
+    const usedGroupsToday = new Set<string>();
+
+    for (const t of sorted) {
+      const group = getDisciplineGroup(t.disciplina);
+      if (keepToday.length < maxItemsPerDay && !usedGroupsToday.has(group)) {
+        keepToday.push(t);
+        usedGroupsToday.add(group);
+      } else {
+        toDistribute.push(t);
+      }
+    }
+
+    // Ordenação da fila a distribuir: respeitar hierarquia de pré-requisitos
+    toDistribute.sort((a, b) => {
+      if (b.prerequisitos?.includes(a.id)) return -1;
+      if (a.prerequisitos?.includes(b.id)) return 1;
+      return a.disciplina.localeCompare(b.disciplina);
+    });
+
+    // 3. Alocação em esteira nos próximos dias disponíveis
+    const updatesMap = new Map<string, string>();
+    const assignedPerDay = new Map<string, Topic[]>();
+    const scheduledDateOfTopic = new Map<string, string>();
+    const targetDaysSet = new Set<string>();
+
+    // Inicializa dias futuros com tópicos já agendados fora do lote
+    for (const t of topics) {
+      if (t.agendadoPara && t.agendadoPara > effectiveBase && !toDistribute.some(td => td.id === t.id)) {
+        if (!assignedPerDay.has(t.agendadoPara)) assignedPerDay.set(t.agendadoPara, []);
+        assignedPerDay.get(t.agendadoPara)!.push(t);
+        scheduledDateOfTopic.set(t.id, t.agendadoPara);
+      }
+    }
+
+    for (const t of toDistribute) {
+      const group = getDisciplineGroup(t.disciplina);
+      let dayOffset = 1;
+      let placed = false;
+
+      let minDateAllowed = effectiveBase;
+      if (t.prerequisitos && t.prerequisitos.length > 0) {
+        for (const pid of t.prerequisitos) {
+          const pDate = scheduledDateOfTopic.get(pid);
+          if (pDate && pDate > minDateAllowed) {
+            minDateAllowed = pDate;
+          }
+        }
+      }
+
+      while (!placed && dayOffset < 30) {
+        const candidateDate = addDaysToDate(effectiveBase, dayOffset);
+
+        // Pular Domingo (Dia de Descanso sagrado)
+        if (isRestDay(candidateDate)) {
+          dayOffset += 1;
+          continue;
+        }
+
+        // Respeitar dependência de pré-requisito
+        if (candidateDate <= minDateAllowed) {
+          dayOffset += 1;
+          continue;
+        }
+
+        const currentDayTopics = assignedPerDay.get(candidateDate) || [];
+        const dayGroups = new Set(currentDayTopics.map(item => getDisciplineGroup(item.disciplina)));
+
+        // Sem concorrência da mesma matéria no mesmo dia e até o limite do dia
+        if (currentDayTopics.length < maxItemsPerDay && !dayGroups.has(group)) {
+          currentDayTopics.push(t);
+          assignedPerDay.set(candidateDate, currentDayTopics);
+          updatesMap.set(t.id, candidateDate);
+          scheduledDateOfTopic.set(t.id, candidateDate);
+          targetDaysSet.add(candidateDate);
+          placed = true;
+          break;
+        }
+
+        dayOffset += 1;
+      }
+    }
+
+    // Atualização otimista local
+    setTopics(prev => prev.map(t => {
+      const newDate = updatesMap.get(t.id);
+      if (newDate) {
+        return {
+          ...t,
+          agendadoPara: newDate,
+          faseRecomendada: `⚡ Diluído para ${formatDateBR(newDate)} (1 matéria/dia, sem conflitos)`
+        };
+      }
+      return t;
+    }));
+
+    try {
+      confetti({ particleCount: 65, spread: 70, origin: { y: 0.6 } });
+    } catch {}
+
+    if (user) {
+      try {
+        const promises = Array.from(updatesMap.entries()).map(([topicId, newDate]) => {
+          const orig = previousTopics.find(p => p.id === topicId);
+          return SyncService.push({
+            type: 'TOPIC_PROGRESS',
+            data: {
+              topic_id: topicId,
+              status: orig?.status || 'Pendente',
+              agendado_para: newDate
+            }
+          });
+        });
+        await Promise.all(promises);
+        notifySync({
+          type: 'success',
+          message: `✨ ${toDistribute.length} tópicos foram redistribuídos em esteira (1 matéria por dia, respeitando domingo de descanso)!`
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        notifySync({
+          type: 'error',
+          message: `Erro ao salvar diluição na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
+    }
+
+    return { movedCount: toDistribute.length, daysCount: targetDaysSet.size };
   };
 
   const completeRevision = async (id: string, nextIntervalDays = 15) => {
@@ -1378,9 +1750,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         updateTopic,
         markAsMastered,
         quickCompleteTopic,
+        completeBookSession,
         reopenTopicForDate,
         rescheduleTopic,
         scheduleForToday,
+        scheduleTopicForDate,
+        diluteAccumulatedTopics,
         completeRevision,
         addError,
         updateError,

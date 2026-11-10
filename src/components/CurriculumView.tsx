@@ -109,6 +109,7 @@ export const CurriculumView: React.FC = () => {
           {[
             { id: 'TODAS', label: 'Todas' },
             { id: 'MBA', label: '🎓 MBA Dados' },
+            { id: 'Claude Code', label: '🤖 Claude Code' },
             { id: 'Matemática Base', label: '📐 Matemática' },
             { id: 'Português Base', label: '📝 Português' },
             { id: 'Ciências da Natureza', label: '🧪 Ciências da Natureza' },
@@ -371,6 +372,8 @@ export const CurriculumView: React.FC = () => {
                           className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                             tag === 'MBA'
                               ? 'bg-purple-500/15 text-purple-300 border border-purple-500/30'
+                              : tag === 'Claude Code'
+                              ? 'bg-indigo-500/15 text-indigo-300 border border-indigo-500/30'
                               : tag === 'Matemática Base'
                               ? 'bg-amber-500/15 text-amber-300 border border-amber-500/30'
                               : tag === 'Português Base'

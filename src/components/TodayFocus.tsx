@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useStudy, getTodayDateString, getWeekDays } from '../context/StudyContext';
+import { useStudy, getTodayDateString, getWeekDays, isRestDay } from '../context/StudyContext';
 import { useAuth } from '../context/AuthContext';
 import { StudyTimer, formatStudyDuration } from './StudyTimer';
 import { WeeklyPrintModal } from './WeeklyPrintModal';
@@ -29,7 +29,9 @@ import {
   Play,
   Eye,
   LogIn,
-  Search
+  Search,
+  BookOpen,
+  Layers
 } from 'lucide-react';
 
 export const TodayFocus: React.FC = () => {
@@ -37,9 +39,12 @@ export const TodayFocus: React.FC = () => {
     topics, 
     markAsMastered, 
     quickCompleteTopic,
+    completeBookSession,
     reopenTopicForDate,
     rescheduleTopic, 
-    scheduleForToday, 
+    scheduleForToday,
+    scheduleTopicForDate,
+    diluteAccumulatedTopics,
     setSelectedTopicForModal,
     getTopicPedagogicalStatus,
     getTopicUnmetPrerequisites,
@@ -136,7 +141,7 @@ export const TodayFocus: React.FC = () => {
   // Modo Imersão Anti-Distração: esconde o restante da lista enquanto o timer está rodando
   const isImmersiveFocusActive = isTimerRunning && !!activeTimerTarget && !peekListWhileRunning;
 
-  // Catálogo dinâmico para a gaveta "+ Adicionar mais um item para hoje"
+  // Catálogo dinâmico para a gaveta "+ Adicionar mais um item para o dia"
   const catalogTopics = useMemo(() => {
     return topics
       .filter(t => {
@@ -153,9 +158,13 @@ export const TodayFocus: React.FC = () => {
             t.macrotema.toLowerCase().includes(q)
           );
         }
+        // Se a tag for "Leitura / Livro", inclui todos os livros mesmo que com teoria concluída!
+        if (catalogTag === 'Leitura / Livro' || t.origem?.includes('Leitura / Livro')) {
+          return true;
+        }
         return t.status === 'Pendente' || t.status === 'Em Andamento';
       })
-      .slice(0, 8);
+      .slice(0, 10);
   }, [topics, selectedDate, catalogTag, catalogSearch]);
 
   const handlePedagogicalPlan = () => {
@@ -446,15 +455,23 @@ export const TodayFocus: React.FC = () => {
                   </span>
 
                   <div className="flex items-center gap-1">
-                    {pendingTopicsForDay > 0 && (
-                      <span className="text-[9px] px-1.5 rounded-full font-semibold bg-slate-800 text-slate-300">
-                        {pendingTopicsForDay}
+                    {day.dayName === 'Dom' && pendingTopicsForDay === 0 && completedTopicsForDay === 0 ? (
+                      <span className="text-[9px] px-1.5 rounded-full font-medium bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
+                        🛋️ Off
                       </span>
-                    )}
-                    {completedTopicsForDay > 0 && (
-                      <span className="text-[9px] px-1 rounded-full font-semibold bg-emerald-500/20 text-emerald-300">
-                        ✓{completedTopicsForDay}
-                      </span>
+                    ) : (
+                      <>
+                        {pendingTopicsForDay > 0 && (
+                          <span className="text-[9px] px-1.5 rounded-full font-semibold bg-slate-800 text-slate-300">
+                            {pendingTopicsForDay}
+                          </span>
+                        )}
+                        {completedTopicsForDay > 0 && (
+                          <span className="text-[9px] px-1 rounded-full font-semibold bg-emerald-500/20 text-emerald-300">
+                            ✓{completedTopicsForDay}
+                          </span>
+                        )}
+                      </>
                     )}
                   </div>
                 </button>
@@ -462,6 +479,35 @@ export const TodayFocus: React.FC = () => {
             })}
           </div>
         </section>
+      )}
+
+      {/* Banner de Diluição Inteligente quando há sobrecarga na data atual */}
+      {!isImmersiveFocusActive && activeDateScheduledTopics.length >= 4 && (
+        <div className="bg-gradient-to-r from-sky-950/40 via-indigo-950/30 to-slate-900/60 border border-sky-500/30 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-sky-200 shadow-md animate-in fade-in duration-300">
+          <div className="flex items-start gap-3">
+            <div className="p-2 rounded-xl bg-sky-500/20 text-sky-300 shrink-0 mt-0.5">
+              <Layers className="w-5 h-5" aria-hidden="true" />
+            </div>
+            <div className="space-y-0.5">
+              <div className="text-sm font-bold text-white flex items-center gap-2">
+                <span>Carga Acumulada Elevada ({activeDateScheduledTopics.length} conteúdos)</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-sky-500/20 text-sky-300 font-mono">
+                  Sugerido: máx. 3/dia
+                </span>
+              </div>
+              <p className="text-xs text-slate-300">
+                Mais de 3 a 4 tópicos no mesmo dia geram sobrecarga e fadiga de retenção. Deseja diluir o excesso de forma balanceada para o domingo e próximos dias da semana?
+              </p>
+            </div>
+          </div>
+          <button
+            onClick={() => diluteAccumulatedTopics(selectedDate, 3)}
+            className="shrink-0 text-xs px-4 py-2 rounded-xl bg-sky-500 hover:bg-sky-400 text-slate-950 font-bold transition flex items-center gap-2 shadow-lg shadow-sky-600/20"
+          >
+            <Sparkles className="w-4 h-4" />
+            <span>⚡ Diluir Acúmulo</span>
+          </button>
+        </div>
       )}
 
       {/* Fila Ativa de Hoje (Enxuta e Focada) */}
@@ -473,49 +519,67 @@ export const TodayFocus: React.FC = () => {
         {/* Tópicos Regulares Pendentes */}
         {activeDateScheduledTopics.length === 0 && !isImmersiveFocusActive ? (
           <div className="bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 text-center space-y-4">
-            <div className="space-y-1">
-              <h3 className="text-base font-semibold text-white">
-                {completedDateTopics.length > 0
-                  ? `🎉 Meta cumprida! Você concluiu ${completedDateTopics.length} tópico(s) hoje.`
-                  : 'Sua fila de matérias regulares de hoje está vazia'}
-              </h3>
-              <p className="text-xs text-slate-400 max-w-sm mx-auto">
-                Puxe de 2 a 3 tópicos recomendados de acordo com o seu tempo disponível agora:
-              </p>
-            </div>
+            {isRestDay(selectedDate) ? (
+              <div className="space-y-3 py-6 max-w-md mx-auto">
+                <div className="inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-indigo-500/10 border border-indigo-500/20 text-3xl mx-auto shadow-inner">
+                  🛋️
+                </div>
+                <div className="space-y-1.5">
+                  <h3 className="text-lg font-bold text-white tracking-tight">
+                    Dia de Descanso Semanal
+                  </h3>
+                  <p className="text-xs text-slate-300 leading-relaxed">
+                    Nenhuma tarefa programada para hoje. Pausas conscientes são essenciais para a neuroplasticidade e consolidação da memória de longo prazo. Descanse sem culpa!
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-1">
+                  <h3 className="text-base font-semibold text-white">
+                    {completedDateTopics.length > 0
+                      ? `🎉 Meta cumprida! Você concluiu ${completedDateTopics.length} tópico(s) hoje.`
+                      : 'Sua fila de matérias regulares de hoje está vazia'}
+                  </h3>
+                  <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                    Puxe de 2 a 3 tópicos recomendados de acordo com o seu tempo disponível agora:
+                  </p>
+                </div>
 
-            <div className="grid grid-cols-5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs w-full max-w-md mx-auto" role="group" aria-label="Tempo disponível para estudo">
-              {(
-                [
-                  { id: 'micro', label: '20m' },
-                  { id: 'curta', label: '40m' },
-                  { id: 'media', label: '1h' },
-                  { id: 'longa', label: '2h' },
-                  { id: 'livre', label: 'Livre' },
-                ] as const
-              ).map(d => (
-                <button
-                  key={d.id}
-                  onClick={() => setSessionDuration(d.id)}
-                  aria-pressed={sessionDuration === d.id}
-                  className={`px-2 py-1.5 rounded-lg transition text-center ${
-                    sessionDuration === d.id ? 'bg-emerald-600 text-white font-medium' : 'text-slate-400 hover:text-white'
-                  }`}
-                >
-                  {d.label}
-                </button>
-              ))}
-            </div>
+                <div className="grid grid-cols-5 bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs w-full max-w-md mx-auto" role="group" aria-label="Tempo disponível para estudo">
+                  {(
+                    [
+                      { id: 'micro', label: '20m' },
+                      { id: 'curta', label: '40m' },
+                      { id: 'media', label: '1h' },
+                      { id: 'longa', label: '2h' },
+                      { id: 'livre', label: 'Livre' },
+                    ] as const
+                  ).map(d => (
+                    <button
+                      key={d.id}
+                      onClick={() => setSessionDuration(d.id)}
+                      aria-pressed={sessionDuration === d.id}
+                      className={`px-2 py-1.5 rounded-lg transition text-center ${
+                        sessionDuration === d.id ? 'bg-emerald-600 text-white font-medium' : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      {d.label}
+                    </button>
+                  ))}
+                </div>
 
-            <div>
-              <button
-                onClick={handlePedagogicalPlan}
-                className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-700/20 transition inline-flex items-center gap-2"
-              >
-                <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
-                <span>Sugerir Próximos Tópicos</span>
-              </button>
-            </div>
+                <div>
+                  <button
+                    onClick={handlePedagogicalPlan}
+                    className="bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold px-5 py-2.5 rounded-xl shadow-lg shadow-emerald-700/20 transition inline-flex items-center gap-2"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" aria-hidden="true" />
+                    <span>Sugerir Próximos Tópicos</span>
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         ) : (
           activeDateScheduledTopics.map((topic, index) => {
@@ -584,6 +648,13 @@ export const TodayFocus: React.FC = () => {
                         </span>
                       )}
 
+                      {topic.origem?.includes('Leitura / Livro') && (
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-rose-500/15 text-rose-300 border border-rose-500/30 font-medium">
+                          <BookOpen className="w-3 h-3 text-rose-400" aria-hidden="true" />
+                          <span>Material Bibliográfico</span>
+                        </span>
+                      )}
+
                       {hasStudiedTime && (
                         <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 font-mono">
                           <Clock className="w-3 h-3 text-emerald-400" aria-hidden="true" />
@@ -641,22 +712,40 @@ export const TodayFocus: React.FC = () => {
                       <span>{isSelectedForTimer && isTimerRunning ? 'Em Foco' : 'Focar'}</span>
                     </button>
 
-                    {/* Botão 2: Concluir em 1-Clique (Sem Pop-up!) */}
-                    <button
-                      onClick={() => {
-                        quickCompleteTopic(topic.id, selectedDate);
-                        if (isSelectedForTimer) {
-                          setActiveTimerTarget(null);
-                          setIsTimerRunning(false);
-                        }
-                      }}
-                      aria-label={`Marcar tópico ${topic.microtopico} como concluído hoje`}
-                      className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center gap-1.5 shadow-sm"
-                      title="Concluir com 1 clique e mover para Concluídos de Hoje"
-                    >
-                      <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
-                      <span>Concluir</span>
-                    </button>
+                    {/* Botão 2: Concluir (Especial para Livro/Leitura vs Conteúdo Regular) */}
+                    {topic.origem?.includes('Leitura / Livro') ? (
+                      <button
+                        onClick={() => {
+                          completeBookSession(topic.id, selectedDate);
+                          if (isSelectedForTimer) {
+                            setActiveTimerTarget(null);
+                            setIsTimerRunning(false);
+                          }
+                        }}
+                        aria-label={`Registrar leitura de hoje do livro ${topic.microtopico}`}
+                        className="text-xs bg-rose-600 hover:bg-rose-500 text-white font-semibold px-3.5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-rose-400 transition flex items-center gap-1.5 shadow-sm"
+                        title="Registra a leitura de hoje e agenda a próxima sessão para amanhã"
+                      >
+                        <BookOpen className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Leitura Feita</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          quickCompleteTopic(topic.id, selectedDate);
+                          if (isSelectedForTimer) {
+                            setActiveTimerTarget(null);
+                            setIsTimerRunning(false);
+                          }
+                        }}
+                        aria-label={`Marcar tópico ${topic.microtopico} como concluído hoje`}
+                        className="text-xs bg-emerald-600 hover:bg-emerald-500 text-white font-semibold px-3.5 py-2 rounded-xl focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 transition flex items-center gap-1.5 shadow-sm"
+                        title="Concluir com 1 clique e mover para Concluídos de Hoje"
+                      >
+                        <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+                        <span>Concluir</span>
+                      </button>
+                    )}
 
                     {/* Menu de Três Pontos (...) para ações secundárias */}
                     <div className="relative">
@@ -669,8 +758,22 @@ export const TodayFocus: React.FC = () => {
                       </button>
 
                       {isMenuOpen && (
-                        <div className="absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 z-30 text-xs divide-y divide-slate-800">
+                        <div className="absolute right-0 mt-2 w-56 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 z-30 text-xs divide-y divide-slate-800">
                           <div className="py-1">
+                            {topic.origem?.includes('Leitura / Livro') && (
+                              <button
+                                onClick={() => {
+                                  quickCompleteTopic(topic.id, selectedDate);
+                                  if (isSelectedForTimer) setActiveTimerTarget(null);
+                                  setOpenMenuId(null);
+                                }}
+                                className="w-full px-3.5 py-2 text-left text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                              >
+                                <CheckCircle className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                                <span>Concluir Livro / Capítulo</span>
+                              </button>
+                            )}
+
                             <button
                               onClick={() => {
                                 rescheduleTopic(topic.id, 1);
@@ -894,7 +997,7 @@ export const TodayFocus: React.FC = () => {
             className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-slate-300 rounded-lg p-1.5 transition mx-auto"
           >
             {showCatalogDrawer ? <ChevronUp className="w-3.5 h-3.5" aria-hidden="true" /> : <ChevronDown className="w-3.5 h-3.5" aria-hidden="true" />}
-            <span>{showCatalogDrawer ? 'Recolher sugestões' : '+ Adicionar mais um item para hoje'}</span>
+            <span>{showCatalogDrawer ? 'Recolher sugestões' : `+ Adicionar item para ${selectedDate === today ? 'hoje' : (weekDays.find(d => d.dateStr === selectedDate)?.dayName || selectedDate)}`}</span>
           </button>
 
           {showCatalogDrawer && (
@@ -906,8 +1009,8 @@ export const TodayFocus: React.FC = () => {
                     type="search"
                     value={catalogSearch}
                     onChange={e => setCatalogSearch(e.target.value)}
-                    placeholder="Buscar qualquer matéria ou assunto para estudar hoje..."
-                    aria-label="Buscar matéria ou assunto para adicionar hoje"
+                    placeholder={`Buscar livro, matéria ou edital para ${selectedDate === today ? 'hoje' : (weekDays.find(d => d.dateStr === selectedDate)?.dayName || 'o dia')}...`}
+                    aria-label="Buscar matéria ou assunto para adicionar"
                     className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-8 pr-3 py-1.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500"
                   />
                 </div>
@@ -918,6 +1021,7 @@ export const TodayFocus: React.FC = () => {
                     { id: 'Matemática Base', label: 'Matemática' },
                     { id: 'Ciências da Natureza', label: 'Natureza' },
                     { id: 'MBA', label: 'MBA' },
+                    { id: 'Claude Code', label: 'Claude Code' },
                     { id: 'Concurso', label: 'Concurso' },
                     { id: 'Leitura / Livro', label: 'Livros' },
                   ].map(tag => (
@@ -938,26 +1042,45 @@ export const TodayFocus: React.FC = () => {
 
               {catalogTopics.length === 0 ? (
                 <p className="text-center py-3 text-xs text-slate-500">
-                  Nenhum tópico pendente encontrado para essa busca.
+                  Nenhum tópico encontrado para essa busca.
                 </p>
               ) : (
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                  {catalogTopics.map(t => (
-                    <div key={t.id} className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs hover:border-slate-700 transition">
-                      <div className="line-clamp-1 pr-2">
-                        <span className="text-[10px] text-slate-500 block">{t.disciplina}</span>
-                        <span className="text-slate-200 font-medium">{t.microtopico}</span>
+                  {catalogTopics.map(t => {
+                    const isBook = t.origem?.includes('Leitura / Livro');
+                    const isCompleted = t.status === 'Teoria Concluída' || t.status === 'Dominado';
+                    const targetDayInfo = weekDays.find(d => d.dateStr === selectedDate);
+                    const btnLabel = selectedDate === today ? 'Hoje' : (targetDayInfo?.dayName || 'Agendar');
+
+                    return (
+                      <div key={t.id} className="bg-slate-950 p-2.5 rounded-xl border border-slate-800/80 flex items-center justify-between text-xs hover:border-slate-700 transition">
+                        <div className="line-clamp-1 pr-2">
+                          <div className="flex items-center gap-1.5 mb-0.5">
+                            <span className="text-[10px] text-slate-500 block">{t.disciplina}</span>
+                            {isBook && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 font-medium">
+                                📖 Livro
+                              </span>
+                            )}
+                            {isCompleted && (
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/15 text-emerald-300 font-medium">
+                                Reabrir
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-slate-200 font-medium">{t.microtopico}</span>
+                        </div>
+                        <button
+                          onClick={() => scheduleTopicForDate(t.id, selectedDate)}
+                          className="p-1.5 bg-slate-800 hover:bg-emerald-600 rounded-lg text-slate-200 hover:text-white transition shrink-0 flex items-center gap-1 px-2.5"
+                          title={`Adicionar à fila de ${btnLabel}`}
+                        >
+                          <Plus className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span className="text-[11px] font-semibold">{btnLabel}</span>
+                        </button>
                       </div>
-                      <button
-                        onClick={() => rescheduleTopic(t.id, selectedDate)}
-                        className="p-1.5 bg-slate-800 hover:bg-emerald-600 rounded-lg text-slate-200 hover:text-white transition shrink-0 flex items-center gap-1 px-2.5"
-                        title="Adicionar à fila de hoje"
-                      >
-                        <Plus className="w-3.5 h-3.5" aria-hidden="true" />
-                        <span className="text-[11px] font-semibold">Hoje</span>
-                      </button>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </section>

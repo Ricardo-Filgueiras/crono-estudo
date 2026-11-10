@@ -2999,6 +2999,226 @@ export const INITIAL_TOPICS: Topic[] = [
     ],
     "tempoEstimadoMinutos": 50
   }
+,
+  {
+    "id": "cc-101-01",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 1: What is Claude Code?",
+    "microtopico": "What is Claude Code? - Fundamentos e Diferenças de Chat AIs",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🚀 Nível 1: Introdução ao paradigma de agentes de codificação e arquitetura agêntica.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469788",
+    "tempoEstimadoMinutos": 20,
+    "prerequisitos": []
+  },
+  {
+    "id": "cc-101-02",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 1: What is Claude Code?",
+    "microtopico": "How Claude Code works - Agentic Loop, Context Window, Tools e Permissões",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⚙️ Nível 2: Requer What is Claude Code? Entendimento do loop agêntico e ferramentas.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469789",
+    "tempoEstimadoMinutos": 25,
+    "prerequisitos": [
+      "cc-101-01"
+    ]
+  },
+  {
+    "id": "cc-101-03",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 2: Your first prompt",
+    "microtopico": "Installing Claude Code - Instalação no Terminal, VS Code, JetBrains e Web",
+    "peso": "Média",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "💻 Nível 3: Requer How Claude Code works. Setup prático no ambiente local.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469790",
+    "tempoEstimadoMinutos": 20,
+    "prerequisitos": [
+      "cc-101-02"
+    ]
+  },
+  {
+    "id": "cc-101-04",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 2: Your first prompt",
+    "microtopico": "Your first prompt - Approval Mode, Auto-Accept e Plan Mode",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🎯 Nível 4: Requer Installing Claude Code. Primeiros prompts, modos de aprovação e planejamento.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469791",
+    "tempoEstimadoMinutos": 25,
+    "prerequisitos": [
+      "cc-101-03"
+    ]
+  },
+  {
+    "id": "cc-101-05",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 3: Daily workflows",
+    "microtopico": "The explore → plan → code → commit workflow",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🔄 Nível 5: Requer Your first prompt. Ciclo virtuoso de engenharia agêntica no dia a dia.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469792",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-04"
+    ]
+  },
+  {
+    "id": "cc-101-06",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 3: Daily workflows",
+    "microtopico": "Context management - /compact, /clear, /context e Gestão de Janela",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🧠 Nível 6: Requer The explore → plan → code → commit workflow. Gestão enxuta de memória.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469793",
+    "tempoEstimadoMinutos": 25,
+    "prerequisitos": [
+      "cc-101-05"
+    ]
+  },
+  {
+    "id": "cc-101-07",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 3: Daily workflows",
+    "microtopico": "Code review com Claude Code",
+    "peso": "Média",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🔍 Nível 7: Requer Context management. Revisão automatizada de código e boas práticas.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469794",
+    "tempoEstimadoMinutos": 25,
+    "prerequisitos": [
+      "cc-101-06"
+    ]
+  },
+  {
+    "id": "cc-101-08",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 4: Customizing Claude Code",
+    "microtopico": "The CLAUDE.md file - Memória Persistente do Projeto",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "📝 Nível 8: Requer Code review. Configuração do arquivo de memória e diretrizes de projeto.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469795",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-07"
+    ]
+  },
+  {
+    "id": "cc-101-09",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 4: Customizing Claude Code",
+    "microtopico": "Subagents - Delegação de Tarefas e Isolamento de Contexto",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🤖 Nível 9: Requer CLAUDE.md. Criação e orquestração de subagentes autônomos.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469796",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-08"
+    ]
+  },
+  {
+    "id": "cc-101-10",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 4: Customizing Claude Code",
+    "microtopico": "Skills - Extensão de Habilidades e Scripts Especializados",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "⚡ Nível 10: Requer Subagents. Desenvolvimento de skills customizadas.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469848",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-09"
+    ]
+  },
+  {
+    "id": "cc-101-11",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 4: Customizing Claude Code",
+    "microtopico": "MCP (Model Context Protocol) - Conexão de Ferramentas e Dados Externos",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🔌 Nível 11: Requer Skills. Integração com servidores MCP e APIs externas.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469797",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-10"
+    ]
+  },
+  {
+    "id": "cc-101-12",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 4: Customizing Claude Code",
+    "microtopico": "Hooks - Controle Determinístico de Formatação, Bloqueio e Notificações",
+    "peso": "Alta",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🪝 Nível 12: Requer MCP. Implementação de hooks determinísticos pré e pós-execução.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469798",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-11"
+    ]
+  },
+  {
+    "id": "cc-101-13",
+    "disciplina": "Claude Code 101: AI Coding Agents",
+    "macrotema": "Módulo 5: Quiz de Avaliação",
+    "microtopico": "Course quiz - Avaliação e Certificação Claude Code 101",
+    "peso": "Certificação",
+    "origem": [
+      "Claude Code"
+    ],
+    "status": "Pendente",
+    "faseRecomendada": "🎓 Nível 13: Requer Hooks. Quiz final para consolidação e certificação oficial.",
+    "linkMaterial": "https://anthropic.skilljar.com/claude-code-101/469849",
+    "tempoEstimadoMinutos": 30,
+    "prerequisitos": [
+      "cc-101-12"
+    ]
+  }
 ];
 
 export const INITIAL_ERRORS: ErrorItem[] = [
