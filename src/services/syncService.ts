@@ -2,6 +2,7 @@ import { supabase } from '../lib/supabase';
 
 export type SyncActionType = 
   | 'HABIT_UPDATE'
+  | 'QUESTION_HABIT_UPDATE'
   | 'TOPIC_PROGRESS'
   | 'SESSION_LOG'
   | 'BATCH_TOPIC_ORDER'
@@ -18,6 +19,7 @@ export interface BootstrapData {
   prerequisites: any[];
   progress: any[];
   habits: any[];
+  question_habits?: any[];
   sessions: any[];
   errors: any[];
   server_time: string;

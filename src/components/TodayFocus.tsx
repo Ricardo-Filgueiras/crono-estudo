@@ -31,7 +31,8 @@ import {
   LogIn,
   Search,
   BookOpen,
-  Layers
+  Layers,
+  CheckSquare
 } from 'lucide-react';
 
 export const TodayFocus: React.FC = () => {
@@ -52,6 +53,10 @@ export const TodayFocus: React.FC = () => {
     englishHabits,
     toggleEnglishDone,
     toggleEnglishAtEnd,
+    questionHabits,
+    toggleQuestionDone,
+    toggleQuestionAtEnd,
+    setActiveTab,
     moveTopicOrder,
     activeTimerTarget,
     setActiveTimerTarget
@@ -97,8 +102,9 @@ export const TodayFocus: React.FC = () => {
   // Dias da semana atual (Segunda a Domingo)
   const weekDays = getWeekDays(today);
 
-  // Status do hábito de inglês para o dia selecionado
+  // Status dos hábitos diários para o dia selecionado
   const currentHabit = englishHabits[selectedDate] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 };
+  const currentQuestionHabit = questionHabits[selectedDate] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0, questionsCount: 0 };
 
   // Tópicos pendentes/ativos da data selecionada (exclui concluídos hoje e dominados) e respeita ordemFila
   const activeDateScheduledTopics = topics
@@ -128,12 +134,13 @@ export const TodayFocus: React.FC = () => {
     );
   });
 
-  const totalPendingCount = activeDateScheduledTopics.length + (!currentHabit.done ? 1 : 0);
-  const totalCompletedCount = completedDateTopics.length + (currentHabit.done ? 1 : 0);
+  const totalPendingCount = activeDateScheduledTopics.length + (!currentHabit.done ? 1 : 0) + (!currentQuestionHabit.done ? 1 : 0);
+  const totalCompletedCount = completedDateTopics.length + (currentHabit.done ? 1 : 0) + (currentQuestionHabit.done ? 1 : 0);
 
   // Tempo total estudado no dia selecionado (Inglês + Tópicos do dia)
   const totalSecondsToday =
     (currentHabit.secondsStudied !== undefined ? currentHabit.secondsStudied : (currentHabit.minutesStudied || 0) * 60) +
+    (currentQuestionHabit.secondsStudied !== undefined ? currentQuestionHabit.secondsStudied : (currentQuestionHabit.minutesStudied || 0) * 60) +
     topics
       .filter(t => t.dataEstudo === selectedDate || t.agendadoPara === selectedDate)
       .reduce((acc, t) => acc + (t.tempoEstudadoSegundos !== undefined ? t.tempoEstudadoSegundos : (t.tempoEstudadoMinutos || 0) * 60), 0);
@@ -188,6 +195,138 @@ export const TodayFocus: React.FC = () => {
       estimatedMinutes: 15
     });
     setAutoStartTrigger(prev => prev + 1);
+  };
+
+  const handleStartFocusOnQuestions = () => {
+    setPeekListWhileRunning(false);
+    setActiveTimerTarget({
+      type: 'questions',
+      id: `questions-${selectedDate}`,
+      title: 'Resolução Ativa de Questões (FCC / Fixação)',
+      dateStr: selectedDate,
+      estimatedMinutes: 25
+    });
+    setAutoStartTrigger(prev => prev + 1);
+  };
+
+  const isQuestionTimerActive = activeTimerTarget?.type === 'questions' && activeTimerTarget?.dateStr === selectedDate;
+  const questionDurationLabel = formatStudyDuration(currentQuestionHabit.secondsStudied, currentQuestionHabit.minutesStudied);
+  const hasQuestionStudiedTime = (currentQuestionHabit.secondsStudied || 0) > 0 || (currentQuestionHabit.minutesStudied || 0) > 0;
+
+  // Card do Hábito Diário de Questões FCC
+  const renderQuestionCard = () => {
+    if (isImmersiveFocusActive && !isQuestionTimerActive) return null;
+
+    return (
+      <article
+        key="daily-questions-habit"
+        className={`border rounded-2xl p-4 sm:p-5 transition shadow-sm ${
+          isQuestionTimerActive
+            ? 'bg-slate-900 border-amber-500/60 ring-1 ring-amber-500/20'
+            : 'bg-slate-900/90 border-slate-800 hover:border-slate-700'
+        }`}
+      >
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2 text-[11px] text-slate-400">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-300 border border-amber-500/25 font-medium">
+                <CheckSquare className="w-3 h-3 text-amber-400" aria-hidden="true" />
+                <span>Hábito Diário • 25m</span>
+              </span>
+
+              {hasQuestionStudiedTime && (
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-300 border border-emerald-500/25 font-mono">
+                  <Clock className="w-3 h-3 text-emerald-400" aria-hidden="true" />
+                  <span>{questionDurationLabel} estudados</span>
+                </span>
+              )}
+
+              {currentQuestionHabit.atEnd && (
+                <span className="text-slate-500">• No fim da fila</span>
+              )}
+            </div>
+
+            <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex items-center gap-2">
+              <span>Resolução Ativa de Questões (FCC / Fixação)</span>
+            </h3>
+
+            <p className="text-xs text-slate-400 line-clamp-1">
+              Prática deliberada em estilo FCC (baterias de questões) com alimentação direta do Caderno de Erros.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-center relative">
+            {/* Botão 1: Focar */}
+            <button
+              onClick={handleStartFocusOnQuestions}
+              aria-label="Iniciar bloco de 25 minutos de resolução de questões"
+              className={`text-xs px-3.5 py-2 rounded-xl border font-semibold transition flex items-center gap-1.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-400 ${
+                isQuestionTimerActive
+                  ? 'bg-amber-500/20 text-amber-300 border-amber-500/40'
+                  : 'bg-slate-800 hover:bg-slate-700 text-slate-100 border-slate-700'
+              }`}
+            >
+              <Play className="w-3.5 h-3.5 text-amber-400" aria-hidden="true" />
+              <span>{isQuestionTimerActive && isTimerRunning ? 'Em Foco' : 'Focar'}</span>
+            </button>
+
+            {/* Botão 2: Concluir */}
+            <button
+              onClick={() => {
+                toggleQuestionDone(selectedDate);
+                if (isQuestionTimerActive) {
+                  setActiveTimerTarget(null);
+                  setIsTimerRunning(false);
+                }
+              }}
+              aria-label="Marcar hábito de questões como concluído hoje"
+              className="text-xs font-semibold px-3.5 py-2 rounded-xl transition flex items-center gap-1.5 shadow-sm bg-emerald-600 hover:bg-emerald-500 text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"
+              title="Concluir com 1 clique e mover para Concluídos de Hoje"
+            >
+              <CheckCircle className="w-3.5 h-3.5" aria-hidden="true" />
+              <span>Concluir</span>
+            </button>
+
+            {/* Menu Secundário '...' */}
+            <div className="relative">
+              <button
+                onClick={() => setOpenMenuId(openMenuId === 'questions' ? null : 'questions')}
+                aria-label="Mais opções para o hábito de questões"
+                className="p-2 rounded-xl bg-slate-800/70 hover:bg-slate-800 text-slate-400 hover:text-white border border-slate-800 transition"
+              >
+                <MoreHorizontal className="w-4 h-4" aria-hidden="true" />
+              </button>
+
+              {openMenuId === 'questions' && (
+                <div className="absolute right-0 mt-2 w-52 bg-slate-900 border border-slate-700 rounded-xl shadow-2xl py-1.5 z-30 text-xs">
+                  <button
+                    onClick={() => {
+                      toggleQuestionAtEnd(selectedDate);
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full px-3.5 py-2 text-left text-slate-200 hover:bg-slate-800 flex items-center gap-2"
+                  >
+                    <ArrowDownToLine className="w-3.5 h-3.5 text-sky-400" aria-hidden="true" />
+                    <span>{currentQuestionHabit.atEnd ? 'Mover para o topo' : 'Adiar p/ o fim do dia'}</span>
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      setActiveTab('erros');
+                      setOpenMenuId(null);
+                    }}
+                    className="w-full px-3.5 py-2 text-left text-slate-200 hover:bg-slate-800 flex items-center gap-2 border-t border-slate-800 mt-1 pt-2"
+                  >
+                    <FileEdit className="w-3.5 h-3.5 text-rose-400" aria-hidden="true" />
+                    <span>Abrir Caderno de Erros FCC</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </article>
+    );
   };
 
   const handleStartFocusOnTopic = (topicId: string, title: string, estimatedMinutes?: number) => {
@@ -429,7 +568,7 @@ export const TodayFocus: React.FC = () => {
 
               const completedTopicsForDay = topics.filter(
                 t => t.dataEstudo === day.dateStr && (t.status === 'Teoria Concluída' || t.status === 'Dominado' || t.status === 'Em Exercícios')
-              ).length + (englishHabits[day.dateStr]?.done ? 1 : 0);
+              ).length + (englishHabits[day.dateStr]?.done ? 1 : 0) + (questionHabits[day.dateStr]?.done ? 1 : 0);
 
               return (
                 <button
@@ -515,6 +654,9 @@ export const TodayFocus: React.FC = () => {
         
         {/* Item 1: Bloco Fixo de Inglês (No topo se não concluído e não adiado p/ fim) */}
         {!currentHabit.done && !currentHabit.atEnd && renderEnglishCard()}
+
+        {/* Item 2: Bloco Fixo de Resolução de Questões (No topo se não concluído e não adiado p/ fim) */}
+        {!currentQuestionHabit.done && !currentQuestionHabit.atEnd && renderQuestionCard()}
 
         {/* Tópicos Regulares Pendentes */}
         {activeDateScheduledTopics.length === 0 && !isImmersiveFocusActive ? (
@@ -870,6 +1012,9 @@ export const TodayFocus: React.FC = () => {
         {/* Item 1: Bloco Fixo de Inglês (No fim da fila se adiado e não concluído) */}
         {!currentHabit.done && currentHabit.atEnd && renderEnglishCard()}
 
+        {/* Item 2: Bloco Fixo de Resolução de Questões (No fim da fila se adiado e não concluído) */}
+        {!currentQuestionHabit.done && currentQuestionHabit.atEnd && renderQuestionCard()}
+
       </section>
 
       {/* Seção Recolhível: Concluídos de Hoje (Oculta durante foco ativo; recolhida por padrão) */}
@@ -927,6 +1072,32 @@ export const TodayFocus: React.FC = () => {
 
                         <button
                           onClick={() => toggleEnglishDone(selectedDate)}
+                          className="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg hover:bg-slate-800 transition flex items-center gap-1 flex-shrink-0"
+                          title="Desfazer e voltar para a lista de hoje"
+                        >
+                          <RotateCcw className="w-3.5 h-3.5" aria-hidden="true" />
+                          <span>Desfazer</span>
+                        </button>
+                      </div>
+                    )}
+
+                    {/* Hábito de Questões Concluído */}
+                    {currentQuestionHabit.done && (
+                      <div className="bg-slate-900/70 border border-slate-800 rounded-xl p-3 flex items-center justify-between gap-3">
+                        <div className="flex flex-wrap items-center gap-2 min-w-0">
+                          <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" aria-hidden="true" />
+                          <span className="text-xs sm:text-sm text-slate-300 line-through decoration-slate-600 truncate">
+                            Resolução Ativa de Questões (FCC / Fixação)
+                          </span>
+                          {hasQuestionStudiedTime && (
+                            <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-slate-950 text-emerald-300 border border-slate-800">
+                              ⏱️ {questionDurationLabel}
+                            </span>
+                          )}
+                        </div>
+
+                        <button
+                          onClick={() => toggleQuestionDone(selectedDate)}
                           className="text-xs text-slate-400 hover:text-white px-2.5 py-1 rounded-lg hover:bg-slate-800 transition flex items-center gap-1 flex-shrink-0"
                           title="Desfazer e voltar para a lista de hoje"
                         >

@@ -72,8 +72,10 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
     recordStudySeconds, 
     quickCompleteTopic, 
     toggleEnglishDone,
+    toggleQuestionDone,
     topics,
-    englishHabits
+    englishHabits,
+    questionHabits
   } = useStudy();
 
   const [mode, setMode] = useState<'20m' | '25m' | '30m' | 'stopwatch' | 'custom'>('25m');
@@ -333,6 +335,12 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
       if (!current?.done) {
         toggleEnglishDone(dateStr);
       }
+    } else if (activeTimerTarget.type === 'questions') {
+      const dateStr = activeTimerTarget.dateStr || getTodayDateString();
+      const current = questionHabits[dateStr];
+      if (!current?.done) {
+        toggleQuestionDone(dateStr);
+      }
     } else if (activeTimerTarget.type === 'topic') {
       quickCompleteTopic(activeTimerTarget.id, activeTimerTarget.dateStr || getTodayDateString());
     }
@@ -349,6 +357,11 @@ export const StudyTimer: React.FC<StudyTimerProps> = ({ onRunningChange, autoSta
     if (activeTimerTarget.type === 'english') {
       const dateKey = activeTimerTarget.dateStr || getTodayDateString();
       const habit = englishHabits[dateKey];
+      return formatStudyDuration(habit?.secondsStudied, habit?.minutesStudied);
+    }
+    if (activeTimerTarget.type === 'questions') {
+      const dateKey = activeTimerTarget.dateStr || getTodayDateString();
+      const habit = questionHabits[dateKey];
       return formatStudyDuration(habit?.secondsStudied, habit?.minutesStudied);
     }
     const foundTopic = topics.find(t => t.id === activeTimerTarget.id);

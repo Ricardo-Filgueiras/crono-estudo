@@ -18,7 +18,7 @@ import {
 type PeriodFilter = 'hoje' | 'semana' | 'mes' | '30dias' | 'geral';
 
 export const StatsDashboard: React.FC = () => {
-  const { topics, errors, sessionLogs, englishHabits } = useStudy();
+  const { topics, errors, sessionLogs, englishHabits, questionHabits } = useStudy();
   const [selectedPeriod, setSelectedPeriod] = useState<PeriodFilter>('semana');
   const [hoveredHeatmapDay, setHoveredHeatmapDay] = useState<{
     dateStr: string;
@@ -132,8 +132,22 @@ export const StatsDashboard: React.FC = () => {
       }
     }
 
+    // D. Hábitos de resolução de questões registrados
+    if (questionHabits) {
+      for (const [dateStr, q] of Object.entries(questionHabits)) {
+        if (q.done || (q.secondsStudied && q.secondsStudied > 0) || (q.minutesStudied && q.minutesStudied > 0)) {
+          const day = touchDay(dateStr);
+          const qSecs = q.secondsStudied || (q.minutesStudied ? q.minutesStudied * 60 : 0);
+          const hasLog = sessionLogs.some(l => l.dateStr === dateStr && l.type === 'questions');
+          if (!hasLog && qSecs > 0) {
+            day.seconds += qSecs;
+          }
+        }
+      }
+    }
+
     return map;
-  }, [sessionLogs, topics, englishHabits]);
+  }, [sessionLogs, topics, englishHabits, questionHabits]);
 
   // === 3. MÉTRICAS CONSOLIDADAS DO PERÍODO SELECIONADO ===
   const periodMetrics = useMemo(() => {
@@ -168,15 +182,60 @@ export const StatsDashboard: React.FC = () => {
 
     for (const log of logsInPeriod) {
       if (log.type === 'english') {
-        tagSecondsMap['Inglês'] += log.secondsStudied;
+        tagSecondsMap['Inglês'] = (tagSecondsMap['Inglês'] || 0) + log.secondsStudied;
         englishSeconds += log.secondsStudied;
+      } else if (log.type === 'questions') {
+        tagSecondsMap['Questões de Fixação'] = (tagSecondsMap['Questões de Fixação'] || 0) + log.secondsStudied;
       } else {
         topicSeconds += log.secondsStudied;
         if (log.origem && log.origem.length > 0) {
           const share = log.secondsStudied / log.origem.length;
           for (const orig of log.origem) {
-            if (tagSecondsMap[orig] !== undefined) {
-              tagSecondsMap[orig] += share;
+            tagSecondsMap[orig] = (tagSecondsMap[orig] || 0) + share;
+          }
+        }
+      }
+    }
+
+    // Tópicos com dataEstudo no período (caso haja tempo acumulado sem log explícito de sessão)
+    for (const t of topics) {
+      if (t.dataEstudo && t.dataEstudo >= startDate && t.dataEstudo <= endDate) {
+        const hasSessionLog = sessionLogs.some(l => l.dateStr === t.dataEstudo && l.topicId === t.id);
+        if (!hasSessionLog) {
+          const tSecs = t.tempoEstudadoSegundos || (t.tempoEstudadoMinutos ? t.tempoEstudadoMinutos * 60 : 0);
+          if (tSecs > 0 && t.origem && t.origem.length > 0) {
+            const share = tSecs / t.origem.length;
+            for (const orig of t.origem) {
+              tagSecondsMap[orig] = (tagSecondsMap[orig] || 0) + share;
+            }
+          }
+        }
+      }
+    }
+
+    // Inglês com hábito concluído no período sem log explícito de sessão
+    for (const [dateStr, h] of Object.entries(englishHabits)) {
+      if (dateStr >= startDate && dateStr <= endDate && h.done) {
+        const hasLog = sessionLogs.some(l => l.dateStr === dateStr && l.type === 'english');
+        if (!hasLog) {
+          const engSecs = h.secondsStudied || (h.minutesStudied ? h.minutesStudied * 60 : 0);
+          if (engSecs > 0) {
+            tagSecondsMap['Inglês'] = (tagSecondsMap['Inglês'] || 0) + engSecs;
+            englishSeconds += engSecs;
+          }
+        }
+      }
+    }
+
+    // Questões com hábito concluído no período sem log explícito de sessão
+    if (questionHabits) {
+      for (const [dateStr, q] of Object.entries(questionHabits)) {
+        if (dateStr >= startDate && dateStr <= endDate && q.done) {
+          const hasLog = sessionLogs.some(l => l.dateStr === dateStr && l.type === 'questions');
+          if (!hasLog) {
+            const qSecs = q.secondsStudied || (q.minutesStudied ? q.minutesStudied * 60 : 0);
+            if (qSecs > 0) {
+              tagSecondsMap['Questões de Fixação'] = (tagSecondsMap['Questões de Fixação'] || 0) + qSecs;
             }
           }
         }
@@ -823,7 +882,7 @@ export const StatsDashboard: React.FC = () => {
                       <span className="font-mono text-emerald-400">{formatDateBR(log.dateStr)}</span>
                       <span>•</span>
                       <span className="truncate">
-                        {log.type === 'english' ? 'Inglês' : (log.origem?.[0] || 'Tópico')}
+                        {log.type === 'english' ? 'Inglês' : log.type === 'questions' ? 'Questões FCC' : (log.origem?.[0] || 'Tópico')}
                       </span>
                     </div>
                   </div>

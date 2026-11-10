@@ -47,17 +47,21 @@ export interface Topic {
   justificativaRecomendacao?: string; // Motivo transparente pelo qual foi indicado pelo motor
 }
 
-export interface EnglishHabitDay {
+export interface DailyHabitDay {
   done: boolean;
   atEnd: boolean;
   minutesStudied?: number;
   secondsStudied?: number;
   completedAt?: string;
+  questionsCount?: number;
 }
 
+export type EnglishHabitDay = DailyHabitDay;
+export type QuestionHabitDay = DailyHabitDay;
+
 export interface ActiveTimerTarget {
-  type: 'topic' | 'english';
-  id: string; // topic.id or 'english-YYYY-MM-DD'
+  type: 'topic' | 'english' | 'questions';
+  id: string; // topic.id or 'english-YYYY-MM-DD' or 'questions-YYYY-MM-DD'
   title: string;
   dateStr?: string;
   estimatedMinutes?: number;
@@ -99,7 +103,7 @@ export interface StudySessionLog {
   origem?: StudyContextTag[];
   dateStr: string; // YYYY-MM-DD
   secondsStudied: number;
-  type: 'topic' | 'english';
+  type: 'topic' | 'english' | 'questions';
   timestamp: string; // ISO
 }
 

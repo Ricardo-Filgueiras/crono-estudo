@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, useRef } from 'react';
-import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem, EnglishHabitDay, ActiveTimerTarget, StudySessionLog } from '../types';
+import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem, EnglishHabitDay, QuestionHabitDay, ActiveTimerTarget, StudySessionLog } from '../types';
 import { INITIAL_TOPICS, INITIAL_ERRORS } from '../data/initialData';
 import { 
   buildTopicMap, 
@@ -59,6 +59,11 @@ interface StudyContextType {
   englishHabits: Record<string, EnglishHabitDay>;
   toggleEnglishDone: (dateStr: string) => Promise<void>;
   toggleEnglishAtEnd: (dateStr: string) => Promise<void>;
+
+  // === HÁBITO DIÁRIO DE RESOLUÇÃO DE QUESTÕES ===
+  questionHabits: Record<string, QuestionHabitDay>;
+  toggleQuestionDone: (dateStr: string, questionsCount?: number) => Promise<void>;
+  toggleQuestionAtEnd: (dateStr: string) => Promise<void>;
   moveTopicOrder: (topicId: string, direction: 'up' | 'down', visibleIds?: string[]) => Promise<void>;
   activeTimerTarget: ActiveTimerTarget | null;
   setActiveTimerTarget: (target: ActiveTimerTarget | null) => void;
@@ -70,6 +75,7 @@ const StudyContext = createContext<StudyContextType | undefined>(undefined);
 const STORAGE_KEY_TOPICS = 'crono_estudo_topics_v7';
 const STORAGE_KEY_ERRORS = 'crono_estudo_errors_v1';
 const STORAGE_KEY_HABITS = 'crono_estudo_english_habits_v1';
+const STORAGE_KEY_QUESTION_HABITS = 'crono_estudo_question_habits_v1';
 const STORAGE_KEY_SESSION_LOGS = 'crono_estudo_session_logs_v1';
 
 export const formatDateBR = (dateStr?: string): string => {
@@ -283,6 +289,16 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return {};
   });
 
+  const [questionHabits, setQuestionHabits] = useState<Record<string, QuestionHabitDay>>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY_QUESTION_HABITS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.error('Erro ao ler hábitos de questões', e);
+    }
+    return {};
+  });
+
   const [sessionLogs, setSessionLogs] = useState<StudySessionLog[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY_SESSION_LOGS);
@@ -371,6 +387,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       localStorage.setItem(STORAGE_KEY_HABITS, JSON.stringify(englishHabits));
     } catch {}
   }, [englishHabits]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY_QUESTION_HABITS, JSON.stringify(questionHabits));
+    } catch {}
+  }, [questionHabits]);
 
   useEffect(() => {
     try {
@@ -484,6 +506,29 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         });
       }
 
+      // 3.1 Hábitos de Resolução de Questões
+      const qHabits = bootstrapData.question_habits;
+      if (qHabits && qHabits.length > 0) {
+        setQuestionHabits(prev => {
+          const next = { ...prev };
+          for (const h of qHabits) {
+            const localHabit = prev[h.date_str];
+            const cloudSecs = h.seconds_studied || (h.minutes_studied ? h.minutes_studied * 60 : 0);
+            const localSecs = localHabit?.secondsStudied || (localHabit?.minutesStudied ? localHabit.minutesStudied * 60 : 0);
+            const bestSecs = Math.max(cloudSecs, localSecs);
+            next[h.date_str] = {
+              done: h.done ?? localHabit?.done ?? false,
+              atEnd: h.at_end ?? localHabit?.atEnd ?? false,
+              minutesStudied: Math.floor(bestSecs / 60),
+              secondsStudied: bestSecs,
+              questionsCount: h.questions_count ?? localHabit?.questionsCount ?? 0,
+              completedAt: h.completed_at || localHabit?.completedAt
+            };
+          }
+          return next;
+        });
+      }
+
       // 4. Sessões de Estudo
       if (bootstrapData.sessions && bootstrapData.sessions.length > 0) {
         setSessionLogs(bootstrapData.sessions.map((s: any) => ({
@@ -533,6 +578,16 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
           ...prev,
           [payload.dateStr]: {
             ...(prev[payload.dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0 }),
+            ...payload.habit
+          }
+        }));
+      })
+      .on('broadcast', { event: 'QUESTION_HABIT_UPDATE' }, ({ payload }) => {
+        if (!payload || !payload.dateStr) return;
+        setQuestionHabits(prev => ({
+          ...prev,
+          [payload.dateStr]: {
+            ...(prev[payload.dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0, questionsCount: 0 }),
             ...payload.habit
           }
         }));
@@ -1372,6 +1427,103 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   };
 
+  const toggleQuestionDone = async (dateStr: string, questionsCount?: number) => {
+    const previousHabits = { ...questionHabits };
+    const current = previousHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0, questionsCount: 0 };
+    const nextDone = !current.done;
+    const nowIso = new Date().toISOString();
+    const nextCompletedAt = nextDone ? nowIso : undefined;
+    const finalCount = questionsCount !== undefined ? questionsCount : (current.questionsCount || 0);
+
+    const updatedHabit: QuestionHabitDay = {
+      ...current,
+      done: nextDone,
+      completedAt: nextCompletedAt,
+      questionsCount: finalCount
+    };
+
+    setQuestionHabits(prev => ({
+      ...prev,
+      [dateStr]: updatedHabit
+    }));
+
+    if (nextDone) {
+      try {
+        confetti({ particleCount: 50, spread: 60, origin: { y: 0.6 } });
+      } catch {}
+    }
+
+    broadcastChange('QUESTION_HABIT_UPDATE', { dateStr, habit: updatedHabit });
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'QUESTION_HABIT_UPDATE',
+          data: {
+            date_str: dateStr,
+            done: nextDone,
+            at_end: current.atEnd,
+            minutes_studied: current.minutesStudied || 0,
+            seconds_studied: current.secondsStudied || (current.minutesStudied || 0) * 60,
+            questions_count: finalCount,
+            completed_at: nextCompletedAt
+          }
+        });
+      } catch (err: any) {
+        console.error('[Sync] Falha ao sincronizar hábito de questões, revertendo estado local:', err);
+        setQuestionHabits(previousHabits);
+        broadcastChange('QUESTION_HABIT_UPDATE', { dateStr, habit: current });
+        notifySync({
+          type: 'error',
+          message: `Erro ao salvar conclusão de questões na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
+  const toggleQuestionAtEnd = async (dateStr: string) => {
+    const previousHabits = { ...questionHabits };
+    const current = previousHabits[dateStr] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0, questionsCount: 0 };
+    const nextAtEnd = !current.atEnd;
+
+    const updatedHabit: QuestionHabitDay = {
+      ...current,
+      atEnd: nextAtEnd
+    };
+
+    setQuestionHabits(prev => ({
+      ...prev,
+      [dateStr]: updatedHabit
+    }));
+
+    broadcastChange('QUESTION_HABIT_UPDATE', { dateStr, habit: updatedHabit });
+
+    if (user) {
+      try {
+        await SyncService.push({
+          type: 'QUESTION_HABIT_UPDATE',
+          data: {
+            date_str: dateStr,
+            done: current.done,
+            at_end: nextAtEnd,
+            minutes_studied: current.minutesStudied || 0,
+            seconds_studied: current.secondsStudied || (current.minutesStudied || 0) * 60,
+            questions_count: current.questionsCount || 0,
+            completed_at: current.completedAt
+          }
+        });
+      } catch (err: any) {
+        console.error('[Sync] Falha ao sincronizar posição do hábito de questões:', err);
+        setQuestionHabits(previousHabits);
+        broadcastChange('QUESTION_HABIT_UPDATE', { dateStr, habit: current });
+        notifySync({
+          type: 'error',
+          message: `Erro ao atualizar posição do hábito de questões: ${err.message}. Alteração revertida.`
+        });
+      }
+    }
+  };
+
   const recordStudySeconds = (target: ActiveTimerTarget, secondsToAdd: number) => {
     if (secondsToAdd <= 0) return;
 
@@ -1464,6 +1616,47 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
                 completed_at: updatedHabit.completedAt || null
               }
             }).catch(err => console.warn('[Sync] Aviso ao sincronizar tempo de inglês:', err));
+          }, 5000);
+        }
+
+        return {
+          ...prev,
+          [dateKey]: updatedHabit
+        };
+      });
+      return;
+    }
+
+    if (target.type === 'questions') {
+      setQuestionHabits(prev => {
+        const current = prev[dateKey] || { done: false, atEnd: false, minutesStudied: 0, secondsStudied: 0, questionsCount: 0 };
+        const baseSecs = current.secondsStudied !== undefined ? current.secondsStudied : (current.minutesStudied || 0) * 60;
+        const finalSecs = baseSecs + secondsToAdd;
+        const finalMins = Math.floor(finalSecs / 60);
+        const updatedHabit: QuestionHabitDay = {
+          ...current,
+          secondsStudied: finalSecs,
+          minutesStudied: finalMins
+        };
+
+        if (user) {
+          const habitSyncKey = `q_hab_${dateKey}`;
+          if (studySyncTimeoutRef.current[habitSyncKey]) {
+            clearTimeout(studySyncTimeoutRef.current[habitSyncKey]);
+          }
+          studySyncTimeoutRef.current[habitSyncKey] = setTimeout(() => {
+            SyncService.push({
+              type: 'QUESTION_HABIT_UPDATE',
+              data: {
+                date_str: dateKey,
+                done: updatedHabit.done,
+                at_end: updatedHabit.atEnd,
+                seconds_studied: updatedHabit.secondsStudied,
+                minutes_studied: updatedHabit.minutesStudied,
+                questions_count: updatedHabit.questionsCount || 0,
+                completed_at: updatedHabit.completedAt || null
+              }
+            }).catch(err => console.warn('[Sync] Aviso ao sincronizar tempo de questões:', err));
           }, 5000);
         }
 
@@ -1696,6 +1889,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       topics,
       errors,
       englishHabits,
+      questionHabits,
       sessionLogs
     };
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -1717,6 +1911,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         setTopics(data.topics);
         if (Array.isArray(data.errors)) setErrors(data.errors);
         if (data.englishHabits && typeof data.englishHabits === 'object') setEnglishHabits(data.englishHabits);
+        if (data.questionHabits && typeof data.questionHabits === 'object') setQuestionHabits(data.questionHabits);
         if (Array.isArray(data.sessionLogs)) setSessionLogs(data.sessionLogs);
         return true;
       }
@@ -1731,10 +1926,12 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       setTopics(INITIAL_TOPICS);
       setErrors(INITIAL_ERRORS);
       setEnglishHabits({});
+      setQuestionHabits({});
       setSessionLogs([]);
       localStorage.removeItem(STORAGE_KEY_TOPICS);
       localStorage.removeItem(STORAGE_KEY_ERRORS);
       localStorage.removeItem(STORAGE_KEY_HABITS);
+      localStorage.removeItem(STORAGE_KEY_QUESTION_HABITS);
       localStorage.removeItem(STORAGE_KEY_SESSION_LOGS);
     }
   };
@@ -1779,6 +1976,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         englishHabits,
         toggleEnglishDone,
         toggleEnglishAtEnd,
+        questionHabits,
+        toggleQuestionDone,
+        toggleQuestionAtEnd,
         moveTopicOrder,
         activeTimerTarget,
         setActiveTimerTarget,
