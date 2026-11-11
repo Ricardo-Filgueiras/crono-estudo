@@ -803,7 +803,8 @@ export const StatsDashboard: React.FC = () => {
               { name: 'Ciências da Natureza', key: 'Ciências da Natureza', color: 'bg-teal-500', text: 'text-teal-300' },
               { name: 'Leitura / Livros Técnicos', key: 'Leitura / Livro', color: 'bg-rose-500', text: 'text-rose-300' },
               { name: 'Concurso Público (TI)', key: 'Concurso', color: 'bg-emerald-500', text: 'text-emerald-300' },
-              { name: 'Hábito Diário de Inglês', key: 'Inglês', color: 'bg-indigo-500', text: 'text-indigo-300' },
+              { name: 'Hábito Diário de Inglês', key: 'Inglês', color: 'bg-sky-500', text: 'text-sky-300' },
+              { name: 'Questões de Fixação', key: 'Questões de Fixação', color: 'bg-amber-500', text: 'text-amber-300' },
             ].map(item => {
               const secs = periodMetrics.tagSecondsMap[item.key] || 0;
               const perc = periodMetrics.totalSeconds > 0 
