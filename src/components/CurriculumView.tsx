@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useStudy, getTodayDateString } from '../context/StudyContext';
-import { StudyContextTag } from '../types';
+import { StudyContextTag, Topic } from '../types';
+import { getTopicLevel, buildTopologicalDepthMap } from '../utils/conceptGraph';
 import { 
   Search, 
   Award, 
@@ -14,8 +15,13 @@ import {
   ChevronDown,
   ChevronUp,
   Compass,
-  Crosshair
+  Crosshair,
+  Eye,
+  EyeOff
 } from 'lucide-react';
+
+const isTopicCompletedStatus = (t: Topic): boolean =>
+  t.status === 'Teoria Concluída' || t.status === 'Dominado' || t.status === 'Em Exercícios';
 
 export const CurriculumView: React.FC = () => {
   const { 
@@ -31,9 +37,44 @@ export const CurriculumView: React.FC = () => {
 
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string>('TODAS');
-  const [selectedStatus, setSelectedStatus] = useState<string>('TODOS');
+  const [hideCompleted, setHideCompleted] = useState<boolean>(() => {
+    try {
+      return localStorage.getItem('crono_estudo_hide_completed_v1') === 'true';
+    } catch {
+      return false;
+    }
+  });
+  const [selectedStatus, setSelectedStatus] = useState<string>(() => {
+    try {
+      return localStorage.getItem('crono_estudo_hide_completed_v1') === 'true' ? 'NAO_CONCLUIDOS' : 'TODOS';
+    } catch {
+      return 'TODOS';
+    }
+  });
   const [selectedDisciplina, setSelectedDisciplina] = useState<string>('TODAS');
   const [showPortugueseLineageMap, setShowPortugueseLineageMap] = useState<boolean>(true);
+
+  const toggleHideCompleted = () => {
+    setHideCompleted(prev => {
+      const next = !prev;
+      try {
+        localStorage.setItem('crono_estudo_hide_completed_v1', String(next));
+      } catch {}
+      if (next) {
+        if (
+          selectedStatus === 'TODOS' ||
+          selectedStatus === 'Dominado' ||
+          selectedStatus === 'Teoria Concluída' ||
+          selectedStatus === 'Em Exercícios'
+        ) {
+          setSelectedStatus('NAO_CONCLUIDOS');
+        }
+      } else if (selectedStatus === 'NAO_CONCLUIDOS') {
+        setSelectedStatus('TODOS');
+      }
+      return next;
+    });
+  };
 
   // Unique disciplines filtered by selected Trilha
   const disciplinas = useMemo(() => {
@@ -44,9 +85,12 @@ export const CurriculumView: React.FC = () => {
     return ['TODAS', ...list];
   }, [topics, selectedTag]);
 
-  // Filtered topics
-  const filteredTopics = useMemo(() => {
-    return topics.filter(t => {
+  // Profundidade topológica (cadeia de pré-requisitos) para desempate dentro do mesmo Nível
+  const depthMap = useMemo(() => buildTopologicalDepthMap(topics), [topics]);
+
+  // Tópicos filtrados por Trilha, Disciplina, Status e Busca (ordenados do Nível 1 ao Nível 4)
+  const baseFilteredTopics = useMemo(() => {
+    const matching = topics.filter(t => {
       if (selectedTag !== 'TODAS') {
         if (!t.origem || !t.origem.includes(selectedTag as StudyContextTag)) return false;
       }
@@ -54,26 +98,59 @@ export const CurriculumView: React.FC = () => {
 
       const pedStatus = getTopicPedagogicalStatus(t);
 
-      if (selectedStatus !== 'TODOS') {
+      if (selectedStatus !== 'TODOS' && selectedStatus !== 'NAO_CONCLUIDOS') {
         if (selectedStatus === 'DISPONIVEL' && (t.status === 'Dominado' || pedStatus !== 'Disponível')) return false;
         if (selectedStatus === 'BLOQUEADO' && pedStatus !== 'Bloqueado') return false;
-        if (selectedStatus !== 'DISPONIVEL' && selectedStatus !== 'BLOQUEADO' && t.status !== selectedStatus) return false;
+        if (
+          selectedStatus !== 'DISPONIVEL' &&
+          selectedStatus !== 'BLOQUEADO' &&
+          t.status !== selectedStatus
+        ) {
+          return false;
+        }
       }
 
       if (search.trim()) {
-        const q = search.toLowerCase();
-        const inMicro = t.microtopico.toLowerCase().includes(q);
-        const inMacro = t.macrotema.toLowerCase().includes(q);
-        const inDisc = t.disciplina.toLowerCase().includes(q);
-        const inNotes = (t.anotacoes || '').toLowerCase().includes(q);
+        const normalizeText = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+        const q = normalizeText(search.trim());
+        const inMicro = normalizeText(t.microtopico).includes(q);
+        const inMacro = normalizeText(t.macrotema).includes(q);
+        const inDisc = normalizeText(t.disciplina).includes(q);
+        const inNotes = normalizeText(t.anotacoes || '').includes(q);
         return inMicro || inMacro || inDisc || inNotes;
       }
       return true;
     });
-  }, [topics, selectedTag, selectedDisciplina, selectedStatus, search, getTopicPedagogicalStatus]);
 
-  const completedFiltered = filteredTopics.filter(t => t.status === 'Teoria Concluída' || t.status === 'Dominado' || t.status === 'Em Exercícios').length;
-  const percentFiltered = filteredTopics.length > 0 ? Math.round((completedFiltered / filteredTopics.length) * 100) : 0;
+    // Ordenação hierárquica: Nível 1 -> Nível 2 -> Nível 3 -> Nível 4
+    // Dentro do mesmo Nível: menor profundidade de pré-requisitos primeiro, depois disponíveis antes de bloqueados
+    return [...matching].sort((a, b) => {
+      const levelDiff = getTopicLevel(a) - getTopicLevel(b);
+      if (levelDiff !== 0) return levelDiff;
+
+      const depthDiff = (depthMap.get(a.id) ?? 0) - (depthMap.get(b.id) ?? 0);
+      if (depthDiff !== 0) return depthDiff;
+
+      const pedA = getTopicPedagogicalStatus(a);
+      const pedB = getTopicPedagogicalStatus(b);
+      const blockedA = pedA === 'Bloqueado' ? 1 : 0;
+      const blockedB = pedB === 'Bloqueado' ? 1 : 0;
+      if (blockedA !== blockedB) return blockedA - blockedB;
+
+      return 0;
+    });
+  }, [topics, selectedTag, selectedDisciplina, selectedStatus, search, getTopicPedagogicalStatus, depthMap]);
+
+  // Lista final aplicando o filtro de ocultar dominados/concluídos (via dropdown ou botão rápido)
+  const shouldHideCompleted = hideCompleted || selectedStatus === 'NAO_CONCLUIDOS';
+  const filteredTopics = useMemo(() => {
+    if (!shouldHideCompleted) return baseFilteredTopics;
+    return baseFilteredTopics.filter(t => !isTopicCompletedStatus(t));
+  }, [baseFilteredTopics, shouldHideCompleted]);
+
+  const completedFiltered = baseFilteredTopics.filter(isTopicCompletedStatus).length;
+  const hiddenCompletedCount = baseFilteredTopics.length - filteredTopics.length;
+  const percentFiltered = baseFilteredTopics.length > 0 ? Math.round((completedFiltered / baseFilteredTopics.length) * 100) : 0;
   const today = getTodayDateString();
 
   return (
@@ -162,10 +239,30 @@ export const CurriculumView: React.FC = () => {
             <select
               id="filter-status"
               value={selectedStatus}
-              onChange={e => setSelectedStatus(e.target.value)}
+              onChange={e => {
+                const nextVal = e.target.value;
+                setSelectedStatus(nextVal);
+                if (nextVal === 'NAO_CONCLUIDOS') {
+                  setHideCompleted(true);
+                  try {
+                    localStorage.setItem('crono_estudo_hide_completed_v1', 'true');
+                  } catch {}
+                } else if (
+                  nextVal === 'TODOS' ||
+                  nextVal === 'Dominado' ||
+                  nextVal === 'Teoria Concluída' ||
+                  nextVal === 'Em Exercícios'
+                ) {
+                  setHideCompleted(false);
+                  try {
+                    localStorage.setItem('crono_estudo_hide_completed_v1', 'false');
+                  } catch {}
+                }
+              }}
               className="w-full bg-slate-950 border border-slate-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus:border-emerald-500"
             >
-              <option value="TODOS">Todos os Conteúdos</option>
+              <option value="TODOS">Todos os Conteúdos (Nível 1 → Nível 4)</option>
+              <option value="NAO_CONCLUIDOS">🙈 Ocultar Dominados e Concluídos (Apenas Não Concluídos)</option>
               <option value="DISPONIVEL">🟢 Prontos para Aprender (Pré-requisitos dominados)</option>
               <option value="BLOQUEADO">🔒 Bloqueados por Pré-requisitos pendentes</option>
               <option value="Dominado">⭐ Dominados (Bagagem Prévia)</option>
@@ -179,11 +276,45 @@ export const CurriculumView: React.FC = () => {
 
         </div>
 
-        {/* Progress pill for filtered items */}
-        <div className="pt-2 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-300" aria-live="polite">
-          <div>
-            Exibindo <strong className="text-white">{filteredTopics.length}</strong> tópicos • <span className="text-emerald-400 font-medium">{completedFiltered} concluídos ({percentFiltered}%)</span>
+        {/* Progress pill & Hide Completed Toggle for filtered items */}
+        <div className="pt-2 border-t border-slate-800/80 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-300" aria-live="polite">
+          <div className="flex flex-wrap items-center gap-2.5">
+            <span>
+              Exibindo <strong className="text-white">{filteredTopics.length}</strong> tópicos
+              {hiddenCompletedCount > 0 && (
+                <span className="text-slate-400"> ({hiddenCompletedCount} concluídos ocultos)</span>
+              )}
+              {' '}•{' '}
+              <span className="text-emerald-400 font-medium">
+                {completedFiltered}/{baseFilteredTopics.length} concluídos ({percentFiltered}%)
+              </span>
+            </span>
+
+            <button
+              type="button"
+              onClick={toggleHideCompleted}
+              aria-pressed={shouldHideCompleted}
+              className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-medium border transition focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 ${
+                shouldHideCompleted
+                  ? 'bg-emerald-600/20 text-emerald-300 border-emerald-500/40 shadow-sm'
+                  : 'bg-slate-950 text-slate-300 border-slate-800 hover:text-white hover:bg-slate-800'
+              }`}
+              title={shouldHideCompleted ? 'Mostrar novamente os tópicos já concluídos/dominados' : 'Ocultar tópicos já concluídos ou dominados da listagem'}
+            >
+              {shouldHideCompleted ? (
+                <>
+                  <Eye className="w-3.5 h-3.5 text-emerald-400" aria-hidden="true" />
+                  <span>Dominados/concluídos ocultos ({completedFiltered}) • Mostrar</span>
+                </>
+              ) : (
+                <>
+                  <EyeOff className="w-3.5 h-3.5 text-slate-400" aria-hidden="true" />
+                  <span>Ocultar dominados/concluídos ({completedFiltered})</span>
+                </>
+              )}
+            </button>
           </div>
+
           <div className="w-36 bg-slate-800 h-2 rounded-full overflow-hidden" role="progressbar" aria-valuenow={percentFiltered} aria-valuemin={0} aria-valuemax={100} aria-label="Progresso dos tópicos filtrados">
             <div 
               className="bg-emerald-500 h-full transition-all duration-300 rounded-full"
@@ -273,8 +404,8 @@ export const CurriculumView: React.FC = () => {
                   box: 'text-emerald-200/90 bg-emerald-950/30 border-emerald-500/20',
                 },
               ].map(card => {
-                const levelTopics = filteredTopics.filter(t => t.macrotema.startsWith(`Nível ${card.level}`));
-                const doneCount = levelTopics.filter(t => t.status === 'Dominado' || t.status === 'Teoria Concluída').length;
+                const levelTopics = baseFilteredTopics.filter(t => getTopicLevel(t) === card.level);
+                const doneCount = levelTopics.filter(isTopicCompletedStatus).length;
                 return (
                   <div key={card.level} className={`bg-slate-950/80 border ${card.border} rounded-2xl p-3.5 space-y-2 flex flex-col justify-between`}>
                     <div className="space-y-2">
@@ -339,7 +470,10 @@ export const CurriculumView: React.FC = () => {
           filteredTopics.map(topic => {
             const isCompleted = topic.status === 'Teoria Concluída' || topic.status === 'Dominado';
             const isMastered = topic.status === 'Dominado';
-            const isSharedMBA = topic.origem && topic.origem.includes('MBA') && topic.origem.includes('Concurso');
+            const isSharedMBA =
+              topic.origem &&
+              topic.origem.includes('Concurso') &&
+              (topic.origem.includes('MBA') || topic.origem.includes('Claude Code'));
 
             const pedStatus = getTopicPedagogicalStatus(topic);
             const unmetPrereqs = getTopicUnmetPrerequisites(topic);
@@ -397,7 +531,31 @@ export const CurriculumView: React.FC = () => {
                       )}
 
                       <span className="text-xs text-slate-300 font-medium ml-1">{topic.disciplina}</span>
-                      {topic.macrotema && <span className="text-xs text-slate-400">• {topic.macrotema}</span>}
+                      {topic.macrotema && (() => {
+                        const levelNum = getTopicLevel(topic);
+                        const macroParts = topic.macrotema.split(/\s*•\s*/);
+                        const levelLabel = macroParts[0];
+                        const restMacro = macroParts.slice(1).join(' • ');
+                        const levelPillClass =
+                          levelNum === 1
+                            ? 'text-amber-300 bg-amber-500/15 border-amber-500/30'
+                            : levelNum === 2
+                            ? 'text-sky-300 bg-sky-500/15 border-sky-500/30'
+                            : levelNum === 3
+                            ? 'text-indigo-300 bg-indigo-500/15 border-indigo-500/30'
+                            : levelNum === 4
+                            ? 'text-emerald-300 bg-emerald-500/15 border-emerald-500/30'
+                            : 'text-slate-300 bg-slate-800 border-slate-700';
+
+                        return (
+                          <>
+                            <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${levelPillClass}`}>
+                              {levelLabel}
+                            </span>
+                            {restMacro && <span className="text-xs text-slate-400">• {restMacro}</span>}
+                          </>
+                        );
+                      })()}
                       
                       {/* Status indicator */}
                       <span className={`text-[11px] font-medium px-2 py-0.5 rounded-full ml-auto md:ml-0 ${
@@ -427,13 +585,24 @@ export const CurriculumView: React.FC = () => {
                       )}
                     </div>
 
-                    <h3 className="text-sm sm:text-base font-semibold text-slate-100 flex items-center gap-2">
+                    <h3 className="text-sm sm:text-base font-semibold text-slate-100 flex flex-wrap items-center gap-2">
                       {isBlocked && (
                         <span title="Bloqueado por pré-requisitos pendentes" className="inline-flex">
                           <Lock className="w-4 h-4 text-amber-400 flex-shrink-0" aria-hidden="true" />
                         </span>
                       )}
-                      <span>{topic.microtopico}</span>
+                      {(() => {
+                        const tagMatch = topic.microtopico.match(/^\[([^\]]+)\]\s*(.+)$/);
+                        if (!tagMatch) return <span>{topic.microtopico}</span>;
+                        return (
+                          <>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                              {tagMatch[1]}
+                            </span>
+                            <span>{tagMatch[2]}</span>
+                          </>
+                        );
+                      })()}
                     </h3>
 
                     {topic.anotacoes && (
@@ -451,7 +620,11 @@ export const CurriculumView: React.FC = () => {
                           className="inline-flex items-center gap-1.5 text-xs text-emerald-400 hover:text-emerald-300 bg-emerald-500/10 hover:bg-emerald-500/20 px-2.5 py-1.5 rounded-lg border border-emerald-500/30 transition shadow-sm"
                         >
                           <ExternalLink className="w-3.5 h-3.5" aria-hidden="true" />
-                          <span>Abrir Anotação no Google Docs</span>
+                          <span>
+                            {topic.linkMaterial.includes('skilljar.com')
+                              ? 'Abrir Aula na Anthropic Academy'
+                              : 'Abrir Anotação no Google Docs'}
+                          </span>
                         </a>
                       </div>
                     )}

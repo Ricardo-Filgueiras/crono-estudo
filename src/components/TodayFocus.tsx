@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext';
 import { StudyTimer, formatStudyDuration } from './StudyTimer';
 import { WeeklyPrintModal } from './WeeklyPrintModal';
 import { StudyContextTag } from '../types';
+import { getTopicLevel } from '../utils/conceptGraph';
 import { 
   CheckCircle, 
   Clock, 
@@ -158,11 +159,12 @@ export const TodayFocus: React.FC = () => {
           return false;
         }
         if (catalogSearch.trim()) {
-          const q = catalogSearch.toLowerCase();
+          const normalizeText = (s: string) => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+          const q = normalizeText(catalogSearch.trim());
           return (
-            t.microtopico.toLowerCase().includes(q) ||
-            t.disciplina.toLowerCase().includes(q) ||
-            t.macrotema.toLowerCase().includes(q)
+            normalizeText(t.microtopico).includes(q) ||
+            normalizeText(t.disciplina).includes(q) ||
+            normalizeText(t.macrotema).includes(q)
           );
         }
         // Se a tag for "Leitura / Livro", inclui todos os livros mesmo que com teoria concluída!
@@ -171,6 +173,7 @@ export const TodayFocus: React.FC = () => {
         }
         return t.status === 'Pendente' || t.status === 'Em Andamento';
       })
+      .sort((a, b) => getTopicLevel(a) - getTopicLevel(b))
       .slice(0, 10);
   }, [topics, selectedDate, catalogTag, catalogSearch]);
 
@@ -812,8 +815,19 @@ export const TodayFocus: React.FC = () => {
                       )}
                     </div>
 
-                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight">
-                      {topic.microtopico}
+                    <h3 className="text-base sm:text-lg font-bold text-white tracking-tight flex flex-wrap items-center gap-2">
+                      {(() => {
+                        const tagMatch = topic.microtopico.match(/^\[([^\]]+)\]\s*(.+)$/);
+                        if (!tagMatch) return <span>{topic.microtopico}</span>;
+                        return (
+                          <>
+                            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-emerald-500/15 text-emerald-300 border border-emerald-500/30">
+                              {tagMatch[1]}
+                            </span>
+                            <span>{tagMatch[2]}</span>
+                          </>
+                        );
+                      })()}
                     </h3>
 
                     {topic.anotacoes && (

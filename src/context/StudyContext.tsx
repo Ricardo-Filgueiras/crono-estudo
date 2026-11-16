@@ -3,6 +3,8 @@ import { Topic, ErrorItem, ActiveTab, PedagogicalStatus, RecommendationItem, Eng
 import { INITIAL_TOPICS, INITIAL_ERRORS } from '../data/initialData';
 import { 
   buildTopicMap, 
+  getTopicLevel,
+  buildTopologicalDepthMap,
   getPedagogicalStatus, 
   getUnmetPrerequisites, 
   getUnlockPower, 
@@ -142,7 +144,7 @@ export const addDaysToDate = (dateStr: string, days: number): string => {
 export const getDisciplineGroup = (disciplina: string): string => {
   const d = (disciplina || '').toLowerCase();
   if (d.includes('português') || d.includes('portugues')) return 'Português';
-  if (d.includes('matemática') || d.includes('matematica') || d.includes('álgebra') || d.includes('geometria')) return 'Matemática';
+  if (d.includes('matemática') || d.includes('matematica') || d.includes('raciocínio') || d.includes('raciocinio') || d.includes('álgebra') || d.includes('geometria')) return 'Matemática';
   if (d.includes('sql') || d.includes('spark') || d.includes('estatística') || d.includes('estatistica') || d.includes('dados') || d.includes('mba')) return 'MBA/Dados';
   if (d.includes('claude') || d.includes('agente') || d.includes('coding agent')) return 'Claude Code';
   if (d.includes('livro') || d.includes('leitura') || d.includes('bibliogr')) return 'Leitura/Livro';
@@ -184,7 +186,10 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
       merged.push({
         ...initial,
         ...saved,
+        disciplina: initial.disciplina,
         macrotema: initial.macrotema,
+        microtopico: initial.microtopico,
+        peso: initial.peso,
         status: 'Pendente',
         agendadoPara: undefined,
         faseRecomendada: initial.faseRecomendada,
@@ -200,7 +205,10 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
       merged.push({
         ...initial,
         ...saved,
+        disciplina: initial.disciplina,
         macrotema: initial.macrotema,
+        microtopico: initial.microtopico,
+        peso: initial.peso,
         status: 'Em Andamento',
         agendadoPara: getTodayDateString(),
         faseRecomendada: initial.faseRecomendada,
@@ -213,21 +221,27 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
     }
 
     const isPortugueseTopic = initial.disciplina === 'Língua Portuguesa';
+    const isClaudeCodeTopic = initial.id.startsWith('cc-101-');
 
     merged.push({
       ...initial,
       ...saved,
+      disciplina: initial.disciplina,
       macrotema: initial.macrotema,
+      microtopico: initial.microtopico,
+      peso: initial.peso,
       prerequisitos: initial.prerequisitos ?? saved.prerequisitos,
       tempoEstimadoMinutos: saved.tempoEstimadoMinutos ?? initial.tempoEstimadoMinutos,
-      origem: saved.origem && saved.origem.length > 0 ? saved.origem : initial.origem,
+      origem: initial.origem && initial.origem.length > 0 ? initial.origem : saved.origem,
+      linkMaterial: saved.linkMaterial || initial.linkMaterial,
       ordemFila: saved.ordemFila,
       anotacoes:
-        (isPortugueseTopic || saved.anotacoes === 'Aguardando teoria.') && initial.anotacoes
+        (!saved.anotacoes || isPortugueseTopic || isClaudeCodeTopic || saved.anotacoes === 'Aguardando teoria.') && initial.anotacoes
           ? initial.anotacoes
           : saved.anotacoes,
       faseRecomendada:
         (isPortugueseTopic ||
+          isClaudeCodeTopic ||
           saved.faseRecomendada === '⏳ Pendente - Aguardando estudo.' ||
           saved.faseRecomendada === '⏳ Standby (Próximos módulos do MBA).') &&
         initial.faseRecomendada
@@ -241,6 +255,21 @@ export const mergeWithInitialTopics = (savedTopics: Topic[]): Topic[] => {
       merged.push(initial);
     }
   }
+
+  const initialOrderMap = new Map(INITIAL_TOPICS.map((t, idx) => [t.id, idx]));
+  const depthMap = buildTopologicalDepthMap(merged);
+
+  merged.sort((a, b) => {
+    const levelDiff = getTopicLevel(a) - getTopicLevel(b);
+    if (levelDiff !== 0) return levelDiff;
+
+    const depthDiff = (depthMap.get(a.id) ?? 0) - (depthMap.get(b.id) ?? 0);
+    if (depthDiff !== 0) return depthDiff;
+
+    const idxA = initialOrderMap.get(a.id) ?? 9999;
+    const idxB = initialOrderMap.get(b.id) ?? 9999;
+    return idxA - idxB;
+  });
 
   return merged;
 };
@@ -262,7 +291,9 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       console.error('Erro ao ler tópicos do localStorage', e);
     }
     const today = getTodayDateString();
-    return INITIAL_TOPICS.map(t => t.id === 'topic-7' ? { ...t, agendadoPara: today } : t);
+    return mergeWithInitialTopics(
+      INITIAL_TOPICS.map(t => t.id === 'topic-7' ? { ...t, agendadoPara: today } : t)
+    );
   });
 
   const [errors, setErrors] = useState<ErrorItem[]>(() => {

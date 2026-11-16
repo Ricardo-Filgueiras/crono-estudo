@@ -42,8 +42,19 @@ export default async function handler(req: any, res: any) {
       supabase.from('user_study_errors').select('*').eq('user_id', user.id).order('created_at', { ascending: false })
     ]);
 
+    const extractLevel = (macrotema?: string): number => {
+      const m = (macrotema || '').match(/(?:Nível|Nivel|Módulo|Modulo)\s*(\d+)/i);
+      return m ? parseInt(m[1], 10) : 99;
+    };
+
+    const sortedTopics = [...(topicsRes.data || [])].sort((a: any, b: any) => {
+      const levelDiff = extractLevel(a.macrotema) - extractLevel(b.macrotema);
+      if (levelDiff !== 0) return levelDiff;
+      return String(a.disciplina || '').localeCompare(String(b.disciplina || ''));
+    });
+
     return res.status(200).json({
-      topics: topicsRes.data || [],
+      topics: sortedTopics,
       prerequisites: prereqsRes.data || [],
       progress: progressRes.data || [],
       habits: habitsRes.data || [],

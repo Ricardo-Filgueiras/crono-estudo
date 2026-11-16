@@ -8,6 +8,56 @@ export const buildTopicMap = (topics: Topic[]): Map<string, Topic> => {
 };
 
 /**
+ * Extrai o nível numérico (1 a 4) a partir do macrotema do tópico.
+ * Ex: "Nível 1: Os Tijolos • ..." -> 1, "Módulo 2: ..." -> 2.
+ */
+export const getTopicLevel = (topic: Topic): number => {
+  const match = (topic.macrotema || '').match(/(?:Nível|Nivel|Módulo|Modulo)\s*(\d+)/i);
+  if (match) {
+    return parseInt(match[1], 10);
+  }
+  return 99;
+};
+
+/**
+ * Calcula a profundidade topológica (cadeia de pré-requisitos) de cada tópico
+ * para garantir que, dentro de um mesmo Nível, o pré-requisito sempre venha antes
+ * do tópico que depende dele.
+ */
+export const buildTopologicalDepthMap = (topics: Topic[]): Map<string, number> => {
+  const topicMap = buildTopicMap(topics);
+  const depthMap = new Map<string, number>();
+  const visiting = new Set<string>();
+
+  const computeDepth = (id: string): number => {
+    if (depthMap.has(id)) return depthMap.get(id)!;
+    if (visiting.has(id)) return 0;
+    visiting.add(id);
+
+    const t = topicMap.get(id);
+    let maxParentDepth = -1;
+    if (t && t.prerequisitos && t.prerequisitos.length > 0) {
+      for (const prereqId of t.prerequisitos) {
+        if (topicMap.has(prereqId)) {
+          maxParentDepth = Math.max(maxParentDepth, computeDepth(prereqId));
+        }
+      }
+    }
+
+    visiting.delete(id);
+    const depth = maxParentDepth + 1;
+    depthMap.set(id, depth);
+    return depth;
+  };
+
+  for (const t of topics) {
+    computeDepth(t.id);
+  }
+
+  return depthMap;
+};
+
+/**
  * Verifica se um conceito é considerado dominado ou concluído pedagogicamente
  * para fins de liberação de dependências.
  */
@@ -188,6 +238,10 @@ export const recommendNextSteps = (
     const aActive = a.status === 'Em Andamento' || a.status === 'Precisa Revisar' ? 1 : 0;
     const bActive = b.status === 'Em Andamento' || b.status === 'Precisa Revisar' ? 1 : 0;
     if (bActive !== aActive) return bActive - aActive;
+
+    // Nível crescente primeiro (Nível 1 -> Nível 4)
+    const levelDiff = getTopicLevel(a.topic) - getTopicLevel(b.topic);
+    if (levelDiff !== 0) return levelDiff;
 
     // Maior poder de desbloqueio primeiro
     if (b.unlockCount !== a.unlockCount) {
