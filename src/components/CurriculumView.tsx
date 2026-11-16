@@ -623,7 +623,7 @@ export const CurriculumView: React.FC = () => {
                           <span>
                             {topic.linkMaterial.includes('skilljar.com')
                               ? 'Abrir Aula na Anthropic Academy'
-                              : 'Abrir Anotação no Google Docs'}
+                              : 'Abrir material de apoio'}
                           </span>
                         </a>
                       </div>

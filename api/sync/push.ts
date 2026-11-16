@@ -75,6 +75,12 @@ export default async function handler(req: any, res: any) {
       if (data.anotacoes !== undefined) topicUpdateData.anotacoes = data.anotacoes;
       if (data.justificativa_recomendacao !== undefined) topicUpdateData.justificativa_recomendacao = data.justificativa_recomendacao;
 
+      if (data.link_material !== undefined) {
+        await supabase.from('topics').update({
+          link_material: data.link_material ? String(data.link_material).trim() : null
+        }).eq('id', data.topic_id);
+      }
+
       if (!topicUpdateData.status) {
         topicUpdateData.status = 'Pendente';
       }

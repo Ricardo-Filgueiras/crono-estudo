@@ -732,6 +732,7 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             tempo_estudado_segundos: updates.tempoEstudadoSegundos,
             tempo_estudado_minutos: updates.tempoEstudadoMinutos,
             anotacoes: updates.anotacoes,
+            link_material: updates.linkMaterial,
             justificativa_recomendacao: updates.justificativaRecomendacao
           }
         });

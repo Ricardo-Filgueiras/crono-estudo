@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useStudy, getTodayDateString, addDaysToDate } from '../context/StudyContext';
 import { TopicStatus, LearningEvidence } from '../types';
-import { X, CheckCircle, Brain, CheckSquare, Square } from 'lucide-react';
+import { X, CheckCircle, Brain, CheckSquare, Square, ExternalLink } from 'lucide-react';
 
 export const TopicModal: React.FC = () => {
   const { selectedTopicForModal, setSelectedTopicForModal, updateTopic, markAsMastered } = useStudy();
@@ -11,6 +11,7 @@ export const TopicModal: React.FC = () => {
   const [acertos, setAcertos] = useState<string>('');
   const [tempoEstudado, setTempoEstudado] = useState<string>('');
   const [anotacoes, setAnotacoes] = useState('');
+  const [linkMaterial, setLinkMaterial] = useState('');
   const [proximaRevisao, setProximaRevisao] = useState('');
   const [agendadoPara, setAgendadoPara] = useState('');
 
@@ -45,6 +46,7 @@ export const TopicModal: React.FC = () => {
       setAcertos(selectedTopicForModal.acertosExercicios !== undefined ? String(selectedTopicForModal.acertosExercicios) : '');
       setTempoEstudado(selectedTopicForModal.tempoEstudadoMinutos !== undefined ? String(selectedTopicForModal.tempoEstudadoMinutos) : '');
       setAnotacoes(selectedTopicForModal.anotacoes || '');
+      setLinkMaterial(selectedTopicForModal.linkMaterial || '');
       setProximaRevisao(selectedTopicForModal.proximaRevisao || addDaysToDate(getTodayDateString(), 7));
       setAgendadoPara(selectedTopicForModal.agendadoPara || '');
       setEvidencias(selectedTopicForModal.evidencias || {
@@ -76,6 +78,7 @@ export const TopicModal: React.FC = () => {
       updateTopic(selectedTopicForModal.id, {
         evidencias,
         anotacoes,
+        linkMaterial: linkMaterial.trim() || undefined,
         tempoEstudadoMinutos: parsedMinutes,
         tempoEstudadoSegundos: parsedMinutes !== undefined ? parsedMinutes * 60 : selectedTopicForModal.tempoEstudadoSegundos,
         acertosExercicios: acertos ? parseFloat(acertos) : undefined
@@ -91,6 +94,7 @@ export const TopicModal: React.FC = () => {
       tempoEstudadoMinutos: parsedMinutes,
       tempoEstudadoSegundos: parsedMinutes !== undefined ? parsedMinutes * 60 : selectedTopicForModal.tempoEstudadoSegundos,
       anotacoes,
+      linkMaterial: linkMaterial.trim() || undefined,
       evidencias,
       proximaRevisao: proximaRevisao || undefined,
       agendadoPara: isCompletedStatus ? undefined : (agendadoPara || undefined),
@@ -317,6 +321,34 @@ export const TopicModal: React.FC = () => {
                 <span className="absolute right-3 top-2 text-xs text-slate-400" aria-hidden="true">min</span>
               </div>
             </div>
+          </div>
+
+          {/* Link do Material de Apoio (LDI / Google Docs / Aula) */}
+          <div>
+            <div className="flex items-center justify-between gap-2 mb-1">
+              <label htmlFor="topic-link-material" className="block text-xs font-semibold text-slate-200">
+                Link do Material de Apoio (LDI / Google Docs / Aula)
+              </label>
+              {linkMaterial.trim() && (
+                <a
+                  href={linkMaterial.trim()}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="inline-flex items-center gap-1 text-[11px] font-medium text-emerald-400 hover:text-emerald-300"
+                >
+                  <ExternalLink className="w-3 h-3" aria-hidden="true" />
+                  <span>Abrir material de apoio</span>
+                </a>
+              )}
+            </div>
+            <input
+              id="topic-link-material"
+              type="url"
+              placeholder="Cole aqui o link direto da página/aula do LDI, PDF ou Google Docs..."
+              value={linkMaterial}
+              onChange={e => setLinkMaterial(e.target.value)}
+              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400 focus:border-emerald-500"
+            />
           </div>
 
           {/* Anotações & Dificuldades */}

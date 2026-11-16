@@ -2942,7 +2942,7 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-120",
     "disciplina": "Discursiva / Estudo de Caso",
-    "macrotema": "Nível 2: A Obra Completa • Simulação Discursiva: Banco de Dados, Normalização e Tuning",
+    "macrotema": "Nível 4: A Obra Completa • Simulação Discursiva: Banco de Dados, Normalização e Tuning",
     "microtopico": "[Discursiva / Estudo de Caso • Simulação Discursiva: Banco de Dados, Normalização e Tuning] Estudo de Caso Prático: Modelagem Relacional, Normalização ou Otimização de Banco de Dados Público",
     "peso": "Discursiva (Eliminatório/Classificatório)",
     "status": "Pendente",
@@ -2961,7 +2961,7 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-121",
     "disciplina": "Discursiva / Estudo de Caso",
-    "macrotema": "Nível 2: A Obra Completa • Simulação Discursiva: Microserviços, APIs REST e Arquitetura RAG/IA",
+    "macrotema": "Nível 4: A Obra Completa • Simulação Discursiva: Microserviços, APIs REST e Arquitetura RAG/IA",
     "microtopico": "[Discursiva / Estudo de Caso • Simulação Discursiva: Microserviços, APIs REST e Arquitetura RAG/IA] Estudo de Caso Prático: Arquitetura de Microserviços, APIs RESTful e Integração com RAG/IA",
     "peso": "Discursiva (Eliminatório/Classificatório)",
     "status": "Pendente",
@@ -2981,7 +2981,7 @@ export const INITIAL_TOPICS: Topic[] = [
   {
     "id": "topic-122",
     "disciplina": "Discursiva / Estudo de Caso",
-    "macrotema": "Nível 2: A Obra Completa • Simulação Discursiva: Incidente de Segurança, LGPD e Contratos de TIC",
+    "macrotema": "Nível 4: A Obra Completa • Simulação Discursiva: Incidente de Segurança, LGPD e Contratos de TIC",
     "microtopico": "[Discursiva / Estudo de Caso • Simulação Discursiva: Incidente de Segurança, LGPD e Contratos de TIC] Estudo de Caso Prático: Incidente de Segurança, Conformidade com a LGPD e Fiscalização de Contrato de TIC",
     "peso": "Discursiva (Eliminatório/Classificatório)",
     "status": "Pendente",
@@ -5559,6 +5559,161 @@ export const INITIAL_TOPICS: Topic[] = [
     "tempoEstimadoMinutos": 35,
     "faseRecomendada": "⏳ Topo da Pirâmide de Inglês Técnico — Requer Leitura de RFCs, Estratégias de Leitura e Documentação de APIs.",
     "anotacoes": "Resolução de questões de compreensão e interpretação de artigos científicos (Abstracts, Methodology, Benchmarks de IA/Engenharia de Software, Security Advisories/CVEs e Manuais) no padrão da banca FCC."
+  },
+  {
+    "id": "topic-249",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 1: Os Tijolos • LDI Aula 0: Apresentação do Curso",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 0: Apresentação do Curso] Aula 0 - Apresentação do Curso: Formato da Prova Discursiva, Critérios da Banca e Estratégia de Preparação",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [],
+    "tempoEstimadoMinutos": 25,
+    "faseRecomendada": "🟢 Disponível (Nível 1 - Os Tijolos): Ponto de partida do LDI da Prova Discursiva.",
+    "anotacoes": "Capítulos deste LDI — Aula 0: Apresentação do Curso, regras editalícias da prova discursiva, distribuição da pontuação entre conteúdo técnico e domínio da modalidade escrita e planejamento das rodadas práticas."
+  },
+  {
+    "id": "topic-250",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 1: Os Tijolos • LDI Aula 1: Questão Discursiva + Estudo de Caso",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 1: Questão Discursiva + Estudo de Caso] Questão Discursiva + Estudo de Caso: Diferenças, Anatomia do Enunciado e Comandos da Banca",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-249"
+    ],
+    "tempoEstimadoMinutos": 35,
+    "faseRecomendada": "⏳ Nível 1 (Os Tijolos): Requer Aula 0 - Apresentação do Curso.",
+    "anotacoes": "Capítulos deste LDI — Aula 1 (Parte 1): distinção entre Questão Discursiva expositiva/conceitual e Estudo de Caso situacional; identificação da situação-problema e mapeamento de todos os itens exigidos no espelho de correção."
+  },
+  {
+    "id": "topic-251",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 2: A Função das Peças • LDI Aula 1: Teoria Geral da Produção Textual - Aspectos Estruturais",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 1: Aspectos Estruturais] Aula 1 - Teoria Geral da Produção Textual: Aspectos Estruturais (Projeto de Texto, Introdução, Desenvolvimento por Tópicos e Conclusão)",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-250"
+    ],
+    "tempoEstimadoMinutos": 45,
+    "faseRecomendada": "⏳ Nível 2 (A Função das Peças): Requer Questão Discursiva + Estudo de Caso.",
+    "anotacoes": "Capítulos deste LDI — Aula 1 (Parte 2): Teoria Geral da Produção Textual — Aspectos Estruturais. Construção do esqueleto/projeto de texto, tópico frasal direto, um parágrafo por comando da questão e fechamento objetivo."
+  },
+  {
+    "id": "topic-252",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 2: A Função das Peças • LDI Aula 2: Teoria Geral da Produção Textual - Aspectos de Apresentação do Texto",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 2: Aspectos de Apresentação do Texto] Aula 2 - Teoria Geral da Produção Textual: Aspectos de Apresentação do Texto (Margens, Paragrafação, Translineação, Legibilidade e Rasuras)",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-251"
+    ],
+    "tempoEstimadoMinutos": 35,
+    "faseRecomendada": "⏳ Nível 2 (A Função das Peças): Requer Aula 1 - Aspectos Estruturais.",
+    "anotacoes": "Capítulos deste LDI — Aula 2: Teoria Geral da Produção Textual — Aspectos de Apresentação do Texto. Respeito rigoroso às margens, recuo de parágrafo, regras de translineação (separação silábica no fim da linha), caligrafia e como corrigir erro sem perder nota."
+  },
+  {
+    "id": "topic-253",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 3: As Vigas • LDI Aula 3: Aspectos Microestruturais",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 3: Aspectos Microestruturais] Aula 3 - Aspectos Microestruturais: Correção Gramatical, Coesão, Paralelismo Sintático, Pontuação, Crase, Regência e Precisão Vocabular",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso",
+      "Português Base"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-252",
+      "topic-2"
+    ],
+    "tempoEstimadoMinutos": 45,
+    "faseRecomendada": "⏳ Nível 3 (As Vigas): Requer Aula 2 - Aspectos de Apresentação do Texto e Coesão Textual.",
+    "anotacoes": "Capítulos deste LDI — Aula 3: Aspectos Microestruturais. Como blindar o texto contra descontos gramaticais por linha (pontuação, concordância, regência, crase, colocação pronominal, paralelismo e escolha de conectivos inter e intraparágrafos)."
+  },
+  {
+    "id": "topic-254",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 3: As Vigas • LDI Aula 4: Folha de Respostas",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 4: Folha de Respostas] Aula 4 - Folha de Respostas: Estratégia de Rascunho, Controle de Linhas, Transcrição Definitiva e Gestão de Tempo de Prova",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-252",
+      "topic-253"
+    ],
+    "tempoEstimadoMinutos": 30,
+    "faseRecomendada": "⏳ Nível 3 (As Vigas): Requer Aula 2 (Apresentação) e Aula 3 (Aspectos Microestruturais).",
+    "anotacoes": "Capítulos deste LDI — Aula 4: Folha de Respostas. Dimensionamento de linhas (mínimo e máximo do edital), técnica de rascunho por tópicos-chave para economizar tempo e preenchimento seguro da folha de texto definitivo."
+  },
+  {
+    "id": "topic-255",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 4: A Obra Completa • LDI Aula 5: Rodada de Temas (1ª Rodada)",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 5: Rodada de Temas] Aula 5 - Rodada de Temas: 1ª Rodada (Treino Prático de Produção Discursiva e Estudo de Caso)",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-254",
+      "topic-119"
+    ],
+    "tempoEstimadoMinutos": 60,
+    "faseRecomendada": "⏳ Nível 4 (A Obra Completa): Requer Aula 4 - Folha de Respostas e Metodologia de Estudo de Caso FCC.",
+    "anotacoes": "Capítulos deste LDI — Aula 5 (1ª Rodada): Resolução cronometrada na folha de respostas oficial, autoavaliação pelo espelho de correção (macroestrutura + microestrutura) e revisão de lacunas."
+  },
+  {
+    "id": "topic-256",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 4: A Obra Completa • LDI Aula 5: Rodada de Temas (2ª Rodada)",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 5: Rodada de Temas] Aula 5 - Rodada de Temas: 2ª Rodada (Treino Prático de Produção Discursiva e Estudo de Caso)",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-255"
+    ],
+    "tempoEstimadoMinutos": 60,
+    "faseRecomendada": "⏳ Nível 4 (A Obra Completa): Requer 1ª Rodada de Temas.",
+    "anotacoes": "Capítulos deste LDI — Aula 5 (2ª Rodada): Prática avançada de questões discursivas e estudos de caso técnicos com foco em adensamento argumentativo, citação de normas/modelos e precisão conceitual."
+  },
+  {
+    "id": "topic-257",
+    "disciplina": "Discursiva / Estudo de Caso",
+    "macrotema": "Nível 4: A Obra Completa • LDI Aula 5: Rodada de Temas (3ª Rodada)",
+    "microtopico": "[Discursiva / Estudo de Caso • LDI Aula 5: Rodada de Temas] Aula 5 - Rodada de Temas: 3ª Rodada (Treino Prático de Produção Discursiva e Estudo de Caso)",
+    "peso": "Discursiva (Eliminatório/Classificatório)",
+    "origem": [
+      "Concurso"
+    ],
+    "status": "Pendente",
+    "prerequisitos": [
+      "topic-256"
+    ],
+    "tempoEstimadoMinutos": 60,
+    "faseRecomendada": "⏳ Nível 4 (A Obra Completa): Requer 2ª Rodada de Temas.",
+    "anotacoes": "Capítulos deste LDI — Aula 5 (3ª Rodada): Simulação final de prova discursiva em condições reais de tempo e espaço de linhas."
   }
 ];
 
