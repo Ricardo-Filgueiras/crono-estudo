@@ -55,7 +55,7 @@ interface StudyContextType {
   getTopicUnmetPrerequisites: (topic: Topic) => Topic[];
   getTopicUnlockCount: (topicId: string) => number;
   getRecommendedMission: (availableMinutes?: number) => RecommendationItem[];
-  schedulePedagogicalMission: (availableMinutes?: number) => void;
+  schedulePedagogicalMission: (availableMinutes?: number, targetDateStr?: string) => Promise<void>;
 
   // === HÁBITO DIÁRIO DE INGLÊS, CRONÔMETRO VINCULADO & REORDENAÇÃO ===
   englishHabits: Record<string, EnglishHabitDay>;
@@ -682,30 +682,78 @@ export const StudyProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     return recommendNextSteps(topics, { maxItems: 3, availableMinutes });
   };
 
-  const schedulePedagogicalMission = (availableMinutes?: number) => {
+  const schedulePedagogicalMission = async (availableMinutes?: number, targetDateStr?: string) => {
     const today = getTodayDateString();
+    const effectiveDate = targetDateStr || today;
     const recommendations = recommendNextSteps(topics, { maxItems: 2, availableMinutes });
     if (recommendations.length === 0) return;
 
-    setTopics(prev => {
-      const recMap = new Map(recommendations.map(r => [r.topic.id, r]));
-      return prev.map(t => {
+    const previousTopics = [...topics];
+    const recMap = new Map(recommendations.map(r => [r.topic.id, r]));
+
+    setTopics(prev =>
+      prev.map(t => {
         const match = recMap.get(t.id);
         if (match) {
           return {
             ...t,
-            agendadoPara: today,
+            agendadoPara: effectiveDate,
             justificativaRecomendacao: match.explanation,
             faseRecomendada: `🎯 Recomendado pelo Motor de Pré-requisitos: ${match.explanation}`
           };
         }
         return t;
+      })
+    );
+
+    for (const r of recommendations) {
+      broadcastChange('TOPIC_UPDATE', {
+        topicId: r.topic.id,
+        updates: {
+          agendadoPara: effectiveDate,
+          justificativaRecomendacao: r.explanation,
+          faseRecomendada: `🎯 Recomendado pelo Motor de Pré-requisitos: ${r.explanation}`
+        }
       });
-    });
+    }
 
     try {
       confetti({ particleCount: 40, spread: 60, origin: { y: 0.7 } });
     } catch {}
+
+    if (user) {
+      try {
+        await Promise.all(
+          recommendations.map(r =>
+            SyncService.push({
+              type: 'TOPIC_PROGRESS',
+              data: {
+                topic_id: r.topic.id,
+                status: r.topic.status || 'Pendente',
+                agendado_para: effectiveDate,
+                justificativa_recomendacao: r.explanation
+              }
+            })
+          )
+        );
+        notifySync({
+          type: 'success',
+          message: `🎯 ${recommendations.length} tópico(s) recomendado(s) adicionado(s) à fila de ${effectiveDate === today ? 'hoje' : formatDateBR(effectiveDate)}!`
+        });
+      } catch (err: any) {
+        setTopics(previousTopics);
+        for (const r of recommendations) {
+          const orig = previousTopics.find(t => t.id === r.topic.id);
+          if (orig) {
+            broadcastChange('TOPIC_UPDATE', { topicId: r.topic.id, updates: orig });
+          }
+        }
+        notifySync({
+          type: 'error',
+          message: `Erro ao salvar sugestões na nuvem: ${err.message}. Alteração revertida.`
+        });
+      }
+    }
   };
 
   // =========================================================================

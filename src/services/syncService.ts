@@ -115,11 +115,12 @@ export class SyncService {
 
     // 3. Fallback Direto Multi-Query via SDK
     try {
-      const [topicsRes, prereqsRes, progressRes, habitsRes, sessionsRes, errorsRes] = await Promise.all([
+      const [topicsRes, prereqsRes, progressRes, habitsRes, questionHabitsRes, sessionsRes, errorsRes] = await Promise.all([
         supabase.from('topics').select('*'),
         supabase.from('topic_prerequisites').select('*'),
         supabase.from('user_topic_progress').select('*').eq('user_id', session.user.id),
         supabase.from('user_english_habits').select('*').eq('user_id', session.user.id),
+        supabase.from('user_question_habits').select('*').eq('user_id', session.user.id),
         supabase.from('user_study_sessions').select('*').eq('user_id', session.user.id).order('timestamp', { ascending: false }),
         supabase.from('user_study_errors').select('*').eq('user_id', session.user.id).order('created_at', { ascending: false })
       ]);
@@ -129,6 +130,7 @@ export class SyncService {
         prerequisites: prereqsRes.data || [],
         progress: progressRes.data || [],
         habits: habitsRes.data || [],
+        question_habits: questionHabitsRes.data || [],
         sessions: sessionsRes.data || [],
         errors: errorsRes.data || [],
         server_time: new Date().toISOString()

@@ -185,7 +185,7 @@ export const TodayFocus: React.FC = () => {
       longa: 120,
       livre: 0
     };
-    schedulePedagogicalMission(minutesMap[sessionDuration]);
+    schedulePedagogicalMission(minutesMap[sessionDuration], selectedDate);
   };
 
   const handleStartFocusOnEnglish = () => {

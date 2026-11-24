@@ -59,6 +59,22 @@ export default async function handler(req: any, res: any) {
       return res.status(200).json({ success: true, type, date_str: data.date_str });
     }
 
+    if (type === 'QUESTION_HABIT_UPDATE') {
+      const { error } = await supabase.from('user_question_habits').upsert({
+        user_id: user.id,
+        date_str: data.date_str,
+        done: Boolean(data.done),
+        at_end: Boolean(data.at_end),
+        minutes_studied: data.minutes_studied || 0,
+        seconds_studied: data.seconds_studied || 0,
+        questions_count: data.questions_count || 0,
+        completed_at: data.completed_at ? new Date(data.completed_at).toISOString() : null
+      }, { onConflict: 'user_id,date_str' });
+
+      if (error) throw error;
+      return res.status(200).json({ success: true, type, date_str: data.date_str });
+    }
+
     if (type === 'TOPIC_PROGRESS') {
       const topicUpdateData: any = {
         user_id: user.id,
